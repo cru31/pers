@@ -1,0 +1,186 @@
+@startuml WebGPU_Backend_Architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam rectangleBackgroundColor #F0F0F0
+skinparam packageBackgroundColor #E8E8E8
+skinparam classBackgroundColor #FFFFFF
+skinparam arrowColor #333333
+skinparam rectangleBorderColor #888888
+
+title WebGPU Backend Architecture - System Overview
+
+package "Application Layer" #E1F5FE {
+    class Application {
+        + Initialize()
+        + Update(deltaTime)
+        + Render()
+        + Shutdown()
+    }
+    
+    class Scene {
+        + entities[]
+        + cameras[]
+        + lights[]
+        + Update()
+    }
+    
+    class ResourceManager {
+        + LoadMesh()
+        + LoadTexture()
+        + LoadShader()
+        + CreateMaterial()
+    }
+}
+
+package "Rendering Frontend" #FFF3E0 {
+    class RenderGraph {
+        + AddPass()
+        + SetInput()
+        + SetOutput()
+        + Compile()
+        + Execute()
+    }
+    
+    class RenderPass {
+        + Setup()
+        + Execute()
+        + resources[]
+        + dependencies[]
+    }
+    
+    class FrameData {
+        + viewMatrix
+        + projMatrix
+        + lights[]
+        + objects[]
+    }
+}
+
+package "WebGPU Abstraction Layer" #E8F5E9 {
+    class WebGPUDevice {
+        - instance: WGPUInstance
+        - adapter: WGPUAdapter
+        - device: WGPUDevice
+        - queue: WGPUQueue
+        + CreateBuffer()
+        + CreateTexture()
+        + CreatePipeline()
+        + Submit()
+    }
+    
+    class WebGPUSwapChain {
+        - surface: WGPUSurface
+        - swapChain: WGPUSwapChain
+        + GetCurrentTexture()
+        + Present()
+    }
+    
+    class CommandEncoder {
+        - encoder: WGPUCommandEncoder
+        + BeginRenderPass()
+        + BeginComputePass()
+        + CopyBuffer()
+        + Finish()
+    }
+    
+    class RenderPassEncoder {
+        - encoder: WGPURenderPassEncoder
+        + SetPipeline()
+        + SetBindGroup()
+        + Draw()
+        + DrawIndexed()
+    }
+}
+
+package "Resource Management" #FCE4EC {
+    class BufferPool {
+        + AcquireBuffer()
+        + ReleaseBuffer()
+        - availableBuffers[]
+        - inUseBuffers[]
+    }
+    
+    class TextureCache {
+        + GetTexture()
+        + CreateTexture()
+        - textureMap<>
+    }
+    
+    class PipelineCache {
+        + GetPipeline()
+        + CreatePipeline()
+        - pipelineMap<>
+    }
+    
+    class BindGroupCache {
+        + GetBindGroup()
+        + CreateBindGroup()
+        - bindGroupMap<>
+    }
+}
+
+package "Memory Management" #F3E5F5 {
+    class StagingBufferPool {
+        + Acquire()
+        + Release()
+        - stagingBuffers[]
+    }
+    
+    class DynamicBufferAllocator {
+        + Allocate()
+        + Reset()
+        - currentOffset
+        - bufferSize
+    }
+    
+    class TextureStreamingManager {
+        + StreamIn()
+        + StreamOut()
+        + UpdatePriorities()
+    }
+}
+
+package "Platform Layer" #E0E0E0 {
+    class WindowSystem {
+        + CreateSurface()
+        + GetSize()
+        + PollEvents()
+    }
+    
+    class FileSystem {
+        + ReadFile()
+        + WriteFile()
+        + GetPath()
+    }
+}
+
+' Relationships
+Application --> Scene : manages
+Application --> RenderGraph : builds
+Application --> ResourceManager : uses
+
+Scene --> FrameData : produces
+
+RenderGraph --> RenderPass : contains
+RenderGraph --> WebGPUDevice : uses
+RenderPass --> CommandEncoder : creates
+RenderPass --> FrameData : consumes
+
+CommandEncoder --> RenderPassEncoder : creates
+RenderPassEncoder --> WebGPUDevice : uses
+
+WebGPUDevice --> BufferPool : uses
+WebGPUDevice --> TextureCache : uses
+WebGPUDevice --> PipelineCache : uses
+WebGPUDevice --> BindGroupCache : uses
+
+WebGPUSwapChain --> WebGPUDevice : owned by
+
+BufferPool --> StagingBufferPool : uses
+TextureCache --> TextureStreamingManager : uses
+BufferPool --> DynamicBufferAllocator : uses
+
+WebGPUDevice --> WindowSystem : gets surface
+ResourceManager --> FileSystem : loads from
+
+@enduml

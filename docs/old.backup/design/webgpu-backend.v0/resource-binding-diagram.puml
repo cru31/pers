@@ -1,0 +1,163 @@
+@startuml WebGPU_Resource_Binding
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #FFFFFF
+skinparam packageBackgroundColor #F0F0F0
+
+title WebGPU Resource Binding Model
+
+package "Pipeline Layout" #E8F5E9 {
+    class PipelineLayout {
+        + bindGroupLayouts[]
+        + pushConstantRanges[]
+    }
+    
+    class BindGroupLayout0 <<Frame Global>> {
+        + binding 0: FrameUniforms
+        + binding 1: LightBuffer
+        + binding 2: ShadowMaps[]
+        + binding 3: EnvironmentMaps
+    }
+    
+    class BindGroupLayout1 <<View/Pass>> {
+        + binding 0: ViewUniforms
+        + binding 1: PassTextures
+        + binding 2: DepthTexture
+        + binding 3: SSAOTexture
+    }
+    
+    class BindGroupLayout2 <<Material>> {
+        + binding 0: MaterialUniforms
+        + binding 1: BaseColorTexture
+        + binding 2: NormalTexture
+        + binding 3: MetallicRoughnessTexture
+        + binding 4: Samplers
+    }
+    
+    class BindGroupLayout3 <<Object>> {
+        + binding 0: ObjectUniforms
+        + binding 1: InstanceBuffer
+        + binding 2: BoneMatrices
+    }
+}
+
+package "Bind Groups (Instances)" #FFF3E0 {
+    class BindGroup0_Frame {
+        ~ frameUniformBuffer
+        ~ lightDataBuffer
+        ~ shadowMapArray
+        ~ envCubemap
+    }
+    
+    class BindGroup1_MainView {
+        ~ viewUniformBuffer
+        ~ gBufferTextures
+        ~ depthTexture
+        ~ ssaoTexture
+    }
+    
+    class BindGroup2_PBRMaterial {
+        ~ materialBuffer
+        ~ albedoTexture
+        ~ normalTexture
+        ~ metallicTexture
+        ~ linearSampler
+    }
+    
+    class BindGroup3_Mesh {
+        ~ transformBuffer
+        ~ instanceDataBuffer
+        ~ skinningBuffer
+    }
+}
+
+package "Resources" #FCE4EC {
+    class Buffer {
+        + size: uint64
+        + usage: BufferUsage
+        + mappedAtCreation: bool
+    }
+    
+    class Texture {
+        + format: TextureFormat
+        + dimension: TextureDimension
+        + size: Extent3D
+        + mipLevelCount: uint32
+        + sampleCount: uint32
+    }
+    
+    class Sampler {
+        + minFilter: FilterMode
+        + magFilter: FilterMode
+        + addressModeU: AddressMode
+        + addressModeV: AddressMode
+        + addressModeW: AddressMode
+    }
+    
+    class TextureView {
+        + format: TextureFormat
+        + dimension: TextureViewDimension
+        + baseMipLevel: uint32
+        + mipLevelCount: uint32
+        + baseArrayLayer: uint32
+        + arrayLayerCount: uint32
+    }
+}
+
+package "Shader Interface" #E1F5FE {
+    class VertexShader {
+        [[group(0), binding(0)]]
+        var<uniform> frame: FrameData
+        [[group(1), binding(0)]]
+        var<uniform> view: ViewData
+        [[group(3), binding(0)]]
+        var<uniform> object: ObjectData
+    }
+    
+    class FragmentShader {
+        [[group(0), binding(1)]]
+        var<storage> lights: LightArray
+        [[group(2), binding(0)]]
+        var<uniform> material: MaterialData
+        [[group(2), binding(1)]]
+        var baseColorTexture: texture_2d
+        [[group(2), binding(4)]]
+        var linearSampler: sampler
+    }
+}
+
+' Relationships
+PipelineLayout --> BindGroupLayout0
+PipelineLayout --> BindGroupLayout1
+PipelineLayout --> BindGroupLayout2
+PipelineLayout --> BindGroupLayout3
+
+BindGroupLayout0 ..> BindGroup0_Frame : instantiates
+BindGroupLayout1 ..> BindGroup1_MainView : instantiates
+BindGroupLayout2 ..> BindGroup2_PBRMaterial : instantiates
+BindGroupLayout3 ..> BindGroup3_Mesh : instantiates
+
+BindGroup0_Frame --> Buffer : references
+BindGroup0_Frame --> Texture : references
+BindGroup1_MainView --> Buffer : references
+BindGroup1_MainView --> TextureView : references
+BindGroup2_PBRMaterial --> Buffer : references
+BindGroup2_PBRMaterial --> Texture : references
+BindGroup2_PBRMaterial --> Sampler : references
+BindGroup3_Mesh --> Buffer : references
+
+VertexShader ..> BindGroup0_Frame : reads
+VertexShader ..> BindGroup1_MainView : reads
+VertexShader ..> BindGroup3_Mesh : reads
+FragmentShader ..> BindGroup0_Frame : reads
+FragmentShader ..> BindGroup2_PBRMaterial : reads
+
+note bottom of PipelineLayout
+  Bind Group Frequency:
+  0: Per Frame (rarely changes)
+  1: Per View/Pass (camera changes)
+  2: Per Material (material switches)
+  3: Per Object (every draw call)
+end note
+
+@enduml

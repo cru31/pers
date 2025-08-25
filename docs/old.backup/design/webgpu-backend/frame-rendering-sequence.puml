@@ -1,0 +1,163 @@
+@startuml frame-rendering-sequence
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #666
+skinparam participantBackgroundColor #F8F8F8
+
+title WebGPU Mesh Rendering - Frame Rendering Sequence
+
+participant "Application" as App
+participant "WebGPUDevice" as Device
+participant "CommandEncoder" as CmdEnc
+participant "RenderPass" as Pass
+participant "BindGroupManager" as BGMgr
+participant "DynamicBuffer" as DynBuf
+participant "wgpu::Queue" as Queue
+participant "SwapChain" as SC
+participant "GPU" as GPU
+
+== Frame Start ==
+App -> Device: BeginFrame()
+activate Device
+    Device -> SC: GetCurrentTextureView()
+    SC --> Device: textureView
+    
+    Device -> Device: WaitForFence(frameIndex-2)
+    note right: Wait for N-2 frame\n(triple buffering)
+    
+    Device -> DynBuf: Reset(frameIndex)
+    note right: Reset ring buffer\nfor this frame
+    
+    Device -> CmdEnc: Create()
+    activate CmdEnc
+Device --> App: CommandEncoder
+
+== Update Dynamic Resources ==
+App -> DynBuf: UpdateFrameUniforms(viewProj)
+activate DynBuf
+    DynBuf -> DynBuf: GetNextOffset()
+    DynBuf -> DynBuf: Map(offset, size)
+    DynBuf -> DynBuf: WriteData(viewProj)
+    DynBuf -> DynBuf: Unmap()
+DynBuf --> App: offset
+
+App -> BGMgr: UpdateBindGroup(0, bufferOffset)
+activate BGMgr
+    BGMgr -> BGMgr: GetOrCreateBindGroup()
+    note right: May reuse if\noffset unchanged
+BGMgr --> App: frameBindGroup
+
+== Begin Render Pass ==
+App -> CmdEnc: BeginRenderPass(descriptor)
+activate Pass
+    CmdEnc -> Pass: Create(colorAttachments, depthAttachment)
+    note over Pass
+        RenderPassDescriptor {
+            colorAttachments: [{
+                view: swapChainView,
+                loadOp: Clear,
+                storeOp: Store,
+                clearValue: {0.2, 0.2, 0.2, 1.0}
+            }],
+            depthStencilAttachment: {
+                view: depthView,
+                depthLoadOp: Clear,
+                depthStoreOp: Store,
+                depthClearValue: 1.0
+            }
+        }
+    end note
+CmdEnc --> App: RenderPass
+
+== Draw Mesh ==
+App -> Pass: SetPipeline(meshPipeline)
+Pass -> Pass: cmdSetPipeline()
+note right: Bind PSO with all\nfixed-function states
+
+App -> Pass: SetBindGroup(0, frameData)
+Pass -> Pass: cmdSetBindGroup(0, frameBindGroup)
+note right: Camera matrices,\nlights, time
+
+App -> Pass: SetBindGroup(1, materialData)
+Pass -> Pass: cmdSetBindGroup(1, materialBindGroup)
+note right: Textures,\nmaterial properties
+
+loop For each mesh instance
+    App -> DynBuf: UpdateObjectUniforms(modelMatrix)
+    DynBuf --> App: offset
+    
+    App -> Pass: SetBindGroup(2, objectData, offset)
+    Pass -> Pass: cmdSetBindGroup(2, objectBindGroup, dynamicOffsets)
+    note right: Per-object transform
+    
+    App -> Pass: SetVertexBuffer(0, mesh.vertices)
+    Pass -> Pass: cmdSetVertexBuffer()
+    
+    App -> Pass: SetIndexBuffer(mesh.indices, IndexFormat)
+    Pass -> Pass: cmdSetIndexBuffer()
+    
+    App -> Pass: DrawIndexed(indexCount, instanceCount)
+    Pass -> Pass: cmdDrawIndexed()
+    note right: Record draw command
+end
+
+== End Render Pass ==
+App -> Pass: End()
+deactivate Pass
+Pass -> CmdEnc: EndPass()
+
+== Submit Commands ==
+App -> CmdEnc: Finish()
+CmdEnc -> CmdEnc: BuildCommandBuffer()
+CmdEnc --> App: CommandBuffer
+deactivate CmdEnc
+
+App -> Device: Submit(commandBuffer)
+Device -> Queue: Submit([commandBuffer])
+Queue -> GPU: ExecuteCommands()
+activate GPU
+
+Device -> Queue: SignalFence(frameIndex)
+note right: Signal completion\nfor synchronization
+
+== GPU Execution (Async) ==
+GPU -> GPU: Vertex Shader
+note right: Transform vertices\nwith matrices
+
+GPU -> GPU: Primitive Assembly
+note right: Build triangles
+
+GPU -> GPU: Rasterization
+note right: Generate fragments
+
+GPU -> GPU: Fragment Shader
+note right: Calculate pixel colors\nwith textures/lighting
+
+GPU -> GPU: Depth Test
+note right: Z-buffer test
+
+GPU -> GPU: Blending
+note right: Alpha blending\nif enabled
+
+GPU -> GPU: Write to FrameBuffer
+deactivate GPU
+
+== Present Frame ==
+App -> Device: Present()
+Device -> SC: Present()
+SC -> SC: SwapBuffers()
+note right: Display on screen
+
+Device --> App: FrameComplete
+
+== Frame Timing ==
+note over App, GPU
+    Frame N   : CPU prepares commands
+    Frame N+1 : GPU executes Frame N, CPU prepares Frame N+1
+    Frame N+2 : Display Frame N, GPU executes Frame N+1
+    
+    Triple buffering allows CPU and GPU
+    to work independently without stalls
+end note
+
+@enduml

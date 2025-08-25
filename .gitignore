@@ -1,0 +1,62 @@
+# Build directories
+build/
+**/build/
+cmake-build-*/
+out/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sdf
+*.opensdf
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Third-party libraries (build from source)
+third_party/
+
+# Private documentation
+CLAUDE.md
+claude.md
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.pdb
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+
+# Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+
+# Visual Studio
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.ilk
+*.exp
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*~
+*.swp

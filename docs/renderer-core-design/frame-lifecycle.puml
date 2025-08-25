@@ -1,0 +1,112 @@
+@startuml frame-lifecycle
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #666
+skinparam participantBackgroundColor #F8F8F8
+
+title Frame Lifecycle - Command-Based Rendering
+
+participant "Application" as App
+participant "Renderer" as Renderer
+participant "CommandRecorder" as Cmd
+participant "SwapChain" as Swap
+participant "Queue" as Queue
+participant "GPU" as GPU
+
+== Frame N Start ==
+App -> Renderer: BeginFrame()
+activate Renderer
+
+Renderer -> Swap: AcquireNextImage()
+activate Swap
+Swap -> Swap: Wait for available
+Swap --> Renderer: Backbuffer[N]
+deactivate Swap
+
+Renderer -> Renderer: Wait(Fence[N-2])
+note right: Triple buffering:\nWait for frame N-2
+
+Renderer -> Renderer: GetCommandRecorder()
+Renderer -> Cmd: Begin()
+activate Cmd
+
+Renderer --> App: CommandRecorder*
+deactivate Renderer
+
+== Command Recording ==
+App -> Cmd: BeginRenderPass(nullptr)
+note right: nullptr = backbuffer
+Cmd -> Cmd: Set RenderPass state
+
+App -> Cmd: RenderScene(scene)
+activate Cmd
+Cmd -> Cmd: SetPipeline()
+Cmd -> Cmd: SetBindGroups()
+Cmd -> Cmd: Draw calls...
+deactivate Cmd
+
+App -> Cmd: EndRenderPass()
+note right: **Explicit end required**
+Cmd -> Cmd: Close RenderPass
+
+alt Multi-pass Rendering
+    App -> Cmd: BeginRenderPass(shadowMap)
+    App -> Cmd: RenderShadows()
+    App -> Cmd: EndRenderPass()
+    
+    App -> Cmd: BeginRenderPass(nullptr)
+    App -> Cmd: RenderMain()
+    App -> Cmd: EndRenderPass()
+end
+
+== Frame Submission ==
+App -> Renderer: EndFrame(cmd)
+activate Renderer
+
+Renderer -> Cmd: Finish()
+Cmd -> Cmd: Validate state
+note right: Error if RenderPass\nstill active
+Cmd --> Renderer: CommandBuffer
+deactivate Cmd
+
+Renderer -> Queue: Submit(CommandBuffer, Fence[N])
+activate Queue
+Queue -> GPU: Execute Commands
+activate GPU
+
+Renderer -> Swap: Present()
+note left: Schedule presentation
+
+Renderer -> Renderer: Signal(Fence[N])
+
+Renderer --> App: Frame Complete
+deactivate Renderer
+
+== Parallel Execution ==
+GPU -> GPU: Process Frame N
+note right: Vertex Processing\nRasterization\nFragment Shading
+
+App -> App: Prepare Frame N+1
+note left: CPU can prepare\nnext frame
+
+Queue --> GPU: Complete
+deactivate GPU
+GPU -> GPU: Display Frame N-1
+deactivate Queue
+
+== Error Cases ==
+group Error: Unfinished RenderPass
+    App -> Renderer: EndFrame(cmd)
+    Renderer -> Cmd: Finish()
+    Cmd --> Renderer: ERROR: RenderPass active
+    Renderer --> App: Exception
+end
+
+group Error: Missing EndRenderPass
+    App -> Cmd: BeginRenderPass()
+    App -> Cmd: Draw()
+    App -> Cmd: BeginRenderPass()
+    Cmd --> App: ERROR: Previous pass not ended
+end
+
+@enduml

@@ -1,0 +1,73 @@
+@startuml command-recorder-states
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam stateBackgroundColor #F8F8F8
+skinparam stateBorderColor #888
+
+title CommandRecorder State Flow
+
+[*] --> Idle : Create
+
+Idle --> Recording : Begin()
+Idle --> [*] : Destroy
+
+Recording --> InRenderPass : BeginRenderPass()
+Recording --> Finished : Finish()
+
+InRenderPass --> Recording : EndRenderPass()
+InRenderPass --> InRenderPass : Draw Commands
+InRenderPass --> Error : Invalid Operation
+
+state Recording {
+    [*] --> Ready
+    Ready : Can begin render pass
+    Ready : Can update resources
+    Ready : Can copy textures
+    Ready --> Ready : Resource Operations
+}
+
+state InRenderPass {
+    [*] --> Drawing
+    Drawing : SetPipeline()
+    Drawing : SetBindGroup()
+    Drawing : SetVertexBuffer()
+    Drawing : Draw()
+    Drawing : DrawIndexed()
+    Drawing --> Drawing : Draw Commands
+    
+    note right of Drawing
+        **Valid Operations:**
+        - All draw commands
+        - Pipeline state changes
+        - Resource bindings
+        
+        **Invalid Operations:**
+        - BeginRenderPass (nested)
+        - Resource creation
+        - Buffer updates
+    end note
+}
+
+Finished --> Idle : Reset()\n(Reuse)
+Finished --> Submitted : Submit()
+
+Submitted --> [*] : Frame Complete
+
+Error --> [*] : Exception
+
+note left of Error
+    **Common Errors:**
+    - BeginRenderPass without End
+    - Draw without pipeline
+    - Finish with active pass
+    - Use after Finish
+end note
+
+note bottom of Recording
+    **RenderPass Rules:**
+    - Must explicitly EndRenderPass
+    - No auto-close on BeginRenderPass
+    - No auto-close on Finish (error)
+end note
+
+@enduml

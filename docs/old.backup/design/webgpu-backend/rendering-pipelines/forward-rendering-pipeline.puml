@@ -1,0 +1,131 @@
+@startuml forward-rendering-pipeline
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam activityBackgroundColor #F8F8F8
+skinparam activityBorderColor #888
+
+title Forward Rendering Pipeline Flow
+
+start
+
+partition "Initialization" #E8F4F8 {
+    :Create Depth Buffer;
+    :Create Shadow Maps Array;
+    :Create HDR Color Buffer;
+    :Load Shaders & Create PSOs;
+}
+
+partition "Frame Start" #FFE8E8 {
+    :Acquire SwapChain Image;
+    :Update Frame Uniforms;
+    note right
+        View/Projection matrices
+        Camera position
+        Time, deltaTime
+    end note
+}
+
+partition "Shadow Pass" #E8FFE8 {
+    :For Each Shadow Light;
+    while (More Lights?) is (yes)
+        :Set Shadow Viewport;
+        :Bind Shadow PSO;
+        :Set Light View-Proj;
+        :Render Shadow Casters;
+        note right
+            Depth only
+            No fragment shader
+        end note
+    endwhile (no)
+    :Generate Shadow Map Array;
+}
+
+partition "Z-Prepass (Optional)" #FFE8FF {
+    if (Complex Scene?) then (yes)
+        :Bind Z-Prepass PSO;
+        :Render Opaque Geometry;
+        note right
+            Write depth only
+            Early-Z rejection
+        end note
+    else (no)
+        :Skip Z-Prepass;
+    endif
+}
+
+partition "Main Forward Pass" #E8E8FF {
+    :Clear Color Buffer;
+    :Bind Forward PSO;
+    
+    :Sort Draw Calls;
+    note right
+        1. By Pipeline
+        2. By Material
+        3. By Mesh
+    end note
+    
+    :For Each Opaque Object;
+    while (More Objects?) is (yes)
+        :Set Bind Groups;
+        note left
+            Set 0: Frame Data
+            Set 1: Pass Data
+            Set 2: Material Data
+            Set 3: Object Data
+        end note
+        
+        :Calculate Lighting;
+        note right
+            Loop through lights
+            Sample shadow maps
+            Apply PBR shading
+        end note
+        
+        :Draw Indexed;
+    endwhile (no)
+}
+
+partition "Transparency Pass" #FFFFE8 {
+    :Sort Transparent Objects;
+    note right: Back to front
+    
+    :Enable Blending;
+    :Disable Depth Write;
+    
+    :For Each Transparent Object;
+    while (More Transparent?) is (yes)
+        :Set Bind Groups;
+        :Draw with Blending;
+    endwhile (no)
+}
+
+partition "Post-Processing" #F0F0F0 {
+    :Bind Post-Process PSO;
+    
+    if (HDR Enabled?) then (yes)
+        :Tone Mapping;
+        note right: Reinhard/ACES
+    endif
+    
+    if (FXAA Enabled?) then (yes)
+        :Apply FXAA;
+    endif
+    
+    if (Bloom Enabled?) then (yes)
+        :Extract Bright;
+        :Gaussian Blur;
+        :Composite;
+    endif
+    
+    :Output to SwapChain;
+}
+
+partition "Frame End" #E8F4F8 {
+    :Submit Command Buffer;
+    :Present SwapChain;
+    :Signal Frame Fence;
+}
+
+stop
+
+@enduml

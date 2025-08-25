@@ -1,0 +1,80 @@
+@startuml frame-execution-flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #666
+skinparam participantBackgroundColor #F8F8F8
+skinparam participantBorderColor #888
+
+title Modern GPU Frame Execution Flow
+
+participant "CPU Thread" as CPU
+participant "Command Encoder" as CE
+participant "Command Buffer" as CB
+participant "GPU Queue" as Queue
+participant "GPU" as GPU
+participant "SwapChain" as SC
+
+== Frame N Preparation ==
+CPU -> SC: AcquireNextImage()
+SC --> CPU: ImageIndex
+
+CPU -> CE: CreateCommandEncoder()
+activate CE
+
+== Command Recording (Can be Parallel) ==
+group Parallel Command Recording
+    CPU -> CE: BeginRenderPass(target)
+    CE -> CE: SetPipeline(PSO)
+    CE -> CE: SetBindGroup(0, frameData)
+    CE -> CE: SetBindGroup(1, materialData)
+    
+    loop For each DrawCall
+        CE -> CE: SetBindGroup(2, objectData)
+        CE -> CE: SetVertexBuffer()
+        CE -> CE: SetIndexBuffer()
+        CE -> CE: DrawIndexed()
+    end
+    
+    CE -> CE: EndRenderPass()
+    
+    CPU -> CE: BeginComputePass()
+    CE -> CE: SetComputePipeline()
+    CE -> CE: SetBindGroup(0, computeData)
+    CE -> CE: Dispatch(x, y, z)
+    CE -> CE: EndComputePass()
+end
+
+== Command Buffer Generation ==
+CE -> CB: Finish()
+deactivate CE
+CB --> CPU: CommandBuffer
+
+== GPU Submission ==
+CPU -> Queue: Submit(CommandBuffer)
+Queue -> GPU: Execute Commands
+activate GPU
+
+CPU -> Queue: Signal(Fence)
+
+== Asynchronous GPU Execution ==
+GPU -> GPU: Vertex Processing
+GPU -> GPU: Rasterization
+GPU -> GPU: Fragment Processing
+GPU -> GPU: ROP (Render Output)
+
+== Frame Presentation ==
+CPU -> Queue: Wait(Fence)
+Queue --> CPU: Complete
+
+GPU -> SC: Present()
+deactivate GPU
+SC -> SC: SwapBuffers()
+
+== Frame N+1 Preparation (Overlapped) ==
+note over CPU: CPU can start preparing\nnext frame while GPU\nis still rendering
+
+CPU -> CPU: Update Game Logic
+CPU -> CPU: Update Uniforms
+CPU -> CPU: Culling
+
+@enduml

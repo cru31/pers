@@ -1,0 +1,124 @@
+@startuml initialization-sequence
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #666
+skinparam participantBackgroundColor #F8F8F8
+
+title WebGPU Mesh Rendering - Initialization Sequence
+
+participant "Application" as App
+participant "WebGPUDevice" as Device
+participant "ResourceManager" as ResMgr
+participant "PipelineCache" as PSO
+participant "wgpu::Instance" as Instance
+participant "wgpu::Adapter" as Adapter
+participant "wgpu::Device" as WGPUDev
+
+== Device Initialization ==
+App -> Device: CreateWebGPUDevice()
+activate Device
+    Device -> Instance: CreateInstance()
+    Instance --> Device: instance
+    
+    Device -> Instance: EnumerateAdapters()
+    Instance --> Device: adapters[]
+    
+    Device -> Device: SelectBestAdapter()
+    note right: Prefer Discrete GPU\nCheck features/limits
+    
+    Device -> Adapter: RequestDevice(descriptor)
+    Adapter --> WGPUDev: device
+    
+    Device -> WGPUDev: GetQueue()
+    WGPUDev --> Device: queue
+    
+    Device -> Device: CreateSwapChain()
+    note right: Platform-specific\nsurface creation
+Device --> App: WebGPUDevice*
+
+== Resource Loading ==
+App -> ResMgr: LoadMesh("model.gltf")
+activate ResMgr
+    ResMgr -> ResMgr: ParseGLTF()
+    note right: Extract vertices,\nindices, materials
+    
+    ResMgr -> Device: CreateBuffer(vertexData)
+    Device -> WGPUDev: CreateBuffer(desc)
+    WGPUDev --> Device: vertexBuffer
+    Device --> ResMgr: BufferHandle
+    
+    ResMgr -> Device: CreateBuffer(indexData)
+    Device -> WGPUDev: CreateBuffer(desc)
+    WGPUDev --> Device: indexBuffer
+    Device --> ResMgr: BufferHandle
+    
+    ResMgr -> ResMgr: LoadTextures()
+    loop For each texture
+        ResMgr -> Device: CreateTexture(imageData)
+        Device -> WGPUDev: CreateTexture(desc)
+        WGPUDev --> Device: texture
+        Device --> ResMgr: TextureHandle
+    end
+ResMgr --> App: MeshHandle
+
+== Shader Compilation ==
+App -> Device: LoadShader("mesh.wgsl")
+activate Device
+    Device -> Device: ReadFile("mesh.wgsl")
+    Device -> Device: PreprocessShader()
+    note right: Handle includes,\ndefines, variants
+    
+    Device -> WGPUDev: CreateShaderModule(wgsl)
+    WGPUDev -> WGPUDev: CompileWGSL()
+    WGPUDev --> Device: shaderModule
+Device --> App: ShaderHandle
+
+== Pipeline Creation ==
+App -> PSO: CreateRenderPipeline(desc)
+activate PSO
+    PSO -> PSO: HashDescriptor(desc)
+    PSO -> PSO: CheckCache(hash)
+    
+    alt Pipeline not in cache
+        PSO -> Device: CreateBindGroupLayouts()
+        loop For each set (0-3)
+            Device -> WGPUDev: CreateBindGroupLayout(entries)
+            WGPUDev --> Device: bindGroupLayout
+        end
+        Device --> PSO: layouts[]
+        
+        PSO -> Device: CreatePipelineLayout(layouts)
+        Device -> WGPUDev: CreatePipelineLayout()
+        WGPUDev --> Device: pipelineLayout
+        
+        PSO -> WGPUDev: CreateRenderPipeline(fullDesc)
+        note right: Vertex layout,\nShaders, States,\nPipeline layout
+        WGPUDev --> PSO: pipeline
+        
+        PSO -> PSO: CacheStore(hash, pipeline)
+    end
+PSO --> App: PipelineHandle
+
+== Bind Group Creation ==
+App -> Device: CreateBindGroup(layout, resources)
+activate Device
+    Device -> Device: ValidateResources()
+    
+    Device -> WGPUDev: CreateBindGroup(desc)
+    note right: Bind buffers,\ntextures, samplers
+    WGPUDev --> Device: bindGroup
+Device --> App: BindGroupHandle
+
+== Uniform Buffer Setup ==
+App -> Device: CreateUniformBuffer(size, dynamic)
+activate Device
+    alt Dynamic buffer
+        Device -> Device: CreateRingBuffer(size * 3)
+        note right: Triple buffering\nfor frame overlap
+    else Static buffer
+        Device -> WGPUDev: CreateBuffer(UNIFORM)
+    end
+    WGPUDev --> Device: buffer
+Device --> App: BufferHandle
+
+@enduml

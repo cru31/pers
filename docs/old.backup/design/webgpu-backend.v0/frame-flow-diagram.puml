@@ -1,0 +1,75 @@
+@startuml WebGPU_Frame_Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #333333
+skinparam participantBackgroundColor #E8F5E9
+skinparam noteBackgroundColor #FFF9C4
+
+title WebGPU Frame Execution Flow
+
+participant "Application" as App #E1F5FE
+participant "RenderGraph" as Graph #FFF3E0
+participant "CommandEncoder" as Encoder #E8F5E9
+participant "RenderPass" as Pass #E8F5E9
+participant "Queue" as Queue #C8E6C9
+participant "SwapChain" as Swap #BBDEFB
+participant "GPU" as GPU #FFCDD2
+
+== Frame N ==
+
+App -> App: Update(deltaTime)
+note right: Game logic,\nPhysics,\nAnimations
+
+App -> Graph: BuildRenderGraph()
+note right: Define passes\nand dependencies
+
+App -> Graph: SetFrameData()
+note left: View/Proj matrices,\nLights, Objects
+
+Graph -> Graph: Compile()
+note right: Optimize pass order,\nAllocate resources
+
+App -> Swap: GetCurrentTextureView()
+note right: Acquire next\nswapchain image
+
+Graph -> Encoder: CreateCommandEncoder()
+
+loop For each RenderPass
+    Graph -> Pass: Execute(encoder)
+    
+    Pass -> Encoder: BeginRenderPass(descriptor)
+    note right: Color attachments,\nDepth attachment,\nLoad/Store ops
+    
+    Pass -> Pass: SetPipeline()
+    Pass -> Pass: SetBindGroups()
+    
+    loop For each DrawCall
+        Pass -> Pass: SetVertexBuffer()
+        Pass -> Pass: SetIndexBuffer()
+        Pass -> Pass: Draw() or DrawIndexed()
+    end
+    
+    Pass -> Encoder: EndRenderPass()
+end
+
+Graph -> Encoder: Finish()
+note right: Returns\nCommandBuffer
+
+Graph -> Queue: Submit(commandBuffer)
+note left: Send to GPU
+
+Queue -> GPU: Execute Commands
+note right: Async execution
+
+App -> Swap: Present()
+note left: Display frame
+
+== Frame N+1 (Parallel) ==
+
+App -> App: Update(deltaTime)
+note right: CPU prepares\nnext frame while\nGPU renders
+
+GPU --> Queue: Signal completion
+note left: Via callback
+
+@enduml

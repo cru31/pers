@@ -1,0 +1,100 @@
+@startuml architecture-layers
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam componentBackgroundColor #F8F8F8
+skinparam componentBorderColor #888
+
+title WebGPU Backend v2 - Layered Architecture
+
+package "Application Code" #E8F4F8 {
+    component [Game Logic] as GameLogic
+    component [Scene Management] as SceneMgmt
+    component [Entity Components] as ECS
+}
+
+package "High-Level API" #FFE8E8 {
+    component [Application] as App
+    component [Scene] as Scene
+    component [Camera] as Camera
+    component [Light] as Light
+    component [Material] as Material
+    
+    App --> Scene : manages
+    Scene --> Camera : contains
+    Scene --> Light : contains
+    Scene --> Material : uses
+}
+
+package "Rendering Layer" #E8FFE8 {
+    component [SceneRenderer] as SceneRenderer
+    component [RenderGraph] as RenderGraph
+    component [CullingSystem] as Culling
+    component [BatchingSystem] as Batching
+    
+    SceneRenderer --> RenderGraph : executes
+    SceneRenderer --> Culling : uses
+    SceneRenderer --> Batching : optimizes
+}
+
+package "Resource Management" #FFE8FF {
+    component [MaterialSystem] as MatSystem
+    component [MeshManager] as MeshMgr
+    component [TextureCache] as TexCache
+    component [ShaderCache] as ShaderCache
+    component [ResourcePool] as ResPool
+    
+    MatSystem --> ShaderCache : compiles
+    MatSystem --> TexCache : references
+    MeshMgr --> ResPool : allocates
+}
+
+package "Abstraction Layer" #E8E8FF {
+    component [IDevice] as IDevice
+    component [CommandBuffer] as CmdBuf
+    component [Pipeline] as Pipeline
+    component [BindGroup] as BindGroup
+    
+    IDevice --> CmdBuf : creates
+    IDevice --> Pipeline : manages
+    CmdBuf --> BindGroup : binds
+}
+
+package "WebGPU Backend" #FFFFE8 {
+    component [WebGPUDevice] as WGPUDevice
+    component [WebGPUCommandEncoder] as WGPUEncoder
+    component [PipelineCache] as PipeCache
+    component [BindGroupAllocator] as BGAlloc
+    component [FrameManager] as FrameMgr
+    
+    WGPUDevice --> WGPUEncoder : creates
+    WGPUDevice --> PipeCache : caches
+    WGPUDevice --> BGAlloc : manages
+    WGPUDevice --> FrameMgr : synchronizes
+}
+
+package "WebGPU Native" #F0F0F0 {
+    component [wgpu::Instance] as Instance
+    component [wgpu::Device] as Device
+    component [wgpu::Queue] as Queue
+    component [wgpu::SwapChain] as SwapChain
+    
+    Instance --> Device : creates
+    Device --> Queue : provides
+    Device --> SwapChain : creates
+}
+
+' Relationships between layers
+GameLogic --> App : uses
+App --> SceneRenderer : renders with
+SceneRenderer --> MatSystem : queries
+MatSystem --> IDevice : abstracts
+IDevice ..> WGPUDevice : implements
+WGPUDevice --> Instance : wraps
+
+' Automatic features annotations
+note right of Batching : Automatic\nDraw Call\nOptimization
+note right of ResPool : Automatic\nMemory\nManagement
+note right of PipeCache : Automatic\nPSO\nCaching
+note left of RenderGraph : Automatic\nPass Ordering\n& Barriers
+
+@enduml

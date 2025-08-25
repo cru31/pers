@@ -1,0 +1,138 @@
+@startuml resource-binding-hierarchy
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #888
+skinparam packageBackgroundColor #F0F8FF
+skinparam arrowColor #666
+
+title Resource Binding Model - Hierarchical Structure
+
+package "Binding Frequency Hierarchy" #E8F4F8 {
+    
+    class "Set 0: Per-Frame" #FFE8E8 {
+        == Update: Once per frame ==
+        .. Uniforms ..
+        + View Matrix
+        + Projection Matrix  
+        + Camera Position
+        + Time / DeltaTime
+        + Frame Count
+        .. Resources ..
+        + Global Lights Array
+        + Shadow Map Array
+        + IBL Cubemap
+        + BRDF LUT
+        + SSAO Noise Texture
+        --
+        ~ 1 update per frame
+        ~ Shared by all passes
+    }
+    
+    class "Set 1: Per-Pass" #FFE8FF {
+        == Update: Once per pass ==
+        .. Uniforms ..
+        + Pass Type
+        + Viewport Info
+        + Render Target Size
+        + Light View-Proj (shadow)
+        + Cascade Index
+        .. Resources ..
+        + Previous Pass Results
+        + Post-process Parameters
+        + Pass-specific Textures
+        --
+        ~ 3-5 updates per frame
+        ~ Different for each pass
+    }
+    
+    class "Set 2: Per-Material" #E8E8FF {
+        == Update: On material change ==
+        .. Uniforms ..
+        + Base Color Factor
+        + Metallic Factor
+        + Roughness Factor
+        + Normal Scale
+        + Emissive Factor
+        .. Textures ..
+        + Base Color Map
+        + Normal Map
+        + Metallic-Roughness Map
+        + Occlusion Map
+        + Emissive Map
+        --
+        ~ 10-100 changes per frame
+        ~ Shared by instances
+    }
+    
+    class "Set 3: Per-Object" #E8FFE8 {
+        == Update: Every draw call ==
+        .. Uniforms ..
+        + Model Matrix
+        + Normal Matrix
+        + Previous Model Matrix
+        + Object ID
+        + Instance Color
+        .. Dynamic Data ..
+        + Bone Matrices (skinning)
+        + Morph Weights
+        + Custom Per-Instance Data
+        --
+        ~ 100-10000 updates per frame
+        ~ Unique per object
+    }
+}
+
+package "Optional Sets" #F8F8E8 {
+    class "Set 4: Per-View" #FFFFE8 {
+        == Multi-viewport ==
+        + View Matrix
+        + Projection Matrix
+        + Viewport Rectangle
+        + Frustum Planes
+        --
+        For: Editor, VR, Split-screen
+    }
+    
+    class "Set 5: Per-Light" #F0E8FF {
+        == Forward+ / Clustered ==
+        + Light Position/Direction
+        + Light Color/Intensity
+        + Light Range/Attenuation
+        + Shadow Map Index
+        --
+        For: Many lights scenarios
+    }
+}
+
+package "GPU Pipeline Stages" #F0F0F0 {
+    class "Vertex Shader" {
+        Uses: Set 0, 1, 3
+        + Transform vertices
+        + Calculate world position
+        + Pass to fragment
+    }
+    
+    class "Fragment Shader" {
+        Uses: Set 0, 1, 2, 3
+        + Sample textures
+        + Calculate lighting
+        + Output color
+    }
+}
+
+note top of "Set 0: Per-Frame" : Least frequent updates\nLargest resources\nShared across entire frame
+
+note bottom of "Set 3: Per-Object" : Most frequent updates\nSmallest data\nUse dynamic offsets
+
+' Relationships
+"Set 0: Per-Frame" -[hidden]-> "Set 1: Per-Pass"
+"Set 1: Per-Pass" -[hidden]-> "Set 3: Per-Material"
+"Set 2: Per-Material" -[hidden]-> "Set 3: Per-Object"
+
+"Vertex Shader" ..> "Set 0: Per-Frame" : reads
+"Vertex Shader" ..> "Set 3: Per-Object" : reads
+"Fragment Shader" ..> "Set 2: Per-Material" : reads
+"Fragment Shader" ..> "Set 1: Per-Pass" : reads
+
+@enduml

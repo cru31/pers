@@ -1,0 +1,155 @@
+@startuml pipeline-state-management
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #888
+
+title Pipeline State Object (PSO) Management
+
+package "Pipeline State Components" #E8F4F8 {
+    class RenderPipelineDescriptor {
+        + vertex: VertexState
+        + primitive: PrimitiveState
+        + depthStencil: DepthStencilState
+        + multisample: MultisampleState
+        + fragment: FragmentState
+        + layout: PipelineLayout
+    }
+    
+    class VertexState {
+        + module: ShaderModule
+        + entryPoint: string
+        + buffers: VertexBufferLayout[]
+    }
+    
+    class FragmentState {
+        + module: ShaderModule
+        + entryPoint: string
+        + targets: ColorTargetState[]
+    }
+    
+    class DepthStencilState {
+        + format: TextureFormat
+        + depthWriteEnabled: bool
+        + depthCompare: CompareFunction
+        + stencilFront: StencilFaceState
+        + stencilBack: StencilFaceState
+    }
+    
+    class ColorTargetState {
+        + format: TextureFormat
+        + blend: BlendState
+        + writeMask: ColorWriteMask
+    }
+    
+    class BlendState {
+        + color: BlendComponent
+        + alpha: BlendComponent
+    }
+}
+
+package "PSO Cache System" #F8E8E8 {
+    class PipelineStateCache {
+        - cache: Map<Hash, Pipeline>
+        - stats: CacheStatistics
+        + GetOrCreate(desc): Pipeline
+        + Precompile(descriptors[])
+        + Evict(hash)
+        + Clear()
+    }
+    
+    class PipelineHasher {
+        + HashDescriptor(desc): uint64
+        + HashVertexLayout(layout): uint32
+        + HashRenderState(state): uint32
+        + HashShaders(vs, fs): uint32
+    }
+    
+    class PipelineCompiler {
+        - device: wgpu::Device
+        - shaderCache: ShaderCache
+        + CompileRenderPipeline(desc): Pipeline
+        + CompileComputePipeline(desc): Pipeline
+        + ValidateDescriptor(desc): bool
+    }
+    
+    class ShaderCache {
+        - modules: Map<Path, ShaderModule>
+        - variants: Map<Hash, ShaderModule>
+        + LoadShader(path, defines): ShaderModule
+        + GetOrCompile(source, stage): ShaderModule
+        + HotReload(path)
+    }
+}
+
+package "Runtime State Management" #FFE8E8 {
+    class PipelineStateTracker {
+        - currentPipeline: Pipeline
+        - dirtyFlags: uint32
+        + SetPipeline(pipeline)
+        + IsDirty(): bool
+        + GetCurrent(): Pipeline
+    }
+    
+    class RenderStateCache {
+        - blendStates: Map<Hash, BlendState>
+        - depthStates: Map<Hash, DepthStencilState>
+        + GetBlendState(desc): BlendState
+        + GetDepthState(desc): DepthStencilState
+    }
+    
+    class VertexLayoutCache {
+        - layouts: Map<Hash, VertexBufferLayout>
+        + GetOrCreate(attributes[]): Layout
+        + CalculateStride(format): size_t
+    }
+}
+
+package "Shader Variants" #E8FFE8 {
+    class ShaderVariantSystem {
+        - definitions: Map<string, string>
+        - permutations: List<Variant>
+        + AddDefine(key, value)
+        + GenerateVariants(): Variant[]
+        + SelectVariant(features): Variant
+    }
+    
+    class ShaderPreprocessor {
+        + Process(source, defines): string
+        + IncludeFiles(source): string
+        + StripComments(source): string
+    }
+}
+
+' Relationships
+RenderPipelineDescriptor --> VertexState : contains
+RenderPipelineDescriptor --> FragmentState : contains
+RenderPipelineDescriptor --> DepthStencilState : contains
+FragmentState --> ColorTargetState : contains
+ColorTargetState --> BlendState : contains
+
+PipelineStateCache --> PipelineHasher : uses
+PipelineStateCache --> PipelineCompiler : uses
+PipelineCompiler --> ShaderCache : uses
+PipelineCompiler --> RenderPipelineDescriptor : compiles
+
+PipelineStateTracker --> PipelineStateCache : queries
+RenderStateCache --> BlendState : caches
+RenderStateCache --> DepthStencilState : caches
+
+ShaderCache --> ShaderVariantSystem : uses
+ShaderVariantSystem --> ShaderPreprocessor : uses
+
+note bottom of PipelineStateCache
+    LRU eviction policy
+    Async compilation support
+    Statistics tracking
+end note
+
+note right of ShaderVariantSystem
+    Uber-shader approach
+    Feature-based selection
+    Compile-time optimization
+end note
+
+@enduml

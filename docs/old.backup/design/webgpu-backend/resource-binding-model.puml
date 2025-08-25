@@ -1,0 +1,141 @@
+@startuml resource-binding-model
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #888
+
+title Modern GPU Resource Binding Model (WebGPU/Vulkan/Metal Style)
+
+package "Binding Frequency Hierarchy" #E8F4F8 {
+    class "Set 0: Per-Frame" #FFE8E8 {
+        + View Matrix
+        + Projection Matrix
+        + Time
+        + Lights Array
+        + Shadow Maps
+        Update: Once per frame
+    }
+    
+    class "Set 1: Per-Pass" #E8FFE8 {
+        + Render Target Info
+        + Pass Constants
+        + Post-process Parameters
+        Update: Once per pass
+    }
+    
+    class "Set 2: Per-Material" #E8E8FF {
+        + Material Properties
+        + Diffuse Texture
+        + Normal Map
+        + Metallic/Roughness
+        + Material Constants
+        Update: Per material switch
+    }
+    
+    class "Set 3: Per-Object" #FFE8FF {
+        + Model Matrix
+        + Object ID
+        + Instance Data
+        + Bone Matrices (skinning)
+        Update: Every draw call
+    }
+}
+
+package "WebGPU Implementation" #F8F8E8 {
+    class BindGroupLayout {
+        - entries: BindGroupLayoutEntry[]
+        + AddBinding(binding, type, stage)
+        + Create(): wgpu::BindGroupLayout
+    }
+    
+    class BindGroup {
+        - layout: BindGroupLayout
+        - resources: Resource[]
+        + SetBuffer(binding, buffer, offset, size)
+        + SetTexture(binding, texture)
+        + SetSampler(binding, sampler)
+        + Create(): wgpu::BindGroup
+    }
+    
+    class PipelineLayout {
+        - bindGroupLayouts: BindGroupLayout[]
+        + SetBindGroupLayout(set, layout)
+        + Create(): wgpu::PipelineLayout
+    }
+    
+    class BindGroupAllocator {
+        - pools: Map<Layout, Pool>
+        - frameIndex: uint32
+        + Allocate(layout): BindGroup
+        + Reset(frameIndex)
+        + GarbageCollect()
+    }
+    
+    class DynamicBuffer {
+        - buffer: wgpu::Buffer
+        - offset: size_t
+        - size: size_t
+        + Map(): void*
+        + Unmap()
+        + GetBindingResource(): BufferBinding
+    }
+}
+
+package "Resource Types" #F0F0F0 {
+    class UniformBuffer {
+        usage: UNIFORM
+        mapping: Persistent/Dynamic
+    }
+    
+    class StorageBuffer {
+        usage: STORAGE
+        mapping: Read/Write
+    }
+    
+    class Texture2D {
+        format: RGBA8/BC7/etc
+        usage: SAMPLED
+    }
+    
+    class Sampler {
+        filter: Linear/Point
+        address: Wrap/Clamp
+    }
+}
+
+' Relationships
+"Set 0: Per-Frame" ..> BindGroup : "maps to"
+"Set 1: Per-Pass" ..> BindGroup : "maps to"
+"Set 2: Per-Material" ..> BindGroup : "maps to"
+"Set 3: Per-Object" ..> BindGroup : "maps to"
+
+BindGroup --> BindGroupLayout : "defined by"
+BindGroup --> UniformBuffer : "binds"
+BindGroup --> StorageBuffer : "binds"
+BindGroup --> Texture2D : "binds"
+BindGroup --> Sampler : "binds"
+
+PipelineLayout --> BindGroupLayout : "contains"
+BindGroupAllocator --> BindGroup : "manages"
+BindGroup --> DynamicBuffer : "uses"
+
+note right of "Set 0: Per-Frame"
+    Least frequent updates
+    Typically large resources
+    Shared across many draws
+end note
+
+note right of "Set 3: Per-Object"
+    Most frequent updates
+    Small data
+    Use dynamic buffers
+    or buffer offsets
+end note
+
+note bottom of BindGroupAllocator
+    Pool-based allocation
+    Frame-based recycling
+    Minimizes allocation overhead
+end note
+
+@enduml

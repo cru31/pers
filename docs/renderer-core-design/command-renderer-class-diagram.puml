@@ -1,0 +1,247 @@
+@startuml command-renderer-class-diagram
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #888
+
+title Command-Based Renderer - Class Diagram
+
+
+together {
+    interface ICommandRecorder <<interface>> #E8F4F8 {
+        + BeginRenderPass(target: RenderTarget*, clear: ClearValue) : void
+        + EndRenderPass() : void
+        + RenderScene(scene: Scene*, camera: Camera*) : void
+        + SetPipeline(pipeline: Pipeline*) : void
+        + SetBindGroup(index: uint32_t, group: BindGroup*) : void
+        + SetVertexBuffer(buffer: Buffer*, slot: uint32_t) : void
+        + SetIndexBuffer(buffer: Buffer*, format: IndexFormat) : void
+        + Draw(vertexCount: uint32_t, instanceCount: uint32_t) : void
+        + DrawIndexed(indexCount: uint32_t, instanceCount: uint32_t) : void
+        + CopyTexture(src: Texture*, dst: Texture*) : void
+        + UpdateBuffer(buffer: Buffer*, data: void*, size: size_t) : void
+        + IsInRenderPass() : bool
+    }
+
+    abstract class CommandRecorderBase <<abstract>> #E8F4F8 {
+        # defaultTarget : RenderTarget*
+        # state : RecorderState
+        --
+        + BeginRenderPass(target: RenderTarget*, clear: ClearValue) : void
+        + EndRenderPass() : void
+        + RenderScene(scene: Scene*, camera: Camera*) : void
+        + SetPipeline(pipeline: Pipeline*) : void
+        + SetBindGroup(index: uint32_t, group: BindGroup*) : void
+        + SetVertexBuffer(buffer: Buffer*, slot: uint32_t) : void
+        + SetIndexBuffer(buffer: Buffer*, format: IndexFormat) : void
+        + Draw(vertexCount: uint32_t, instanceCount: uint32_t) : void
+        + DrawIndexed(indexCount: uint32_t, instanceCount: uint32_t) : void
+        + CopyTexture(src: Texture*, dst: Texture*) : void
+        + UpdateBuffer(buffer: Buffer*, data: void*, size: size_t) : void
+        + IsInRenderPass() : bool
+        # Begin() : void
+        # Finish() : CommandBuffer*
+        # Reset() : void
+    }
+}
+
+enum RecorderState #E8F4F8 {
+    Idle
+    Recording
+    InRenderPass
+    Finished
+}
+
+' Implementation
+
+class WebGPUCommandRecorder #FFE8E8 {
+    - wgpuEncoder : wgpu::CommandEncoder
+    - wgpuRenderPass : wgpu::RenderPassEncoder
+    --
+    + BeginRenderPass(target: RenderTarget*, clear: ClearValue) : void
+    + EndRenderPass() : void
+    # CreateRenderPassDescriptor(target: RenderTarget*, clear: ClearValue) : RenderPassDescriptor
+    # Finish() : CommandBuffer*
+}
+
+' Resource Management
+class CommandPool #E8FFE8 {
+    - availableRecorders : queue<ICommandRecorder*>
+    - inUseRecorders : vector<ICommandRecorder*>
+    --
+    + Get() : ICommandRecorder*
+    + Return(recorder: ICommandRecorder*) : void
+    + Reset() : void
+    - CreateRecorder() : ICommandRecorder*
+}
+
+class FrameManager #E8FFE8 {
+    - frames : array<FrameData, 3>
+    - currentFrame : uint32_t
+    - framesInFlight : uint32_t
+    --
+    + BeginFrame() : FrameData&
+    + EndFrame() : void
+    + WaitForFrame(index: uint32_t) : void
+    + GetCurrentFrameIndex() : uint32_t
+}
+
+class FrameData #E8FFE8 {
+    + fence : Fence*
+    + commandPool : CommandPool*
+    + uniformBuffer : UniformBuffer*
+    + frameIndex : uint32_t
+    --
+    + Wait() : void
+    + Signal() : void
+    + Reset() : void
+}
+
+' Render Resources
+class RenderTarget #E8E8FF {
+    - texture : Texture*
+    - view : TextureView*
+    - depthTexture : Texture*
+    - depthView : TextureView*
+    - width : uint32_t
+    - height : uint32_t
+    - format : TextureFormat
+    --
+    + GetView() : TextureView*
+    + GetDepthView() : TextureView*
+    + GetWidth() : uint32_t
+    + GetHeight() : uint32_t
+    + HasDepth() : bool
+    + Resize(width: uint32_t, height: uint32_t) : void
+}
+
+class Pipeline #E8E8FF {
+    - wgpuPipeline : wgpu::RenderPipeline
+    - layout : PipelineLayout*
+    - vertexState : VertexState
+    - fragmentState : FragmentState
+    - primitiveState : PrimitiveState
+    - depthStencilState : DepthStencilState
+    --
+    + Bind(encoder: RenderPassEncoder&) : void
+    + GetLayout() : PipelineLayout*
+    + IsCompatible(desc: PipelineDesc) : bool
+}
+
+class BindGroup #E8E8FF {
+    - wgpuBindGroup : wgpu::BindGroup
+    - layout : BindGroupLayout*
+    - resources : vector<Resource*>
+    --
+    + Bind(encoder: RenderPassEncoder&, index: uint32_t) : void
+    + Update(binding: uint32_t, resource: Resource*) : void
+}
+
+' Renderer Core
+class Renderer #FFE8E8 {
+    - swapChain : SwapChain*
+    - frameManager : FrameManager*
+    - commandPool : CommandPool*
+    - device : Device*
+    - queue : Queue*
+    - currentBackbuffer : RenderTarget*
+    - currentRecorder : ICommandRecorder*
+    --
+    + BeginFrame() : ICommandRecorder*
+    + EndFrame(recorder: ICommandRecorder*) : void
+    + GetCurrentBackbuffer() : RenderTarget*
+    - WaitForPreviousFrame() : void
+    - AcquireNextImage() : void
+    - SubmitCommands(buffer: CommandBuffer*) : void
+    - Present() : void
+}
+
+class SwapChain #FFE8E8 {
+    - wgpuSwapChain : wgpu::SwapChain
+    - backbuffers : vector<RenderTarget*>
+    - currentIndex : uint32_t
+    - format : TextureFormat
+    - presentMode : PresentMode
+    --
+    + AcquireNextImage() : RenderTarget*
+    + Present() : void
+    + Resize(width: uint32_t, height: uint32_t) : void
+    + GetFormat() : TextureFormat
+    + GetCurrentIndex() : uint32_t
+}
+
+interface IRenderer <<interface>> #E8F4F8 {
+    + BeginFrame() : ICommandRecorder*
+    + EndFrame(recorder: ICommandRecorder*) : void
+    + GetCurrentBackbuffer() : RenderTarget*
+    + GetCapabilities() : DeviceCapabilities
+    + Resize(width: uint32_t, height: uint32_t) : void
+}
+
+class Application #FFFFE8 {
+    # renderer : IRenderer*
+    # scene : Scene*
+    --
+    + {abstract} OnInitialize() : bool
+    + {abstract} OnUpdate(deltaTime: float) : void
+    + {abstract} OnRender() : void
+    + Run() : void
+    # GetRenderer() : IRenderer*
+}
+
+Scene -[hidden]down-> Application
+Application -[hidden]right-> IRenderer
+IRenderer -[hidden]down-> Renderer
+
+RenderTarget -[hidden]right->ICommandRecorder
+Pipeline -[hidden]down->RenderTarget
+RenderTarget -[hidden]down->BindGroup
+RecorderState -[hidden]up->CommandRecorderBase
+CommandPool -[hidden]down->ICommandRecorder
+
+class Scene #FFFFE8 {
+    - entities : vector<Entity*>
+    - mainCamera : Camera*
+    - lights : vector<Light*>
+    --
+    + GetRenderables() : vector<Renderable>
+    + GetMainCamera() : Camera*
+    + GetLights() : vector<Light*>
+    + Update(deltaTime: float) : void
+}
+
+' Relationships
+IRenderer <|.. Renderer
+ICommandRecorder <|.. CommandRecorderBase
+CommandRecorderBase <|-- WebGPUCommandRecorder
+CommandRecorderBase --> RecorderState : owns
+Renderer --> SwapChain : manages
+Renderer --> FrameManager : uses
+Renderer --> CommandPool : uses
+Renderer --> ICommandRecorder : creates
+ICommandRecorder --> RenderTarget : renders to
+ICommandRecorder --> Pipeline : uses
+ICommandRecorder --> BindGroup : binds
+FrameManager --> FrameData : manages
+CommandPool --> ICommandRecorder : pools
+SwapChain --> RenderTarget : provides
+Application --> IRenderer : uses
+Application --> Scene : owns
+
+note right of CommandRecorderBase
+    **Key Design Decisions:**
+    - Explicit BeginRenderPass/EndRenderPass
+    - nullptr = current backbuffer
+    - No automatic pass closing
+    - State validation in debug mode
+end note
+
+note right of Renderer
+    **Frame Flow:**
+    1. BeginFrame() - Acquire backbuffer
+    2. Record commands
+    3. EndFrame() - Submit & Present
+    Triple buffering for smooth rendering
+end note
+
+@enduml

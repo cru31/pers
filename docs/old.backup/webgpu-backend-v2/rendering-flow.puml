@@ -1,0 +1,142 @@
+@startuml rendering-flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #666
+skinparam participantBackgroundColor #F8F8F8
+
+title Application Mesh Rendering Flow - Simplified API
+
+actor User
+participant "Application" as App
+participant "Scene" as Scene
+participant "SceneRenderer" as Renderer
+participant "RenderGraph" as Graph
+participant "ResourceManager" as ResMgr
+participant "WebGPUDevice" as Device
+participant "GPU" as GPU
+
+== Initialization (Once) ==
+User -> App: CreateApplication()
+activate App
+App -> Device: Initialize()
+activate Device
+Device -> Device: CreateInstance()
+Device -> Device: RequestAdapter()
+Device -> Device: CreateDevice()
+Device -> Device: CreateSwapChain()
+Device --> App: Ready
+deactivate Device
+
+App -> Scene: CreateScene()
+activate Scene
+Scene -> Scene: InitializeSystems()
+Scene --> App: Scene*
+deactivate Scene
+App --> User: Application Ready
+
+== Content Creation (Simple API) ==
+User -> Scene: CreateEntity("Cube")
+activate Scene
+Scene -> Scene: AllocateEntity()
+Scene --> User: Entity*
+deactivate Scene
+
+User -> Scene: entity->AddComponent<MeshRenderer>(PrimitiveMesh::Cube)
+activate Scene
+Scene -> ResMgr: GetOrCreateMesh(Cube)
+activate ResMgr
+ResMgr -> ResMgr: CheckCache()
+alt Not in cache
+    ResMgr -> ResMgr: GenerateCubeGeometry()
+    ResMgr -> Device: CreateVertexBuffer()
+    ResMgr -> Device: CreateIndexBuffer()
+end
+ResMgr --> Scene: MeshHandle
+deactivate ResMgr
+Scene --> User: MeshRenderer*
+deactivate Scene
+
+User -> Scene: entity->SetMaterial("default")
+activate Scene
+Scene -> ResMgr: GetOrCreateMaterial("default")
+activate ResMgr
+ResMgr -> ResMgr: LoadShader("default.wgsl")
+ResMgr -> Device: CreatePipeline()
+note right: Automatic PSO creation\nand caching
+ResMgr --> Scene: MaterialHandle
+deactivate ResMgr
+Scene --> User: Done
+deactivate Scene
+
+== Frame Rendering (Automatic) ==
+loop Every Frame
+    App -> App: Update(deltaTime)
+    
+    App -> Renderer: RenderScene(scene)
+    activate Renderer
+    
+    Renderer -> Scene: GetRenderables()
+    Scene --> Renderer: EntityList
+    
+    Renderer -> Renderer: PerformCulling()
+    note right: Automatic frustum\nand occlusion culling
+    
+    Renderer -> Renderer: SortAndBatch()
+    note right: Automatic batching\nand instancing
+    
+    Renderer -> Graph: BuildGraph()
+    activate Graph
+    Graph -> Graph: AddShadowPass()
+    Graph -> Graph: AddGeometryPass()
+    Graph -> Graph: AddLightingPass()
+    Graph -> Graph: AddPostProcessPass()
+    Graph -> Graph: OptimizePasses()
+    note right: Automatic pass\nordering and merging
+    Graph --> Renderer: Compiled Graph
+    deactivate Graph
+    
+    Renderer -> Device: BeginFrame()
+    activate Device
+    Device -> Device: AcquireSwapChainImage()
+    Device -> Device: GetCommandEncoder()
+    
+    loop For Each Pass
+        Renderer -> Graph: ExecutePass(encoder)
+        activate Graph
+        
+        Graph -> Device: BeginRenderPass()
+        
+        Graph -> Device: SetPipeline()
+        note right: Cached PSO
+        
+        Graph -> Device: SetBindGroups()
+        note right: Automatic resource\nbinding
+        
+        loop For Each Draw
+            Graph -> Device: Draw()
+        end
+        
+        Graph -> Device: EndRenderPass()
+        Graph --> Renderer: Pass Complete
+        deactivate Graph
+    end
+    
+    Device -> GPU: Submit(commandBuffer)
+    activate GPU
+    GPU -> GPU: Execute Commands
+    GPU --> Device: Complete
+    deactivate GPU
+    
+    Device -> Device: Present()
+    Device --> Renderer: Frame Complete
+    deactivate Device
+    
+    Renderer --> App: Done
+    deactivate Renderer
+end
+
+== Cleanup (Automatic) ==
+User -> App: Shutdown()
+note over Scene, ResMgr : Automatic cleanup via RAII\nReference counting handles resources
+
+@enduml

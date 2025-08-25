@@ -1,0 +1,144 @@
+@startuml high-level-architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam packageBorderColor #888
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #888
+skinparam arrowColor #666
+
+title WebGPU Backend High-Level Architecture
+
+package "Prism Engine Core" #E8F4F8 {
+    interface IGraphicsDevice
+    class RenderPipeline
+    class ResourceManager
+}
+
+package "WebGPU Backend" #F8E8E8 {
+    package "Device Layer" #FFE8E8 {
+        class WebGPUDevice {
+            - instance: wgpu::Instance
+            - adapter: wgpu::Adapter
+            - device: wgpu::Device
+            - queue: wgpu::Queue
+            + Initialize()
+            + CreateCommandEncoder()
+            + Submit()
+        }
+    }
+    
+    package "Resource Layer" #E8FFE8 {
+        class BufferManager {
+            - vertexPools: BufferPool[]
+            - uniformRing: RingBuffer
+            + AllocateVertex()
+            + AllocateUniform()
+        }
+        
+        class TextureManager {
+            - textureCache: Map
+            - samplerCache: Map
+            + CreateTexture()
+            + GetSampler()
+        }
+        
+        class ShaderManager {
+            - moduleCache: Map
+            - wgslCompiler: Compiler
+            + LoadShader()
+            + CompileWGSL()
+        }
+    }
+    
+    package "Pipeline Layer" #E8E8FF {
+        class PipelineStateCache {
+            - renderPipelines: Map
+            - computePipelines: Map
+            + GetOrCreateRenderPipeline()
+            + GetOrCreateComputePipeline()
+        }
+        
+        class BindGroupManager {
+            - layouts: Map
+            - bindGroups: Map
+            + CreateLayout()
+            + AllocateBindGroup()
+        }
+    }
+    
+    package "Command Layer" #FFE8FF {
+        class CommandEncoder {
+            - encoder: wgpu::CommandEncoder
+            - activePass: PassEncoder
+            + BeginRenderPass()
+            + BeginComputePass()
+            + Finish()
+        }
+        
+        class RenderPassEncoder {
+            - passEncoder: wgpu::RenderPassEncoder
+            + SetPipeline()
+            + SetBindGroup()
+            + Draw()
+        }
+        
+        class ComputePassEncoder {
+            - passEncoder: wgpu::ComputePassEncoder
+            + SetPipeline()
+            + Dispatch()
+        }
+    }
+    
+    package "Synchronization" #FFFFE8 {
+        class SyncManager {
+            - fences: Queue
+            - semaphores: Map
+            + WaitForGPU()
+            + SignalFence()
+        }
+        
+        class StateTracker {
+            - resourceStates: Map
+            - barriers: List
+            + TransitionResource()
+            + FlushBarriers()
+        }
+    }
+}
+
+package "WebGPU Native" #F0F0F0 {
+    class "wgpu::Instance" as WGPUInstance
+    class "wgpu::Device" as WGPUDevice
+    class "wgpu::Queue" as WGPUQueue
+}
+
+' Relationships
+IGraphicsDevice <|.. WebGPUDevice : implements
+WebGPUDevice --> WGPUInstance : uses
+WebGPUDevice --> WGPUDevice : uses
+WebGPUDevice --> WGPUQueue : uses
+
+WebGPUDevice --> BufferManager : owns
+WebGPUDevice --> TextureManager : owns
+WebGPUDevice --> ShaderManager : owns
+WebGPUDevice --> PipelineStateCache : owns
+WebGPUDevice --> BindGroupManager : owns
+WebGPUDevice --> CommandEncoder : creates
+WebGPUDevice --> SyncManager : owns
+
+CommandEncoder --> RenderPassEncoder : creates
+CommandEncoder --> ComputePassEncoder : creates
+
+RenderPassEncoder --> PipelineStateCache : uses
+RenderPassEncoder --> BindGroupManager : uses
+ComputePassEncoder --> PipelineStateCache : uses
+ComputePassEncoder --> BindGroupManager : uses
+
+BufferManager --> StateTracker : notifies
+TextureManager --> StateTracker : notifies
+
+RenderPipeline --> WebGPUDevice : uses
+ResourceManager --> BufferManager : delegates
+ResourceManager --> TextureManager : delegates
+
+@enduml

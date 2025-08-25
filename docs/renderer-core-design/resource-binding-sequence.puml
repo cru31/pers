@@ -1,0 +1,130 @@
+@startuml resource-binding-sequence
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #666
+skinparam participantBackgroundColor #F8F8F8
+skinparam noteBackgroundColor #FFFACD
+
+title Resource Binding Flow - Frame Rendering Sequence
+
+participant "Application" as App
+participant "Renderer" as Renderer
+participant "CommandRecorder" as Cmd
+participant "BindGroupCache" as Cache
+participant "GPU" as GPU
+
+== Frame Initialization ==
+App -> Renderer: BeginFrame()
+activate Renderer
+Renderer -> Cmd: Create/Reset
+Renderer --> App: CommandRecorder*
+deactivate Renderer
+
+== Set 0: Frame Resources (Once per frame) ==
+App -> Cache: GetOrCreateFrameBindGroup(frameData)
+activate Cache
+Cache -> Cache: UpdateUniformBuffer(view, proj, time)
+Cache -> Cache: BindGlobalResources(lights, shadows)
+Cache --> App: BindGroup[0]
+deactivate Cache
+
+App -> Cmd: SetBindGroup(0, frameBindGroup)
+note right: Bound once,\nused by all passes
+
+== Render Passes ==
+group Pass 1: Shadow Map
+    App -> Cmd: BeginRenderPass(shadowMap)
+    
+    == Set 1: Pass Resources ==
+    App -> Cache: GetPassBindGroup(shadowPassData)
+    activate Cache
+    Cache -> Cache: UpdatePassUniforms(lightViewProj)
+    Cache --> App: BindGroup[1]
+    deactivate Cache
+    App -> Cmd: SetBindGroup(1, shadowPassBindGroup)
+    note right: Shadow-specific data
+    
+    loop For each shadow caster
+        App -> Cmd: SetBindGroup(3, objectBindGroup)
+        note right: Only Set 3 needed\n(no materials in depth)
+        App -> Cmd: DrawIndexed()
+    end
+    
+    App -> Cmd: EndRenderPass()
+end
+
+group Pass 2: Main Rendering
+    App -> Cmd: BeginRenderPass(nullptr)
+    note left: nullptr = backbuffer
+    
+    == Set 1: Pass Resources ==
+    App -> Cache: GetPassBindGroup(mainPassData)
+    App -> Cmd: SetBindGroup(1, mainPassBindGroup)
+    
+    == Sorted Draw Calls ==
+    loop For each material batch
+        == Set 2: Material Resources ==
+        App -> Cache: GetMaterialBindGroup(material)
+        activate Cache
+        alt Material not cached
+            Cache -> Cache: CreateBindGroup()
+            Cache -> Cache: BindTextures(albedo, normal, etc)
+            Cache -> Cache: UpdateMaterialUniforms()
+        end
+        Cache --> App: BindGroup[2]
+        deactivate Cache
+        
+        App -> Cmd: SetBindGroup(2, materialBindGroup)
+        note right: Changes per material
+        
+        loop For each object with this material
+            == Set 3: Object Resources ==
+            App -> Cache: GetObjectBindGroup(object, offset)
+            activate Cache
+            Cache -> Cache: UpdateModelMatrix(transform)
+            Cache --> App: BindGroup[3], dynamicOffset
+            deactivate Cache
+            
+            App -> Cmd: SetBindGroup(3, objectBindGroup, offset)
+            note right: Dynamic offset for\nefficient updates
+            
+            App -> Cmd: DrawIndexed(mesh.indexCount)
+            
+            GPU -> GPU: Vertex Shader
+            note right: Uses Set 0, 3
+            GPU -> GPU: Fragment Shader
+            note right: Uses Set 0, 1, 2, 3
+        end
+    end
+    
+    App -> Cmd: EndRenderPass()
+end
+
+group Pass 3: Post-Processing
+    App -> Cmd: BeginRenderPass(nullptr)
+    
+    == Set 1: Post-Process Pass ==
+    App -> Cmd: SetBindGroup(1, postProcessBindGroup)
+    note right: Previous pass results\nas input textures
+    
+    App -> Cmd: Draw(3)
+    note right: Fullscreen triangle
+    
+    App -> Cmd: EndRenderPass()
+end
+
+== Frame Submission ==
+App -> Renderer: EndFrame(cmd)
+activate Renderer
+Renderer -> Cmd: Finish()
+Cmd --> Renderer: CommandBuffer
+Renderer -> GPU: Submit(commandBuffer)
+Renderer -> GPU: Present()
+deactivate Renderer
+
+== Binding Optimization Notes ==
+note over Cache: BindGroup Caching:\n- Frame: 1 per frame\n- Pass: ~5 per frame\n- Material: ~50 cached\n- Object: Dynamic offsets
+
+note over GPU: State Changes:\n- Set 0: 1x per frame\n- Set 1: 1x per pass\n- Set 2: ~50x per frame\n- Set 3: ~1000x per frame
+
+@enduml

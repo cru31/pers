@@ -1,0 +1,152 @@
+@startuml deferred-rendering-pipeline
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam activityBackgroundColor #F8F8F8
+skinparam activityBorderColor #888
+
+title Deferred Rendering Pipeline Flow
+
+start
+
+partition "Initialization" #E8F4F8 {
+    :Create G-Buffer MRT;
+    note right
+        RT0: Albedo + Metallic
+        RT1: Normal + Roughness
+        RT2: Motion + IDs
+        RT3: Emissive (optional)
+        Depth: Z-Buffer
+    end note
+    :Create Light Accumulation Buffer;
+    :Create Shadow Maps;
+    :Setup Tiled Light Data;
+}
+
+partition "Frame Start" #FFE8E8 {
+    :Acquire SwapChain Image;
+    :Update Frame Data;
+    :Clear G-Buffer;
+}
+
+partition "Shadow Pass" #E8FFE8 {
+    :For Each Shadow Light;
+    while (Shadow Lights?) is (yes)
+        :Render to Shadow Map;
+    endwhile (no)
+}
+
+partition "G-Buffer Pass" #E8E8FF {
+    :Bind G-Buffer PSO;
+    :Set G-Buffer as MRT;
+    
+    :Sort Opaque Objects;
+    note right: By material/mesh
+    
+    :For Each Opaque Object;
+    while (More Objects?) is (yes)
+        :Set Material Properties;
+        :Write to G-Buffer;
+        note left
+            - Albedo, Normal
+            - Material props
+            - Motion vectors
+            - Object/Material ID
+        end note
+        :Draw Indexed;
+    endwhile (no)
+    
+    :G-Buffer Complete;
+}
+
+partition "Light Culling (Tiled)" #FFE8FF {
+    :Dispatch Compute Shader;
+    :For Each Screen Tile;
+    while (More Tiles?) is (yes)
+        :Calculate Tile Frustum;
+        :Cull Lights Against Tile;
+        :Write Light Indices;
+    endwhile (no)
+}
+
+partition "Lighting Pass" #FFFFE8 {
+    :Bind Lighting PSO;
+    :Bind G-Buffer Textures;
+    
+    fork
+        :Directional Lights;
+        note right
+            Full-screen pass
+            With shadows
+        end note
+    fork again
+        :Point/Spot Lights;
+        if (Many Lights?) then (yes)
+            :Tiled Deferred;
+            note left
+                Read tile light list
+                Process per pixel
+            end note
+        else (few)
+            :Light Volumes;
+            note left
+                Render spheres/cones
+                Stencil optimization
+            end note
+        endif
+    end fork
+    
+    :Accumulate in HDR Buffer;
+}
+
+partition "SSAO Pass (Optional)" #F8F8E8 {
+    if (SSAO Enabled?) then (yes)
+        :Sample Depth/Normal;
+        :Calculate Occlusion;
+        :Blur SSAO;
+        :Modulate Lighting;
+    endif
+}
+
+partition "Forward Pass (Transparency)" #E8FFE8 {
+    :Bind Forward PSO;
+    :Sort Transparent Objects;
+    
+    :For Each Transparent;
+    while (More Transparent?) is (yes)
+        :Sample G-Buffer Depth;
+        :Forward Shading;
+        :Alpha Blending;
+    endwhile (no)
+}
+
+partition "Post-Processing" #F0F0F0 {
+    :HDR to LDR;
+    
+    if (TAA Enabled?) then (yes)
+        :Temporal AA;
+        note right
+            Use motion vectors
+            from G-Buffer
+        end note
+    endif
+    
+    if (SSR Enabled?) then (yes)
+        :Screen Space Reflections;
+        note right
+            Ray march using
+            G-Buffer data
+        end note
+    endif
+    
+    :Final Color Grading;
+    :Output to SwapChain;
+}
+
+partition "Frame End" #E8F4F8 {
+    :Submit Commands;
+    :Present Frame;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml command-renderer-architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam componentBackgroundColor #F8F8F8
+skinparam componentBorderColor #888
+skinparam packageBackgroundColor #F0F8FF
+
+title Command-Based Renderer Architecture
+
+package "Application Layer" #E8F4F8 {
+    component [Application] as App
+    
+    component [Scene] as Scene
+}
+
+package "Renderer Core" #FFE8E8 {
+    component [Renderer] as Renderer
+    component [SwapChain] as SwapChain
+    component [CommandRecorder] as CmdRec
+}
+
+package "Resource Management" #E8FFE8 {
+    component [FrameManager] as FrameMgr
+    component [CommandPool] as CmdPool
+    component [RenderTarget] as RT
+    component [ResourceManager] as ResMgr
+}
+
+package "GPU Backend" #E8E8FF {
+    component [Device] as Device
+    component [Queue] as Queue
+    component [CommandBuffer] as CmdBuf
+}
+
+' Main flow
+App --> Renderer : BeginFrame()
+App --> CmdRec : Record Commands
+App --> Renderer : EndFrame()
+
+Renderer --> SwapChain : AcquireNextImage()
+Renderer --> CmdPool : Get CommandRecorder
+Renderer --> FrameMgr : Synchronize
+
+CmdRec --> RT : BeginRenderPass(target)
+CmdRec --> Scene : RenderScene()
+
+Renderer --> Device : Submit Commands
+Device --> Queue : Submit to GPU
+Queue --> CmdBuf : Execute
+
+SwapChain --> RT : Provides Backbuffer
+
+note top of CmdRec : Core API:\n- Explicit RenderPass\n- nullptr = backbuffer\n- No hidden state
+
+note bottom of FrameMgr : Triple Buffering:\nFrame N: Recording\nFrame N-1: Executing\nFrame N-2: Presenting
+
+@enduml

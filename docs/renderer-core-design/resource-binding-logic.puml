@@ -1,0 +1,130 @@
+@startuml resource-binding-logic
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam activityBackgroundColor #F8F8F8
+skinparam activityBorderColor #888
+
+title Resource Binding Logic Flow
+
+start
+
+:Begin Frame;
+note right: Acquire swapchain image
+
+:Update Frame Resources;
+fork
+    :Update View/Projection Matrices;
+fork again
+    :Update Time Values;
+fork again
+    :Update Global Lights;
+end fork
+:Create/Update Frame BindGroup;
+note right: Set 0 - Once per frame
+
+:Sort Draw Calls;
+note left
+    Sort by:
+    1. Render Pass
+    2. Pipeline State
+    3. Material
+    4. Mesh
+end note
+
+partition "For Each Render Pass" #E8F4F8 {
+    :Begin Render Pass;
+    
+    :Configure Pass Data;
+    fork
+        :Set Viewport;
+    fork again
+        :Set Render Target Info;
+    fork again
+        :Set Pass-specific Uniforms;
+    end fork
+    :Bind Pass BindGroup;
+    note right: Set 1 - Per pass
+    
+    partition "For Each Material Batch" #FFE8E8 {
+        if (Material Changed?) then (yes)
+            :Load Material Data;
+            fork
+                :Bind Material Textures;
+                fork
+                    :Base Color;
+                fork again
+                    :Normal Map;
+                fork again
+                    :Metallic/Roughness;
+                fork again
+                    :Occlusion;
+                fork again
+                    :Emissive;
+                end fork
+            fork again
+                :Update Material Constants;
+            end fork
+            :Bind Material BindGroup;
+            note right: Set 2 - Per material
+        else (no)
+            :Keep Current Material;
+        endif
+        
+        partition "For Each Object" #E8FFE8 {
+            if (Can Instance?) then (yes)
+                :Gather Instance Data;
+                :Update Instance Buffer;
+                :Draw Instanced;
+            else (no)
+                :Calculate Dynamic Offset;
+                note left: offset = objectIndex * 256
+                
+                :Update Object Data;
+                fork
+                    :Model Matrix;
+                fork again
+                    :Normal Matrix;
+                fork again
+                    :Object ID;
+                end fork
+                
+                :Bind Object BindGroup with Offset;
+                note right: Set 3 - Per object\nDynamic offset
+                
+                :Draw Indexed;
+            endif
+        }
+    }
+    
+    :End Render Pass;
+}
+
+:Submit Command Buffer;
+:Present Frame;
+
+stop
+
+partition "Optimization Strategies" #F0F0F0 {
+    :BindGroup Caching|
+    note
+        - Hash material state
+        - Cache frequently used
+        - LRU eviction
+    end note
+    
+    :Dynamic Offsets|
+    note
+        - Single large buffer
+        - 256 byte alignment
+        - Reduce bindings
+    end note
+    
+    :Instancing|
+    note
+        - Batch same mesh+material
+        - Use instance buffer
+        - Reduce draw calls
+    end note
+}
+
+@enduml

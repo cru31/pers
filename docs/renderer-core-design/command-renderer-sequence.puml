@@ -1,0 +1,183 @@
+@startuml command-renderer-sequence
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #666
+skinparam participantBackgroundColor #F8F8F8
+
+title Command Renderer - Detailed Sequence Flow
+
+actor Application
+participant "Renderer" as Renderer
+participant "SwapChain" as Swap
+participant "FrameManager" as Frame
+participant "CommandPool" as Pool
+participant "CommandRecorder" as Cmd
+participant "RenderTarget" as RT
+participant "Queue" as Queue
+participant "GPU" as GPU
+
+== Initialization Phase ==
+Application -> Renderer: Create()
+activate Renderer
+Renderer -> Swap: Initialize(window, format)
+Swap -> Swap: CreateBackbuffers()
+Renderer -> Frame: Initialize(framesInFlight=3)
+Renderer -> Pool: Initialize()
+Renderer --> Application: Renderer*
+deactivate Renderer
+
+== Frame N Rendering ==
+Application -> Renderer: BeginFrame()
+activate Renderer
+
+Renderer -> Frame: BeginFrame()
+activate Frame
+Frame -> Frame: currentFrame = (currentFrame + 1) % 3
+Frame -> Frame: frames[currentFrame].Wait()
+note right: Wait for frame N-2\n(Triple buffering)
+Frame --> Renderer: FrameData&
+deactivate Frame
+
+Renderer -> Swap: AcquireNextImage()
+activate Swap
+Swap -> Swap: GetAvailableBackbuffer()
+Swap -> RT: UpdateView(textureView)
+Swap --> Renderer: RenderTarget*
+deactivate Swap
+Renderer -> Renderer: currentBackbuffer = acquired
+
+Renderer -> Pool: Get()
+activate Pool
+alt Has available recorder
+    Pool --> Renderer: Reused CommandRecorder*
+else Need new recorder
+    Pool -> Pool: CreateRecorder()
+    Pool --> Renderer: New CommandRecorder*
+end
+deactivate Pool
+
+Renderer -> Cmd: Begin()
+activate Cmd
+Cmd -> Cmd: state = Recording
+Cmd -> Cmd: defaultTarget = currentBackbuffer
+Cmd --> Renderer: void
+deactivate Cmd
+
+Renderer --> Application: CommandRecorder*
+deactivate Renderer
+
+== Command Recording ==
+Application -> Cmd: BeginRenderPass(nullptr, clear)
+activate Cmd
+note over Cmd: nullptr = use defaultTarget (backbuffer)
+Cmd -> Cmd: assert(state == Recording)
+Cmd -> RT: CreateRenderPassDescriptor()
+Cmd -> Cmd: currentPass = encoder.BeginRenderPass(desc)
+Cmd -> Cmd: state = InRenderPass
+Cmd --> Application: void
+deactivate Cmd
+
+Application -> Cmd: RenderScene(scene, camera)
+activate Cmd
+Cmd -> Cmd: assert(state == InRenderPass)
+
+loop For each renderable in scene
+    Cmd -> Cmd: SetPipeline(renderable.pipeline)
+    Cmd -> Cmd: SetBindGroup(0, frameData)
+    Cmd -> Cmd: SetBindGroup(1, passData)
+    Cmd -> Cmd: SetBindGroup(2, materialData)
+    Cmd -> Cmd: SetBindGroup(3, objectData)
+    Cmd -> Cmd: SetVertexBuffer(renderable.mesh.vertices)
+    Cmd -> Cmd: SetIndexBuffer(renderable.mesh.indices)
+    Cmd -> Cmd: DrawIndexed(renderable.mesh.indexCount)
+end
+
+Cmd --> Application: void
+deactivate Cmd
+
+Application -> Cmd: EndRenderPass()
+activate Cmd
+Cmd -> Cmd: assert(state == InRenderPass)
+Cmd -> Cmd: currentPass.End()
+Cmd -> Cmd: currentPass = nullptr
+Cmd -> Cmd: state = Recording
+Cmd --> Application: void
+deactivate Cmd
+
+alt Multi-pass rendering
+    Application -> Cmd: BeginRenderPass(shadowMap, depthClear)
+    Application -> Cmd: RenderShadows(scene, lightCamera)
+    Application -> Cmd: EndRenderPass()
+    
+    Application -> Cmd: BeginRenderPass(nullptr, colorClear)
+    Application -> Cmd: RenderMain(scene, mainCamera)
+    Application -> Cmd: EndRenderPass()
+end
+
+== Frame Submission ==
+Application -> Renderer: EndFrame(cmd)
+activate Renderer
+
+Renderer -> Cmd: IsInRenderPass()
+activate Cmd
+Cmd --> Renderer: false
+deactivate Cmd
+
+alt If still in RenderPass
+    Renderer --> Application: ERROR: RenderPass not ended
+else RenderPass properly ended
+    Renderer -> Cmd: Finish()
+    activate Cmd
+    Cmd -> Cmd: assert(state == Recording)
+    Cmd -> Cmd: commandBuffer = encoder.Finish()
+    Cmd -> Cmd: state = Finished
+    Cmd --> Renderer: CommandBuffer*
+    deactivate Cmd
+    
+    Renderer -> Queue: Submit(commandBuffer, fence)
+    activate Queue
+    Queue -> GPU: ExecuteCommands()
+    activate GPU
+    Queue --> Renderer: void
+    deactivate Queue
+    
+    Renderer -> Frame: SignalFence(currentFrame)
+    
+    Renderer -> Swap: Present()
+    activate Swap
+    Swap -> Swap: SwapBuffers()
+    Swap --> Renderer: void
+    deactivate Swap
+    
+    Renderer -> Pool: Return(cmd)
+    activate Pool
+    Pool -> Cmd: Reset()
+    Pool --> Renderer: void
+    deactivate Pool
+    
+    Renderer --> Application: void
+end
+deactivate Renderer
+
+== Asynchronous GPU Execution ==
+GPU -> GPU: Process Commands
+note right: Vertex Processing\nRasterization\nFragment Shading\nROP
+GPU -> GPU: Write to Backbuffer
+GPU -> GPU: Signal Fence
+deactivate GPU
+
+== Error Handling ==
+group Error Case: Forgot EndRenderPass
+    Application -> Renderer: EndFrame(cmd)
+    Renderer -> Cmd: IsInRenderPass()
+    Cmd --> Renderer: true
+    Renderer --> Application: RuntimeError("RenderPass still active")
+end
+
+group Error Case: Nested RenderPass
+    Application -> Cmd: BeginRenderPass(target1)
+    Application -> Cmd: BeginRenderPass(target2)
+    Cmd --> Application: RuntimeError("Previous pass not ended")
+end
+
+@enduml
