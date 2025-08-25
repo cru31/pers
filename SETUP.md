@@ -7,13 +7,22 @@
 - **Visual Studio 2022** with C++ development workload
 - **Rust** (for building wgpu-native)
   - Install from: https://rustup.rs/
-- **LLVM** (for RC compiler)
-  - Install from: https://github.com/llvm/llvm-project/releases
-  - Add to PATH: `C:\Program Files\LLVM\bin`
 - **Git**
 
 ### Optional Software
 - **Ninja build system** (included with Visual Studio)
+
+## Tested Versions
+
+This project has been tested with the following library versions:
+
+- **wgpu-native**: v25.0.2.1 (commit: e2e2b13763752811de31936537f38730e79bef08)
+  - WebGPU implementation based on wgpu-core 23.1.0
+  - Uses WebGPU headers from commit 7093882
+- **GLFW**: 3.4.0 (master branch)
+- **Visual Studio**: 2022 (17.14.10)
+- **Rust**: 1.83 or higher
+- **CMake**: 3.20 or higher
 
 ## Initial Setup
 
@@ -31,9 +40,10 @@ cd pers
 mkdir third_party
 cd third_party
 
-# Clone wgpu-native
+# Clone wgpu-native (specific tested version)
 git clone --recursive https://github.com/gfx-rs/wgpu-native.git
 cd wgpu-native
+git checkout v25.0.2.1
 
 # Build wgpu-native (this will take some time)
 cargo build --release
@@ -48,6 +58,8 @@ cargo build --release
 ```bash
 cd ../  # Back to third_party
 git clone https://github.com/glfw/glfw.git
+cd glfw
+git checkout 3.4  # Use stable 3.4 branch
 ```
 
 ## Building Test Programs
@@ -107,15 +119,11 @@ pers_graphics_engine/
 
 ### Build Errors
 
-1. **"RC compiler not found"**
-   - Install LLVM and ensure `llvm-rc.exe` is in PATH
-   - Or use Visual Studio generator instead of Ninja
-
-2. **"wgpu_native.dll not found"**
+1. **"wgpu_native.dll not found"**
    - Ensure wgpu-native is built in Release mode
    - Check that the DLL is copied to the executable directory
 
-3. **"Failed to create WebGPU instance"**
+2. **"Failed to create WebGPU instance"**
    - Update your graphics drivers
    - Ensure your GPU supports DirectX 12 (Windows) or Metal (macOS)
 

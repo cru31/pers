@@ -19,7 +19,9 @@ Thumbs.db
 desktop.ini
 
 # Third-party libraries (build from source)
+# But don't ignore test programs that test third-party libraries
 third_party/
+!tests/third_party/
 
 # Private documentation
 CLAUDE.md
