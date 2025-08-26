@@ -172,18 +172,20 @@ TEST(ResourceTest, BufferUpload) {
 
 ### 3.1 WebGPU 초기화
 ```cpp
-class WebGPURenderer : public IRenderer {
-    wgpu::Device _device;
-    wgpu::Queue _queue;
-    std::shared_ptr<SwapChain> _swapChain;
+class WebGPUDevice : public IGraphicsDevice {
+    WGPUDevice _device;
+    WGPUQueue _queue;
+    WGPUInstance _instance;
+    WGPUAdapter _adapter;
 };
 ```
 
 ### 3.2 Command Recording
 ```cpp
-class WebGPUCommandRecorder : public CommandRecorderBase {
-    wgpu::CommandEncoder _encoder;
-    wgpu::RenderPassEncoder _currentPass;
+class CommandRecorder : public ICommandRecorder {
+    IGraphicsDevice* _device;
+    CommandEncoder* _encoder;
+    RenderPassEncoder* _currentPass;
 };
 ```
 
@@ -195,7 +197,9 @@ class WebGPUCommandRecorder : public CommandRecorderBase {
 ### 테스트
 ```cpp
 TEST(WebGPUTest, DeviceCreation) {
-    auto renderer = CreateWebGPURenderer();
+    auto device = CreateWebGPUDevice();
+    ASSERT_NE(device, nullptr);
+    auto renderer = CreateRenderer(device);
     ASSERT_NE(renderer, nullptr);
 }
 

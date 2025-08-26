@@ -281,7 +281,7 @@ parallel_for(chunks, [&](auto& chunk) {
 
 mainCmd->ExecuteCommands({cmd1, cmd2});
 ```
-
+[CLASS_HIERARCHY.puml](../renderer-core-design-v2/CLASS_HIERARCHY.puml)
 ### 2. Compute Pass
 ```cpp
 // 향후 가능한 확장

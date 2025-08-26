@@ -7,6 +7,55 @@ skinparam classBorderColor #888
 title Command-Based Renderer - Class Diagram
 
 
+interface IGraphicsDevice <<interface>> #E8F4F8 {
+    + BeginCommandRecording(recorder: ICommandRecorder*) : void*
+    + EndCommandRecording(recorder: ICommandRecorder*, handle: void*) : CommandBuffer*
+    + BeginRenderPass(handle: void*, target: RenderTarget*, clear: ClearValue) : void
+    + EndRenderPass(handle: void*) : void
+    + SetPipeline(handle: void*, pipeline: Pipeline*) : void
+    + SetBindGroup(handle: void*, index: uint32_t, group: BindGroup*) : void
+    + SetVertexBuffer(handle: void*, buffer: Buffer*, slot: uint32_t) : void
+    + SetIndexBuffer(handle: void*, buffer: Buffer*) : void
+    + Draw(handle: void*, vertexCount: uint32_t, instanceCount: uint32_t) : void
+    + DrawIndexed(handle: void*, indexCount: uint32_t, instanceCount: uint32_t) : void
+    + SubmitCommandBuffer(buffer: CommandBuffer*) : void
+    + CreateRenderPipeline(desc: RenderPipelineDescriptor) : Pipeline*
+    + CreateBuffer(desc: BufferDescriptor) : Buffer*
+    + CreateTexture(desc: TextureDescriptor) : Texture*
+    + CreateBindGroup(desc: BindGroupDescriptor) : BindGroup*
+    + GetLimits() : DeviceLimits
+    + GetFeatures() : DeviceFeatures
+}
+
+class WebGPUDevice <<final>> #FFE8E8 {
+    - wgpuDevice : WGPUDevice
+    - wgpuQueue : WGPUQueue
+    - wgpuInstance : WGPUInstance
+    - wgpuAdapter : WGPUAdapter
+    --
+    + BeginCommandRecording(recorder: ICommandRecorder*) : void*
+    + EndCommandRecording(recorder: ICommandRecorder*, handle: void*) : CommandBuffer*
+    + BeginRenderPass(handle: void*, target: RenderTarget*, clear: ClearValue) : void
+    + EndRenderPass(handle: void*) : void
+    + SetPipeline(handle: void*, pipeline: Pipeline*) : void
+    + SetBindGroup(handle: void*, index: uint32_t, group: BindGroup*) : void
+    + SetVertexBuffer(handle: void*, buffer: Buffer*, slot: uint32_t) : void
+    + SetIndexBuffer(handle: void*, buffer: Buffer*) : void
+    + Draw(handle: void*, vertexCount: uint32_t, instanceCount: uint32_t) : void
+    + DrawIndexed(handle: void*, indexCount: uint32_t, instanceCount: uint32_t) : void
+    + SubmitCommandBuffer(buffer: CommandBuffer*) : void
+    + CreateRenderPipeline(desc: RenderPipelineDescriptor) : Pipeline*
+    + CreateBuffer(desc: BufferDescriptor) : Buffer*
+    + CreateTexture(desc: TextureDescriptor) : Texture*
+    + CreateBindGroup(desc: BindGroupDescriptor) : BindGroup*
+    + GetLimits() : DeviceLimits
+    + GetFeatures() : DeviceFeatures
+    - InitializeWebGPU() : bool
+    - CreateCommandEncoder() : WGPUCommandEncoder
+    - RequestAdapter() : WGPUAdapter
+    - RequestDevice() : WGPUDevice
+}
+
 together {
     interface ICommandRecorder <<interface>> #E8F4F8 {
         + BeginRenderPass(target: RenderTarget*, clear: ClearValue) : void
@@ -23,9 +72,10 @@ together {
         + IsInRenderPass() : bool
     }
 
-    abstract class CommandRecorderBase <<abstract>> #E8F4F8 {
-        # defaultTarget : RenderTarget*
-        # state : RecorderState
+    class CommandRecorder <<final>> #E8F4F8 {
+        - device : IGraphicsDevice*
+        - commandHandle : void*
+        - state : RecorderState
         --
         + BeginRenderPass(target: RenderTarget*, clear: ClearValue) : void
         + EndRenderPass() : void
@@ -39,9 +89,8 @@ together {
         + CopyTexture(src: Texture*, dst: Texture*) : void
         + UpdateBuffer(buffer: Buffer*, data: void*, size: size_t) : void
         + IsInRenderPass() : bool
-        # Begin() : void
-        # Finish() : CommandBuffer*
-        # Reset() : void
+        + Finish() : CommandBuffer*
+        + Reset() : void
     }
 }
 
@@ -52,17 +101,6 @@ enum RecorderState #E8F4F8 {
     Finished
 }
 
-' Implementation
-
-class WebGPUCommandRecorder #FFE8E8 {
-    - wgpuEncoder : wgpu::CommandEncoder
-    - wgpuRenderPass : wgpu::RenderPassEncoder
-    --
-    + BeginRenderPass(target: RenderTarget*, clear: ClearValue) : void
-    + EndRenderPass() : void
-    # CreateRenderPassDescriptor(target: RenderTarget*, clear: ClearValue) : RenderPassDescriptor
-    # Finish() : CommandBuffer*
-}
 
 ' Resource Management
 class CommandPool #E8FFE8 {
@@ -116,40 +154,40 @@ class RenderTarget #E8E8FF {
 }
 
 class Pipeline #E8E8FF {
-    - wgpuPipeline : wgpu::RenderPipeline
+    - handle : PipelineHandle
     - layout : PipelineLayout*
     - vertexState : VertexState
     - fragmentState : FragmentState
     - primitiveState : PrimitiveState
     - depthStencilState : DepthStencilState
     --
-    + Bind(encoder: RenderPassEncoder&) : void
+    + GetHandle() : PipelineHandle
     + GetLayout() : PipelineLayout*
     + IsCompatible(desc: PipelineDesc) : bool
 }
 
 class BindGroup #E8E8FF {
-    - wgpuBindGroup : wgpu::BindGroup
+    - handle : BindGroupHandle
     - layout : BindGroupLayout*
     - resources : vector<Resource*>
     --
-    + Bind(encoder: RenderPassEncoder&, index: uint32_t) : void
+    + GetHandle() : BindGroupHandle
     + Update(binding: uint32_t, resource: Resource*) : void
 }
 
 ' Renderer Core
 class Renderer #FFE8E8 {
+    - device : IGraphicsDevice*
     - swapChain : SwapChain*
     - frameManager : FrameManager*
     - commandPool : CommandPool*
-    - device : Device*
-    - queue : Queue*
     - currentBackbuffer : RenderTarget*
     - currentRecorder : ICommandRecorder*
     --
     + BeginFrame() : ICommandRecorder*
     + EndFrame(recorder: ICommandRecorder*) : void
     + GetCurrentBackbuffer() : RenderTarget*
+    + GetDevice() : IGraphicsDevice*
     - WaitForPreviousFrame() : void
     - AcquireNextImage() : void
     - SubmitCommands(buffer: CommandBuffer*) : void
@@ -157,7 +195,8 @@ class Renderer #FFE8E8 {
 }
 
 class SwapChain #FFE8E8 {
-    - wgpuSwapChain : wgpu::SwapChain
+    - device : IGraphicsDevice*
+    - surface : SurfaceHandle
     - backbuffers : vector<RenderTarget*>
     - currentIndex : uint32_t
     - format : TextureFormat
@@ -196,7 +235,7 @@ IRenderer -[hidden]down-> Renderer
 RenderTarget -[hidden]right->ICommandRecorder
 Pipeline -[hidden]down->RenderTarget
 RenderTarget -[hidden]down->BindGroup
-RecorderState -[hidden]up->CommandRecorderBase
+RecorderState -[hidden]up->CommandRecorder
 CommandPool -[hidden]down->ICommandRecorder
 
 class Scene #FFFFE8 {
@@ -211,14 +250,17 @@ class Scene #FFFFE8 {
 }
 
 ' Relationships
+IGraphicsDevice <|.. WebGPUDevice
 IRenderer <|.. Renderer
-ICommandRecorder <|.. CommandRecorderBase
-CommandRecorderBase <|-- WebGPUCommandRecorder
-CommandRecorderBase --> RecorderState : owns
+ICommandRecorder <|.. CommandRecorder
+CommandRecorder --> RecorderState : owns
+CommandRecorder --> IGraphicsDevice : uses
+Renderer --> IGraphicsDevice : owns
 Renderer --> SwapChain : manages
 Renderer --> FrameManager : uses
 Renderer --> CommandPool : uses
 Renderer --> ICommandRecorder : creates
+SwapChain --> IGraphicsDevice : uses
 ICommandRecorder --> RenderTarget : renders to
 ICommandRecorder --> Pipeline : uses
 ICommandRecorder --> BindGroup : binds
@@ -228,7 +270,14 @@ SwapChain --> RenderTarget : provides
 Application --> IRenderer : uses
 Application --> Scene : owns
 
-note right of CommandRecorderBase
+note right of IGraphicsDevice
+    **Backend Abstraction:**
+    - All WebGPU API calls encapsulated here
+    - No direct WebGPU usage outside this class
+    - Future backends: Vulkan, Metal, D3D12
+end note
+
+note right of CommandRecorder
     **Key Design Decisions:**
     - Explicit BeginRenderPass/EndRenderPass
     - nullptr = current backbuffer

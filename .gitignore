@@ -18,9 +18,16 @@ out/
 Thumbs.db
 desktop.ini
 
-# Third-party libraries (build from source)
+# Third-party libraries
+# vcpkg local installation
+vcpkg_installed/
+**/vcpkg_installed/
+
+# Manual third-party sources (if any)
+third_party/*/
+!third_party/README.md
+
 # But don't ignore test programs that test third-party libraries
-third_party/
 !tests/third_party/
 
 # Private documentation
