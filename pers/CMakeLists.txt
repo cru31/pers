@@ -67,12 +67,20 @@ if(NOT RUST_AVAILABLE)
     
     FetchContent_MakeAvailable(wgpu_native_download)
     
-    # Check if download was successful
-    if(EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll.lib" AND EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/wgpu.h")
+    # Check if download was successful and set platform-specific library paths
+    if(EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/wgpu.h")
         message(STATUS "Successfully downloaded wgpu-native to ${WGPU_NATIVE_PREBUILT_DIR}")
         set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT_DIR}")
-        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll.lib")
-        set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll")
+        
+        if(WIN32)
+            set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll.lib")
+            set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll")
+        elseif(APPLE)
+            set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/libwgpu_native.dylib")
+        else()
+            set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/libwgpu_native.so")
+        endif()
+        
         set(WGPU_NATIVE_AVAILABLE TRUE)
         set(WGPU_NATIVE_PREBUILT_USED TRUE)
     else()
@@ -102,6 +110,10 @@ elseif(RUST_AVAILABLE)
     if(WIN32)
         set(WGPU_NATIVE_LIB ${WGPU_SOURCE_DIR}/target/release/wgpu_native.dll.lib)
         set(WGPU_NATIVE_DLL ${WGPU_SOURCE_DIR}/target/release/wgpu_native.dll)
+    elseif(APPLE)
+        set(WGPU_NATIVE_LIB ${WGPU_SOURCE_DIR}/target/release/libwgpu_native.dylib)
+    else()
+        set(WGPU_NATIVE_LIB ${WGPU_SOURCE_DIR}/target/release/libwgpu_native.so)
     endif()
     set(WGPU_NATIVE_INCLUDE_DIR ${WGPU_SOURCE_DIR}/ffi)
     
