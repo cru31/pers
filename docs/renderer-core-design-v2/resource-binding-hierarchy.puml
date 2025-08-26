@@ -1,0 +1,262 @@
+@startuml resource-binding-hierarchy
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #888
+title Pers Graphics Engine V2 - Resource Binding Hierarchy
+
+' Bind Group Layout Hierarchy
+package "Bind Group Layout System" #E8F4F8 {
+    interface IBindGroupLayout {
+        + getEntries() : vector<BindGroupLayoutEntry>
+        + isCompatible(IBindGroup*) : bool
+    }
+    
+    class BindGroupLayoutEntry {
+        + binding : uint32_t
+        + visibility : ShaderStage
+        + type : BindingType
+        + count : uint32_t
+        + dynamicOffset : bool
+    }
+    
+    enum BindingType {
+        UniformBuffer
+        StorageBuffer
+        ReadOnlyStorageBuffer
+        Sampler
+        ComparisonSampler
+        SampledTexture
+        StorageTexture
+        ReadOnlyStorageTexture
+    }
+    
+    enum ShaderStage {
+        Vertex = 0x1
+        Fragment = 0x2
+        Compute = 0x4
+        All = 0x7
+    }
+    
+    IBindGroupLayout *-- BindGroupLayoutEntry
+    BindGroupLayoutEntry --> BindingType
+    BindGroupLayoutEntry --> ShaderStage
+}
+
+' Pipeline Layout System
+package "Pipeline Layout System" #FFE8E8 {
+    interface IPipelineLayout {
+        + getBindGroupLayouts() : vector<IBindGroupLayout*>
+        + getPushConstantRanges() : vector<PushConstantRange>
+    }
+    
+    interface IPipeline {
+        + getLayout() : IPipelineLayout*
+    }
+    
+    interface IGraphicsPipeline {
+        + getVertexLayout() : VertexLayout
+        + getRasterState() : RasterizationState
+        + getDepthStencilState() : DepthStencilState
+        + getBlendState() : BlendState
+    }
+    
+    interface IComputePipeline {
+        + getWorkgroupSize() : WorkgroupSize
+    }
+    
+    IPipeline <|-- IGraphicsPipeline
+    IPipeline <|-- IComputePipeline
+    IPipeline --> IPipelineLayout
+    IPipelineLayout --> IBindGroupLayout
+}
+
+' Bind Group System
+package "Bind Group System" #E8FFE8 {
+    interface IBindGroup {
+        + getLayout() : IBindGroupLayout*
+        + getEntries() : vector<BindGroupEntry>
+    }
+    
+    class BindGroupEntry {
+        + binding : uint32_t
+        + resource : ResourceBinding
+    }
+    
+    class ResourceBinding {
+        <<union>>
+        + buffer : BufferBinding
+        + texture : TextureBinding
+        + sampler : SamplerBinding
+    }
+    
+    class BufferBinding {
+        + buffer : IBuffer*
+        + offset : size_t
+        + size : size_t
+    }
+    
+    class TextureBinding {
+        + textureView : ITextureView*
+    }
+    
+    class SamplerBinding {
+        + sampler : ISampler*
+    }
+    
+    IBindGroup --> IBindGroupLayout
+    IBindGroup *-- BindGroupEntry
+    BindGroupEntry --> ResourceBinding
+    ResourceBinding --> BufferBinding
+    ResourceBinding --> TextureBinding
+    ResourceBinding --> SamplerBinding
+}
+
+' Resource Types
+package "Resource Types" #FFFFE8 {
+    interface IBuffer {
+        + getSize() : size_t
+        + getUsage() : BufferUsage
+    }
+    
+    interface IUniformBuffer {
+        + update(data, offset, size)
+        + isDynamic() : bool
+        + getAlignment() : size_t
+    }
+    
+    interface IStorageBuffer {
+        + isReadOnly() : bool
+    }
+    
+    interface ITexture {
+        + getFormat() : TextureFormat
+        + getMipLevelCount() : uint32_t
+        + createView(desc) : ITextureView*
+    }
+    
+    interface ITextureView {
+        + getTexture() : ITexture*
+        + getDimension() : TextureViewDimension
+        + getFormat() : TextureFormat
+        + getBaseMipLevel() : uint32_t
+        + getMipLevelCount() : uint32_t
+    }
+    
+    interface ISampler {
+        + getMinFilter() : FilterMode
+        + getMagFilter() : FilterMode
+        + getAddressModeU() : AddressMode
+        + getAddressModeV() : AddressMode
+        + getAddressModeW() : AddressMode
+    }
+    
+    IBuffer <|-- IUniformBuffer
+    IBuffer <|-- IStorageBuffer
+    ITexture --> ITextureView
+    
+    BufferBinding --> IBuffer
+    TextureBinding --> ITextureView
+    SamplerBinding --> ISampler
+}
+
+' Binding Frequency Pattern
+package "Binding Frequency Pattern" #E8E8FF {
+    class BindGroupIndex {
+        <<enumeration>>
+        Frame = 0
+        Pass = 1
+        Material = 2
+        Object = 3
+    }
+    
+    class FrameBindGroup {
+        <<Set 0>>
+        + viewMatrix : mat4
+        + projectionMatrix : mat4
+        + viewProjMatrix : mat4
+        + cameraPosition : vec3
+        + time : float
+        + deltaTime : float
+    }
+    
+    class PassBindGroup {
+        <<Set 1>>
+        + lightData : array<Light>
+        + shadowMaps : array<Texture2D>
+        + environmentMap : TextureCube
+        + passConstants : PassUniforms
+    }
+    
+    class MaterialBindGroup {
+        <<Set 2>>
+        + baseColorTexture : Texture2D
+        + normalTexture : Texture2D
+        + metallicRoughnessTexture : Texture2D
+        + occlusionTexture : Texture2D
+        + emissiveTexture : Texture2D
+        + materialConstants : MaterialUniforms
+    }
+    
+    class ObjectBindGroup {
+        <<Set 3>>
+        + modelMatrix : mat4
+        + normalMatrix : mat3
+        + objectID : uint32_t
+        + instanceData : array<Instance>
+    }
+    
+    note right of BindGroupIndex
+        **Update Frequency**
+        Set 0: Once per frame
+        Set 1: Once per pass
+        Set 2: Per material change
+        Set 3: Per object (dynamic)
+    end note
+}
+
+' Command Recording
+package "Command Recording" #FFE8FF {
+    interface IRenderPassEncoder {
+        + cmdSetGraphicsPipeline(pipeline)
+        + cmdSetBindGroup(index, bindGroup, dynamicOffsets)
+        + cmdSetVertexBuffer(slot, buffer, offset)
+        + cmdSetIndexBuffer(buffer, offset)
+        + cmdDraw(vertexCount, instanceCount)
+        + cmdDrawIndexed(indexCount, instanceCount)
+    }
+    
+    interface IComputePassEncoder {
+        + cmdSetComputePipeline(pipeline)
+        + cmdSetBindGroup(index, bindGroup, dynamicOffsets)
+        + cmdDispatch(x, y, z)
+        + cmdDispatchIndirect(buffer, offset)
+    }
+    
+    IRenderPassEncoder --> IBindGroup : binds
+    IComputePassEncoder --> IBindGroup : binds
+    IRenderPassEncoder --> IGraphicsPipeline : uses
+    IComputePassEncoder --> IComputePipeline : uses
+}
+
+' Relationships
+IBindGroup --> BindGroupIndex : "indexed by"
+IPipeline --> IBindGroup : "compatible with"
+
+note bottom of IBindGroupLayout
+    **Validation Rules**
+    - Layout must match pipeline expectations
+    - All required bindings must be present
+    - Resource types must match declarations
+    - Dynamic offsets require alignment
+end note
+
+note bottom of ResourceBinding
+    **WebGPU Binding Model**
+    - Explicit resource binding
+    - Immutable bind groups
+    - Dynamic offsets for buffers
+    - Separated samplers and textures
+end note
+
+@enduml

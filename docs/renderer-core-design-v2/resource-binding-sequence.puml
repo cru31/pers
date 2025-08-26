@@ -1,0 +1,169 @@
+@startuml resource-binding-sequence
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceBoxBackgroundColor #F8F8F8
+skinparam sequenceBoxBorderColor #888
+title Pers Graphics Engine V2 - Resource Binding Sequence
+
+actor Application
+participant "IDevice" as Device
+participant "IResourceFactory" as Factory
+participant "ICommandEncoder" as Encoder
+participant "IRenderPassEncoder" as RenderPass
+participant "IQueue" as Queue
+participant "GPU" as GPU
+
+== Initialization Phase ==
+
+Application -> Device: getResourceFactory()
+activate Device
+Device --> Application: factory
+deactivate Device
+
+Application -> Factory: createBindGroupLayout(desc)
+activate Factory
+note right: Define resource layout\n- Binding points\n- Resource types\n- Shader visibility
+Factory --> Application: bindGroupLayout
+deactivate Factory
+
+Application -> Factory: createPipelineLayout(desc)
+activate Factory
+note right: Combine bind group layouts\n- Set 0: Frame data\n- Set 1: Pass data\n- Set 2: Material data\n- Set 3: Object data
+Factory --> Application: pipelineLayout
+deactivate Factory
+
+Application -> Factory: createGraphicsPipeline(desc)
+activate Factory
+note right: Pipeline uses the layout\n- Vertex layout\n- Shader modules\n- Render state
+Factory --> Application: pipeline
+deactivate Factory
+
+== Resource Creation ==
+
+Application -> Factory: createUniformBuffer(desc)
+activate Factory
+Factory --> Application: uniformBuffer
+deactivate Factory
+
+Application -> Factory: createTexture2D(desc)
+activate Factory
+Factory --> Application: texture
+deactivate Factory
+
+Application -> Factory: createSampler(desc)
+activate Factory
+Factory --> Application: sampler
+deactivate Factory
+
+Application -> Factory: createBindGroup(desc)
+activate Factory
+note right: Bind actual resources\n- buffer -> binding 0\n- texture -> binding 1\n- sampler -> binding 2
+Factory --> Application: bindGroup
+deactivate Factory
+
+== Frame Rendering ==
+
+Application -> Device: createCommandEncoder()
+activate Device
+Device --> Application: encoder
+deactivate Device
+
+Application -> Encoder: beginRenderPass(desc)
+activate Encoder
+Encoder --> Application: renderPass
+deactivate Encoder
+
+== Command Recording ==
+
+Application -> RenderPass: cmdSetGraphicsPipeline(pipeline)
+activate RenderPass
+note right: Pipeline defines expected\nbind group layouts
+RenderPass -> RenderPass: Record command
+deactivate RenderPass
+
+group Bind Resources (Recorded Commands)
+    Application -> RenderPass: cmdSetBindGroup(0, frameBindGroup)
+    activate RenderPass
+    note right: Set 0: Per-frame data\n(view/projection matrices)
+    RenderPass -> RenderPass: Record command
+    deactivate RenderPass
+    
+    Application -> RenderPass: cmdSetBindGroup(1, passBindGroup)
+    activate RenderPass
+    note right: Set 1: Per-pass data\n(lights, shadows)
+    RenderPass -> RenderPass: Record command
+    deactivate RenderPass
+    
+    Application -> RenderPass: cmdSetBindGroup(2, materialBindGroup)
+    activate RenderPass
+    note right: Set 2: Per-material data\n(textures, material props)
+    RenderPass -> RenderPass: Record command
+    deactivate RenderPass
+    
+    Application -> RenderPass: cmdSetBindGroup(3, objectBindGroup, [offset])
+    activate RenderPass
+    note right: Set 3: Per-object data\n(model matrix)\nwith dynamic offset
+    RenderPass -> RenderPass: Record command
+    deactivate RenderPass
+end
+
+Application -> RenderPass: cmdSetVertexBuffer(0, vertexBuffer)
+activate RenderPass
+RenderPass -> RenderPass: Record command
+deactivate RenderPass
+
+Application -> RenderPass: cmdSetIndexBuffer(indexBuffer)
+activate RenderPass
+RenderPass -> RenderPass: Record command
+deactivate RenderPass
+
+Application -> RenderPass: cmdDrawIndexed(indexCount)
+activate RenderPass
+RenderPass -> RenderPass: Record command
+deactivate RenderPass
+
+== Command Submission ==
+
+Application -> RenderPass: end()
+activate RenderPass
+note right: Close render pass
+RenderPass --> Application: 
+deactivate RenderPass
+
+Application -> Encoder: finish()
+activate Encoder
+note right: Complete recording\nCreate command buffer
+Encoder --> Application: commandBuffer
+deactivate Encoder
+
+Application -> Queue: submit(commandBuffer)
+activate Queue
+Queue -> GPU: Execute commands
+activate GPU
+note right: GPU executes all\nrecorded commands\nin order
+
+group GPU Execution
+    GPU -> GPU: Set pipeline state
+    GPU -> GPU: Bind resources (Set 0-3)
+    GPU -> GPU: Bind vertex/index buffers
+    GPU -> GPU: Draw indexed primitives
+end
+
+GPU --> Queue: Completion signal
+deactivate GPU
+Queue --> Application: 
+deactivate Queue
+
+== Dynamic Buffer Updates ==
+
+group Per-Object Loop
+    loop For each object
+        Application -> RenderPass: cmdSetBindGroup(3, objectBindGroup, [dynamicOffset])
+        note right: Same bind group\nDifferent offset for\neach object's data
+        Application -> RenderPass: cmdDrawIndexed(indexCount)
+    end
+end
+
+note over Application, GPU: **Key Points**\n- Commands are recorded, not executed immediately\n- Bind groups are immutable once created\n- Dynamic offsets allow reusing bind groups\n- Resource binding follows frequency pattern (frame/pass/material/object)
+
+@enduml
