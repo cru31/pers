@@ -5,5 +5,19 @@
   "dependencies": [
     "glm"
   ],
+  "features": {
+    "tests": {
+      "description": "Build tests with GLFW support",
+      "dependencies": [
+        "glfw3"
+      ]
+    },
+    "samples": {
+      "description": "Build samples with GLFW support",
+      "dependencies": [
+        "glfw3"
+      ]
+    }
+  },
   "builtin-baseline": "6ecbbbdf31cba47aafa7cf6189b1e73e10ac61f8"
 }
