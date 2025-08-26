@@ -8,7 +8,12 @@ target_link_libraries(test_pers_static PRIVATE pers_static)
 add_executable(test_pers_shared test_shared.cpp)
 target_link_libraries(test_pers_shared PRIVATE pers_shared)
 
+# Test for WebGPU integration
+add_executable(test_pers_webgpu test_webgpu.cpp)
+target_link_libraries(test_pers_webgpu PRIVATE pers_static)
+
 # Add tests
 enable_testing()
 add_test(NAME test_static COMMAND test_pers_static)
 add_test(NAME test_shared COMMAND test_pers_shared)
+add_test(NAME test_webgpu COMMAND test_pers_webgpu)
