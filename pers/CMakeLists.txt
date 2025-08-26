@@ -40,7 +40,10 @@ target_include_directories(pers_shared PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(pers_shared PUBLIC glm::glm)
-set_target_properties(pers_shared PROPERTIES OUTPUT_NAME "pers")
+set_target_properties(pers_shared PROPERTIES 
+    OUTPUT_NAME "pers"
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+)
 if(WIN32)
     target_compile_definitions(pers_shared PRIVATE PERS_BUILD_DLL)
     target_compile_definitions(pers_shared INTERFACE PERS_USE_DLL)
