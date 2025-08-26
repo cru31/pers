@@ -40,6 +40,51 @@ if(EXISTS "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll.lib" AND EXISTS "${WGPU_NATIV
     set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll")
     set(WGPU_NATIVE_AVAILABLE TRUE)
     set(WGPU_NATIVE_PREBUILT_USED TRUE)
+elseif(NOT RUST_AVAILABLE)
+    # No pre-built binary and no Rust compiler, download pre-built binaries
+    message(STATUS "Downloading pre-built wgpu-native binaries...")
+    
+    include(FetchContent)
+    
+    # Determine platform and architecture
+    if(WIN32)
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(WGPU_PLATFORM "windows-x86_64")
+        else()
+            message(FATAL_ERROR "32-bit Windows is not supported")
+        endif()
+    elseif(APPLE)
+        set(WGPU_PLATFORM "macos-universal")
+    else()
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(WGPU_PLATFORM "linux-x86_64")
+        else()
+            message(FATAL_ERROR "32-bit Linux is not supported")
+        endif()
+    endif()
+    
+    set(WGPU_VERSION "v0.19.4.1")
+    set(WGPU_URL "https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_VERSION}/wgpu-${WGPU_PLATFORM}-release.zip")
+    
+    FetchContent_Declare(
+        wgpu_native_download
+        URL ${WGPU_URL}
+        SOURCE_DIR ${WGPU_NATIVE_PREBUILT}
+    )
+    
+    FetchContent_MakeAvailable(wgpu_native_download)
+    
+    # Check if download was successful
+    if(EXISTS "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll.lib" AND EXISTS "${WGPU_NATIVE_PREBUILT}/wgpu.h")
+        message(STATUS "Successfully downloaded wgpu-native to ${WGPU_NATIVE_PREBUILT}")
+        set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT}")
+        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll.lib")
+        set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll")
+        set(WGPU_NATIVE_AVAILABLE TRUE)
+        set(WGPU_NATIVE_PREBUILT_USED TRUE)
+    else()
+        message(FATAL_ERROR "Failed to download wgpu-native binaries")
+    endif()
 elseif(RUST_AVAILABLE)
     # If Rust is available, build from source
     message(STATUS "Building wgpu-native from source...")
@@ -75,10 +120,11 @@ elseif(RUST_AVAILABLE)
     
     set(WGPU_NATIVE_AVAILABLE TRUE)
     set(WGPU_NATIVE_PREBUILT_USED FALSE)
-else()
-    message(FATAL_ERROR "WebGPU support requires either:\n"
-                        "1. Pre-built wgpu-native binaries in third_party/wgpu-native-bin/\n"
-                        "2. Rust compiler installed from https://rustup.rs")
+endif()
+
+# Check if wgpu-native is available
+if(NOT WGPU_NATIVE_AVAILABLE)
+    message(FATAL_ERROR "Failed to configure wgpu-native. Please install Rust or ensure network access for downloading pre-built binaries.")
 endif()
 
 # Pers Engine Library Sources
