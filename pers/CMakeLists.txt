@@ -30,17 +30,10 @@ endif()
 
 # Setup wgpu-native
 set(WGPU_NATIVE_AVAILABLE FALSE)
-set(WGPU_NATIVE_PREBUILT "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/wgpu-native-bin")
+set(WGPU_NATIVE_PREBUILT_DIR "${CMAKE_CURRENT_BINARY_DIR}/wgpu-native-prebuilt")
 
-# First check for pre-built binary
-if(EXISTS "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll.lib" AND EXISTS "${WGPU_NATIVE_PREBUILT}/wgpu.h")
-    message(STATUS "Found pre-built wgpu-native at ${WGPU_NATIVE_PREBUILT}")
-    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT}")
-    set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll.lib")
-    set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll")
-    set(WGPU_NATIVE_AVAILABLE TRUE)
-    set(WGPU_NATIVE_PREBUILT_USED TRUE)
-elseif(NOT RUST_AVAILABLE)
+# Check if Rust is available
+if(NOT RUST_AVAILABLE)
     # No pre-built binary and no Rust compiler, download pre-built binaries
     message(STATUS "Downloading pre-built wgpu-native binaries...")
     
@@ -69,17 +62,17 @@ elseif(NOT RUST_AVAILABLE)
     FetchContent_Declare(
         wgpu_native_download
         URL ${WGPU_URL}
-        SOURCE_DIR ${WGPU_NATIVE_PREBUILT}
+        SOURCE_DIR ${WGPU_NATIVE_PREBUILT_DIR}
     )
     
     FetchContent_MakeAvailable(wgpu_native_download)
     
     # Check if download was successful
-    if(EXISTS "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll.lib" AND EXISTS "${WGPU_NATIVE_PREBUILT}/wgpu.h")
-        message(STATUS "Successfully downloaded wgpu-native to ${WGPU_NATIVE_PREBUILT}")
-        set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT}")
-        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll.lib")
-        set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT}/wgpu_native.dll")
+    if(EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll.lib" AND EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/wgpu.h")
+        message(STATUS "Successfully downloaded wgpu-native to ${WGPU_NATIVE_PREBUILT_DIR}")
+        set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT_DIR}")
+        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll.lib")
+        set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll")
         set(WGPU_NATIVE_AVAILABLE TRUE)
         set(WGPU_NATIVE_PREBUILT_USED TRUE)
     else()
