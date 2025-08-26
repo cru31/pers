@@ -4,8 +4,8 @@ project(WebGPUTriangle)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include helper functions
-include(${CMAKE_SOURCE_DIR}/cmake/CopyRuntimeDependencies.cmake)
+# Include local helper functions
+include(${CMAKE_CURRENT_LIST_DIR}/copyRuntimeDep.cmake)
 
 # Find pers library from the main project
 if(NOT TARGET pers_static)
