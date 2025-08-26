@@ -7,9 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Include local helper functions
 include(${CMAKE_CURRENT_LIST_DIR}/copyRuntimeDep.cmake)
 
-# Find pers library from the main project
+# Check if building as part of main project
 if(NOT TARGET pers_static)
-    message(FATAL_ERROR "This test must be built as part of the main project")
+    # For standalone builds, include the setup script
+    set(STANDALONE_SETUP "${CMAKE_CURRENT_LIST_DIR}/standalone_setup.cmake")
+    if(EXISTS "${STANDALONE_SETUP}")
+        include(${STANDALONE_SETUP})
+    else()
+        message(FATAL_ERROR "This test must be built as part of the main project. Use -DBUILD_TESTS=ON from root.")
+    endif()
 endif()
 
 # Check if GLFW is available (should be provided by vcpkg when BUILD_TESTS=ON)
