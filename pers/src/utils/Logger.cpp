@@ -18,7 +18,11 @@ void ConsoleOutput::Write(const LogEntry& entry) {
     
     auto time_t = std::chrono::system_clock::to_time_t(entry.timestamp);
     std::tm tm_buf;
+#ifdef _WIN32
     localtime_s(&tm_buf, &time_t);
+#else
+    localtime_r(&time_t, &tm_buf);
+#endif
     
     out << "[" << std::put_time(&tm_buf, "%H:%M:%S") << "] ";
     
@@ -66,7 +70,11 @@ public:
         
         auto time_t = std::chrono::system_clock::to_time_t(entry.timestamp);
         std::tm tm_buf;
+#ifdef _WIN32
         localtime_s(&tm_buf, &time_t);
+#else
+        localtime_r(&time_t, &tm_buf);
+#endif
         
         file << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "] ";
         
