@@ -9,47 +9,41 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         build_type: [Release]
-        include:
-          - os: ubuntu-latest
-            vcpkg_triplet: x64-linux
-          - os: macos-latest
-            vcpkg_triplet: x64-osx
-          - os: windows-latest
-            vcpkg_triplet: x64-windows
     
     runs-on: ${{ matrix.os }}
     
     steps:
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
     
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitCommitId: 'f8b09027afe97c717e95bd81d1d4f37c057d1c78'
+        vcpkgJsonGlob: '**/vcpkg.json'
     
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        toolchain: 1.79.0
+    - name: Debug vcpkg paths
+      run: |
+        echo "VCPKG_ROOT: $VCPKG_ROOT"
+        echo "Current directory: $(pwd)"
+        echo "vcpkg.json location:"
+        find . -name "vcpkg.json" -type f
+        echo "vcpkg-configuration.json location:"
+        find . -name "vcpkg-configuration.json" -type f
+        cat vcpkg.json
+        cat vcpkg-configuration.json
+      shell: bash
     
-    - name: Configure CMake (Linux/macOS)
-      if: runner.os != 'Windows'
+    - name: Configure CMake
       run: |
         cmake -B build \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-    
-    - name: Configure CMake (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        cmake -B build `
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
-          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.os == 'windows-latest' && 'x64-windows' || matrix.os == 'macos-latest' && 'x64-osx' || 'x64-linux' }}
+      shell: bash
     
     - name: Build
       run: cmake --build build --config ${{ matrix.build_type }}
