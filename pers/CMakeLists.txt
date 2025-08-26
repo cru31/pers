@@ -42,7 +42,7 @@ if(NOT RUST_AVAILABLE)
     # Determine platform and architecture
     if(WIN32)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            set(WGPU_PLATFORM "windows-x86_64")
+            set(WGPU_PLATFORM "windows-x86_64-msvc")
         else()
             message(FATAL_ERROR "32-bit Windows is not supported")
         endif()
@@ -56,7 +56,7 @@ if(NOT RUST_AVAILABLE)
         endif()
     endif()
     
-    set(WGPU_VERSION "v0.19.4.1")
+    set(WGPU_VERSION "v25.0.2.1")
     set(WGPU_URL "https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_VERSION}/wgpu-${WGPU_PLATFORM}-release.zip")
     
     FetchContent_Declare(
@@ -67,25 +67,31 @@ if(NOT RUST_AVAILABLE)
     
     FetchContent_MakeAvailable(wgpu_native_download)
     
-    # Check if download was successful and set platform-specific library paths
-    if(EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/wgpu.h")
-        message(STATUS "Successfully downloaded wgpu-native to ${WGPU_NATIVE_PREBUILT_DIR}")
-        set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT_DIR}")
-        
-        if(WIN32)
-            set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll.lib")
-            set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT_DIR}/wgpu_native.dll")
-        elseif(APPLE)
-            set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/libwgpu_native.dylib")
-        else()
-            set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/libwgpu_native.so")
-        endif()
-        
-        set(WGPU_NATIVE_AVAILABLE TRUE)
-        set(WGPU_NATIVE_PREBUILT_USED TRUE)
-    else()
-        message(FATAL_ERROR "Failed to download wgpu-native binaries")
+    # Verify download and set paths for v25+ structure
+    if(NOT EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/include/webgpu/wgpu.h")
+        message(FATAL_ERROR "Failed to download wgpu-native v25+ binaries - header not found")
     endif()
+    
+    message(STATUS "Successfully downloaded wgpu-native to ${WGPU_NATIVE_PREBUILT_DIR}")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT_DIR}/include/webgpu")
+    
+    # Set platform-specific library paths
+    if(WIN32)
+        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/lib/wgpu_native.dll.lib")
+        set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT_DIR}/lib/wgpu_native.dll")
+    elseif(APPLE)
+        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/lib/libwgpu_native.dylib")
+    else()
+        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/lib/libwgpu_native.so")
+    endif()
+    
+    # Verify library exists
+    if(NOT EXISTS "${WGPU_NATIVE_LIB}")
+        message(FATAL_ERROR "wgpu-native library not found at: ${WGPU_NATIVE_LIB}")
+    endif()
+    
+    set(WGPU_NATIVE_AVAILABLE TRUE)
+    set(WGPU_NATIVE_PREBUILT_USED TRUE)
 elseif(RUST_AVAILABLE)
     # If Rust is available, build from source
     message(STATUS "Building wgpu-native from source...")
@@ -97,7 +103,7 @@ elseif(RUST_AVAILABLE)
     ExternalProject_Add(
         wgpu-native-build
         GIT_REPOSITORY https://github.com/gfx-rs/wgpu-native
-        GIT_TAG v0.19.4.1
+        GIT_TAG v25.0.2.1
         SOURCE_DIR ${WGPU_SOURCE_DIR}
         BINARY_DIR ${WGPU_BUILD_DIR}
         CONFIGURE_COMMAND ""
@@ -206,7 +212,7 @@ message(STATUS "Pers Library Configuration")
 message(STATUS "===========================================")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "GLM: Required (math library)")
-message(STATUS "WebGPU: Required (wgpu-native v0.19.4.1)")
+message(STATUS "WebGPU: Required (wgpu-native v25.0.2.1)")
 if(WGPU_NATIVE_PREBUILT_USED)
     message(STATUS "  Using pre-built binary")
 else()

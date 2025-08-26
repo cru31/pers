@@ -1,11 +1,23 @@
 # Copy runtime dependencies for webgpu_triangle
 function(copy_runtime_dependencies target_name)
-    # WebGPU runtime library
-    if(EXISTS "${CMAKE_BINARY_DIR}/pers/wgpu-native-prebuilt")
-        set(WGPU_DIR "${CMAKE_BINARY_DIR}/pers/wgpu-native-prebuilt")
-    elseif(EXISTS "${CMAKE_BINARY_DIR}/pers/wgpu-native-build/target/release")
-        set(WGPU_DIR "${CMAKE_BINARY_DIR}/pers/wgpu-native-build/target/release")
-    else()
+    # WebGPU runtime library - check multiple possible locations (v25 has lib subdirectory)
+    set(POSSIBLE_WGPU_DIRS
+        "${CMAKE_BINARY_DIR}/pers/wgpu-native-prebuilt/lib"
+        "${CMAKE_BINARY_DIR}/pers/wgpu-native-build/target/release"
+        "${CMAKE_CURRENT_LIST_DIR}/../../../../build/pers/wgpu-native-prebuilt/lib"
+        "${CMAKE_CURRENT_LIST_DIR}/../../../../build/pers/wgpu-native-build/target/release"
+    )
+    
+    set(WGPU_DIR "")
+    foreach(DIR ${POSSIBLE_WGPU_DIRS})
+        if(EXISTS "${DIR}")
+            set(WGPU_DIR "${DIR}")
+            break()
+        endif()
+    endforeach()
+    
+    if(WGPU_DIR STREQUAL "")
+        message(WARNING "Could not find WebGPU runtime libraries to copy")
         return()
     endif()
     

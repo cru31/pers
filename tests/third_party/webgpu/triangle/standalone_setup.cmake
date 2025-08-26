@@ -17,25 +17,25 @@ if(NOT PERS_LIB)
     message(FATAL_ERROR "Could not find pers_static library. Build the main project first.")
 endif()
 
-# Find WebGPU library based on platform
+# Find WebGPU library based on platform (v25+ has lib subdirectory)
 if(WIN32)
     find_library(WGPU_LIB
         NAMES wgpu_native.dll.lib wgpu_native.lib
-        PATHS "${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt" 
+        PATHS "${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt/lib" 
               "${PERS_BUILD_DIR}/pers/wgpu-native-build/target/release"
         NO_DEFAULT_PATH
     )
 elseif(APPLE)
     find_library(WGPU_LIB
         NAMES wgpu_native libwgpu_native.dylib
-        PATHS "${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt" 
+        PATHS "${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt/lib" 
               "${PERS_BUILD_DIR}/pers/wgpu-native-build/target/release"
         NO_DEFAULT_PATH
     )
 else()  # Linux/Unix
     find_library(WGPU_LIB
         NAMES wgpu_native libwgpu_native.so
-        PATHS "${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt" 
+        PATHS "${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt/lib" 
               "${PERS_BUILD_DIR}/pers/wgpu-native-build/target/release"
         NO_DEFAULT_PATH
     )
@@ -48,7 +48,7 @@ endif()
 # Add include directories
 include_directories("${PERS_ROOT}/pers/include")
 include_directories("${PERS_ROOT}/third_party/glm")
-include_directories("${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt")
+include_directories("${PERS_BUILD_DIR}/pers/wgpu-native-prebuilt/include/webgpu")
 
 # Create imported target
 add_library(pers_static STATIC IMPORTED)

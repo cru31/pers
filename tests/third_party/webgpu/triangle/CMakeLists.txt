@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Include local helper functions
-include(${CMAKE_CURRENT_LIST_DIR}/copyRuntimeDep.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/copy_runtime_dep.cmake)
 
 # Check if building as part of main project
 if(NOT TARGET pers_static)

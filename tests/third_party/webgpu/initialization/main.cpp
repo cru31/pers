@@ -12,28 +12,46 @@
 #endif
 
 // Callback for adapter request
-void handleRequestAdapter(WGPURequestAdapterStatus status, WGPUAdapter adapter, const char* message, void* userdata) {
+void handleRequestAdapter(WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2) {
     if (status == WGPURequestAdapterStatus_Success) {
         std::cout << "Got adapter!" << std::endl;
-        *static_cast<WGPUAdapter*>(userdata) = adapter;
+        *static_cast<WGPUAdapter*>(userdata1) = adapter;
     } else {
-        std::cout << "Failed to get adapter: " << (message ? message : "unknown error") << std::endl;
+        std::cout << "Failed to get adapter: ";
+        if (message.data) {
+            std::cout.write(message.data, message.length);
+        } else {
+            std::cout << "unknown error";
+        }
+        std::cout << std::endl;
     }
 }
 
 // Callback for device request  
-void handleRequestDevice(WGPURequestDeviceStatus status, WGPUDevice device, const char* message, void* userdata) {
+void handleRequestDevice(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2) {
     if (status == WGPURequestDeviceStatus_Success) {
         std::cout << "Got device!" << std::endl;
-        *static_cast<WGPUDevice*>(userdata) = device;
+        *static_cast<WGPUDevice*>(userdata1) = device;
     } else {
-        std::cout << "Failed to get device: " << (message ? message : "unknown error") << std::endl;
+        std::cout << "Failed to get device: ";
+        if (message.data) {
+            std::cout.write(message.data, message.length);
+        } else {
+            std::cout << "unknown error";
+        }
+        std::cout << std::endl;
     }
 }
 
 // Error callback
-void handleError(WGPUErrorType type, const char* message, void* userdata) {
-    std::cout << "Error: " << (message ? message : "unknown error") << std::endl;
+void handleError(WGPUDevice const * device, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2) {
+    std::cout << "Error: ";
+    if (message.data) {
+        std::cout.write(message.data, message.length);
+    } else {
+        std::cout << "unknown error";
+    }
+    std::cout << std::endl;
 }
 
 int main() {
@@ -53,17 +71,23 @@ int main() {
     WGPURequestAdapterOptions adapterOptions = {};
     adapterOptions.powerPreference = WGPUPowerPreference_HighPerformance;
     
-    wgpuInstanceRequestAdapter(instance, &adapterOptions, handleRequestAdapter, &adapter);
+    // Set up callback info for v25 API
+    WGPURequestAdapterCallbackInfo callbackInfo = {};
+    callbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    callbackInfo.callback = handleRequestAdapter;
+    callbackInfo.userdata1 = &adapter;
     
-    // For wgpu-native v0.19.4.1, we need to process events manually
-    // This is a workaround since there's no proper async handling yet
-    for (int i = 0; i < 100 && !adapter; ++i) {
-        // Small delay to allow async operation to complete
-        #ifdef _WIN32
-            Sleep(10);
-        #else
-            usleep(10000);
-        #endif
+    WGPUFuture future = wgpuInstanceRequestAdapter(instance, &adapterOptions, callbackInfo);
+    
+    // Wait for the adapter request to complete
+    WGPUFutureWaitInfo waitInfo = {};
+    waitInfo.future = future;
+    waitInfo.completed = false;
+    
+    wgpuInstanceWaitAny(instance, 1, &waitInfo, UINT64_MAX);
+    
+    if (!waitInfo.completed) {
+        std::cerr << "Adapter request timed out" << std::endl;
     }
     
     if (!adapter) {
@@ -72,33 +96,52 @@ int main() {
         return 1;
     }
 
-    // Get adapter properties
-    WGPUAdapterProperties properties = {};
-    wgpuAdapterGetProperties(adapter, &properties);
-    std::cout << "Adapter properties:" << std::endl;
-    std::cout << "  Name: " << properties.name << std::endl;
-    std::cout << "  Driver: " << properties.driverDescription << std::endl;
-    std::cout << "  Backend: " << properties.backendType << std::endl;
+    // Get adapter info
+    WGPUAdapterInfo adapterInfo = {};
+    wgpuAdapterGetInfo(adapter, &adapterInfo);
+    std::cout << "Adapter info:" << std::endl;
+    std::cout << "  Vendor: ";
+    if (adapterInfo.vendor.data) {
+        std::cout.write(adapterInfo.vendor.data, adapterInfo.vendor.length);
+    }
+    std::cout << std::endl;
+    std::cout << "  Device: ";
+    if (adapterInfo.device.data) {
+        std::cout.write(adapterInfo.device.data, adapterInfo.device.length);
+    }
+    std::cout << std::endl;
+    std::cout << "  Backend: " << adapterInfo.backendType << std::endl;
+    
+    // Free the adapter info strings
+    wgpuAdapterInfoFreeMembers(adapterInfo);
 
     // Request device
     WGPUDevice device = nullptr;
     WGPUDeviceDescriptor deviceDesc = {};
-    deviceDesc.label = "Test Device";
+    WGPUStringView labelView = {"Test Device", WGPU_STRLEN};
+    deviceDesc.label = labelView;
     
-    // Don't set required limits for now - use defaults
-    // WGPURequiredLimits requiredLimits = {};
-    // requiredLimits.limits.maxBindGroups = 1;
-    // deviceDesc.requiredLimits = &requiredLimits;
+    // Set up error callback in device descriptor
+    deviceDesc.uncapturedErrorCallbackInfo.callback = handleError;
+    deviceDesc.uncapturedErrorCallbackInfo.userdata1 = nullptr;
     
-    wgpuAdapterRequestDevice(adapter, &deviceDesc, handleRequestDevice, &device);
+    // Set up callback info for device request
+    WGPURequestDeviceCallbackInfo deviceCallbackInfo = {};
+    deviceCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    deviceCallbackInfo.callback = handleRequestDevice;
+    deviceCallbackInfo.userdata1 = &device;
     
-    // Wait for device creation
-    for (int i = 0; i < 100 && !device; ++i) {
-        #ifdef _WIN32
-            Sleep(10);
-        #else
-            usleep(10000);
-        #endif
+    WGPUFuture deviceFuture = wgpuAdapterRequestDevice(adapter, &deviceDesc, deviceCallbackInfo);
+    
+    // Wait for the device request to complete
+    WGPUFutureWaitInfo deviceWaitInfo = {};
+    deviceWaitInfo.future = deviceFuture;
+    deviceWaitInfo.completed = false;
+    
+    wgpuInstanceWaitAny(instance, 1, &deviceWaitInfo, UINT64_MAX);
+    
+    if (!deviceWaitInfo.completed) {
+        std::cerr << "Device request timed out" << std::endl;
     }
     
     if (!device) {
@@ -107,9 +150,6 @@ int main() {
         wgpuInstanceRelease(instance);
         return 1;
     }
-
-    // Set error callback
-    wgpuDeviceSetUncapturedErrorCallback(device, handleError, nullptr);
 
     // Get queue
     WGPUQueue queue = wgpuDeviceGetQueue(device);
@@ -128,13 +168,15 @@ int main() {
     )";
 
     // Create shader module using WGSL directly
-    WGPUShaderModuleWGSLDescriptor wgslDesc = {};
-    wgslDesc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-    wgslDesc.code = computeShader;
+    WGPUShaderSourceWGSL wgslDesc = {};
+    wgslDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
+    WGPUStringView codeView = {computeShader, WGPU_STRLEN};
+    wgslDesc.code = codeView;
 
     WGPUShaderModuleDescriptor shaderDesc = {};
     shaderDesc.nextInChain = &wgslDesc.chain;
-    shaderDesc.label = "Compute Shader";
+    WGPUStringView shaderLabelView = {"Compute Shader", WGPU_STRLEN};
+    shaderDesc.label = shaderLabelView;
 
     WGPUShaderModule shaderModule = wgpuDeviceCreateShaderModule(device, &shaderDesc);
     if (shaderModule) {
@@ -142,9 +184,11 @@ int main() {
         
         // Create compute pipeline
         WGPUComputePipelineDescriptor pipelineDesc = {};
-        pipelineDesc.label = "Test Pipeline";
+        WGPUStringView pipelineLabelView = {"Test Pipeline", WGPU_STRLEN};
+        pipelineDesc.label = pipelineLabelView;
         pipelineDesc.compute.module = shaderModule;
-        pipelineDesc.compute.entryPoint = "main";
+        WGPUStringView entryPointView = {"main", WGPU_STRLEN};
+        pipelineDesc.compute.entryPoint = entryPointView;
         
         WGPUComputePipeline pipeline = wgpuDeviceCreateComputePipeline(device, &pipelineDesc);
         if (pipeline) {
@@ -159,7 +203,8 @@ int main() {
 
     // Test creating a buffer
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.label = "Test Buffer";
+    WGPUStringView bufferLabelView = {"Test Buffer", WGPU_STRLEN};
+    bufferDesc.label = bufferLabelView;
     bufferDesc.size = 256;
     bufferDesc.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
     bufferDesc.mappedAtCreation = false;
