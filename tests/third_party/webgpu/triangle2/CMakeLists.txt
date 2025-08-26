@@ -9,7 +9,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/copy_runtime_dep.cmake)
 
 # Find pers library from the main project
 if(NOT TARGET pers_static)
-    message(FATAL_ERROR "This test must be built as part of the main project")
+    # Support standalone build (e.g., in CLion)
+    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/standalone_setup.cmake")
+        include(${CMAKE_CURRENT_LIST_DIR}/standalone_setup.cmake)
+    else()
+        message(FATAL_ERROR "This test must be built as part of the main project")
+    endif()
 endif()
 
 # Check if GLFW is available (should be provided by vcpkg when BUILD_TESTS=ON)
