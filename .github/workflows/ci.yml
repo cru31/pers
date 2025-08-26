@@ -22,7 +22,7 @@ jobs:
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 'f8b09027afe97c717e95bd81d1d4f37c057d1c78'
+        vcpkgGitCommitId: '6ecbbbdf31cba47aafa7cf6189b1e73e10ac61f8'
         vcpkgJsonGlob: '**/vcpkg.json'
     
     - name: Debug vcpkg paths
