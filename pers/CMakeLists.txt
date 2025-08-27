@@ -249,12 +249,13 @@ elseif(RUST_AVAILABLE)
         DEPENDS wgpu-native-build
     )
     
-    # macOS: Fix the install name of the dylib after copying
+    # macOS: Fix the install name after copying
     if(APPLE)
         add_custom_command(
-            TARGET wgpu-native-install POST_BUILD
+            OUTPUT "${WGPU_RUNTIME_LIB}"
+            APPEND
             COMMAND install_name_tool -id "@rpath/libwgpu_native.dylib" "${WGPU_RUNTIME_LIB}"
-            COMMENT "Fixing dylib install name for macOS"
+            COMMAND ${CMAKE_COMMAND} -E echo "Fixed dylib install name"
         )
     endif()
     
