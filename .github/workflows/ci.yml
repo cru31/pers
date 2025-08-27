@@ -219,9 +219,11 @@ jobs:
         echo "Architecture: $ARCH"
         if [ "$ARCH" = "arm64" ]; then
           echo "VCPKG_TARGET_TRIPLET=arm64-osx" >> $GITHUB_ENV
+          echo "VCPKG_DEFAULT_TRIPLET=arm64-osx" >> $GITHUB_ENV
           echo "CMAKE_OSX_ARCHITECTURES=arm64" >> $GITHUB_ENV
         else
           echo "VCPKG_TARGET_TRIPLET=x64-osx" >> $GITHUB_ENV
+          echo "VCPKG_DEFAULT_TRIPLET=x64-osx" >> $GITHUB_ENV
           echo "CMAKE_OSX_ARCHITECTURES=x86_64" >> $GITHUB_ENV
         fi
     
@@ -270,6 +272,7 @@ jobs:
           -DCMAKE_OSX_ARCHITECTURES=$CMAKE_OSX_ARCHITECTURES \
           -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -DVCPKG_TARGET_TRIPLET=$VCPKG_TARGET_TRIPLET \
+          -DVCPKG_DEFAULT_TRIPLET=$VCPKG_DEFAULT_TRIPLET \
           -DVCPKG_MANIFEST_FEATURES="tests" \
           -DBUILD_TESTS=ON \
           $FORCE_DOWNLOAD $FORCE_COMPILE

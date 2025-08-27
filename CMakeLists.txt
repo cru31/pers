@@ -21,6 +21,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Add pers library subdirectory
 add_subdirectory(pers)
 
+# Debug vcpkg triplet on macOS
+if(APPLE)
+    if(DEFINED VCPKG_TARGET_TRIPLET)
+        message(STATUS "Using vcpkg triplet: ${VCPKG_TARGET_TRIPLET}")
+    endif()
+    if(DEFINED CMAKE_OSX_ARCHITECTURES)
+        message(STATUS "Building for macOS architecture: ${CMAKE_OSX_ARCHITECTURES}")
+    endif()
+endif()
+
 # Check if GLFW is needed and available
 if(BUILD_TESTS OR BUILD_SAMPLES)
     find_package(glfw3 CONFIG)
