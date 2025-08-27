@@ -381,7 +381,16 @@ int main() {
     demo.isInitialized = true;
     
     // Main loop
+    int frameCount = 0;
+    const int maxFramesInCI = 300; // Run for 300 frames (about 5 seconds at 60fps) in CI
+    const bool isCI = std::getenv("CI") != nullptr;
+    
     while (!glfwWindowShouldClose(window)) {
+        // Auto-exit in CI after rendering enough frames
+        if (isCI && frameCount++ >= maxFramesInCI) {
+            std::cout << "CI mode: Rendered " << frameCount << " frames successfully, exiting..." << std::endl;
+            break;
+        }
         glfwPollEvents();
         
         // Get current texture
