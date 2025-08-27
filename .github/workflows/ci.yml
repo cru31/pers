@@ -58,13 +58,17 @@ jobs:
     
     - name: Configure CMake (Download)
       if: matrix.wgpu_method == 'download'
+      shell: pwsh
       run: |
-        cmake --preset=windows-${{ matrix.config }}-download
+        $config = "${{ matrix.config }}".ToLower()
+        cmake --preset=windows-$config-download
     
     - name: Configure CMake (Compile)
       if: matrix.wgpu_method == 'compile'
+      shell: pwsh
       run: |
-        cmake --preset=windows-${{ matrix.config }}-compile
+        $config = "${{ matrix.config }}".ToLower()
+        cmake --preset=windows-$config-compile
     
     - name: Build
       run: |
