@@ -233,6 +233,15 @@ jobs:
         $HOME/vcpkg/bootstrap-vcpkg.sh
         echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
     
+    - name: Verify Architecture and Triplet
+      run: |
+        echo "=== Architecture and Triplet Configuration ==="
+        echo "VCPKG_TARGET_TRIPLET: $VCPKG_TARGET_TRIPLET"
+        echo "VCPKG_DEFAULT_TRIPLET: $VCPKG_DEFAULT_TRIPLET"
+        echo "CMAKE_OSX_ARCHITECTURES: $CMAKE_OSX_ARCHITECTURES"
+        echo "System architecture: $(uname -m)"
+        echo "============================================="
+    
     - name: Setup Rust (for compile method)
       if: matrix.wgpu_method == 'compile'
       uses: dtolnay/rust-toolchain@stable
@@ -259,6 +268,11 @@ jobs:
     
     - name: Configure CMake
       run: |
+        echo "=== CMake Configuration Parameters ==="
+        echo "VCPKG_TARGET_TRIPLET: $VCPKG_TARGET_TRIPLET"
+        echo "CMAKE_OSX_ARCHITECTURES: $CMAKE_OSX_ARCHITECTURES"
+        echo "======================================="
+        
         if [ "${{ matrix.wgpu_method }}" = "download" ]; then
           FORCE_DOWNLOAD="-DFORCE_WGPU_DOWNLOAD=ON"
           BUILD_DIR="build/wgpu-prebuilt"
