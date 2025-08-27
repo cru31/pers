@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Define WebGPU version
+set(WGPU_VERSION "v25.0.2.1" CACHE STRING "wgpu-native version to use")
+message(STATUS "Using wgpu-native version: ${WGPU_VERSION}")
+
 # GLM is required for pers engine
 find_package(glm CONFIG REQUIRED)
 message(STATUS "Found GLM")
@@ -119,13 +123,30 @@ elseif(FORCE_WGPU_DOWNLOAD OR (NOT RUST_AVAILABLE AND NOT FORCE_WGPU_COMPILE))
         endif()
     elseif(APPLE)
         # Check architecture for macOS
-        if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-            set(WGPU_PLATFORM "macos-aarch64")
-        elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
-            set(WGPU_PLATFORM "macos-x86_64")
+        if(CMAKE_OSX_ARCHITECTURES)
+            if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+                set(WGPU_PLATFORM "macos-aarch64")
+            elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+                set(WGPU_PLATFORM "macos-x86_64")
+            else()
+                message(WARNING "Unknown macOS architecture: ${CMAKE_OSX_ARCHITECTURES}, defaulting to x86_64")
+                set(WGPU_PLATFORM "macos-x86_64")
+            endif()
         else()
-            # Default to x86_64 if not specified
-            set(WGPU_PLATFORM "macos-x86_64")
+            # Auto-detect architecture if not specified
+            execute_process(
+                COMMAND uname -m
+                OUTPUT_VARIABLE DETECTED_ARCH
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            if(DETECTED_ARCH STREQUAL "arm64")
+                set(WGPU_PLATFORM "macos-aarch64")
+                set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "macOS architecture" FORCE)
+            else()
+                set(WGPU_PLATFORM "macos-x86_64")
+                set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "macOS architecture" FORCE)
+            endif()
+            message(STATUS "Auto-detected macOS architecture: ${CMAKE_OSX_ARCHITECTURES}")
         endif()
     else()
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -135,7 +156,7 @@ elseif(FORCE_WGPU_DOWNLOAD OR (NOT RUST_AVAILABLE AND NOT FORCE_WGPU_COMPILE))
         endif()
     endif()
     
-    set(WGPU_VERSION "v25.0.2.1")
+    # Use the version defined at the top
     set(WGPU_URL "https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_VERSION}/wgpu-${WGPU_PLATFORM}-release.zip")
     
     FetchContent_Declare(
@@ -190,7 +211,7 @@ elseif(RUST_AVAILABLE)
     ExternalProject_Add(
         wgpu-native-build
         GIT_REPOSITORY https://github.com/gfx-rs/wgpu-native
-        GIT_TAG v25.0.2.1
+        GIT_TAG ${WGPU_VERSION}
         SOURCE_DIR ${WGPU_SOURCE_DIR}
         BINARY_DIR ${WGPU_BUILD_DIR}
         CONFIGURE_COMMAND ""
@@ -315,7 +336,7 @@ message(STATUS "Pers Library Configuration")
 message(STATUS "===========================================")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "GLM: Required (math library)")
-message(STATUS "WebGPU: Required (wgpu-native v25.0.2.1)")
+message(STATUS "WebGPU: Required (wgpu-native ${WGPU_VERSION})")
 if(WGPU_NATIVE_PREBUILT_USED)
     message(STATUS "  Using pre-built binary")
 else()

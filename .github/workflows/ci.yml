@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  WGPU_VERSION: v25.0.2.1
+
 jobs:
   build-windows:
     name: Windows Build
@@ -52,7 +55,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: third_party/wgpu-native-runtime
-        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-v25.0.2.1
+        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-${{ env.WGPU_VERSION }}
         restore-keys: |
           ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
     
@@ -147,7 +150,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: third_party/wgpu-native-runtime
-        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-v25.0.2.1
+        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-${{ env.WGPU_VERSION }}
         restore-keys: |
           ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
     
@@ -210,6 +213,18 @@ jobs:
       with:
         submodules: recursive
     
+    - name: Detect Architecture
+      run: |
+        ARCH=$(uname -m)
+        echo "Architecture: $ARCH"
+        if [ "$ARCH" = "arm64" ]; then
+          echo "VCPKG_TARGET_TRIPLET=arm64-osx" >> $GITHUB_ENV
+          echo "CMAKE_OSX_ARCHITECTURES=arm64" >> $GITHUB_ENV
+        else
+          echo "VCPKG_TARGET_TRIPLET=x64-osx" >> $GITHUB_ENV
+          echo "CMAKE_OSX_ARCHITECTURES=x86_64" >> $GITHUB_ENV
+        fi
+    
     - name: Setup vcpkg
       run: |
         git clone https://github.com/Microsoft/vcpkg.git $HOME/vcpkg
@@ -228,17 +243,17 @@ jobs:
         path: |
           ~/vcpkg/installed
           ~/vcpkg/packages
-        key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+        key: ${{ runner.os }}-${{ env.VCPKG_TARGET_TRIPLET }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
         restore-keys: |
-          ${{ runner.os }}-vcpkg-
+          ${{ runner.os }}-${{ env.VCPKG_TARGET_TRIPLET }}-vcpkg-
     
     - name: Cache wgpu-native runtime
       uses: actions/cache@v4
       with:
         path: third_party/wgpu-native-runtime
-        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-v25.0.2.1
+        key: ${{ runner.os }}-${{ env.CMAKE_OSX_ARCHITECTURES }}-wgpu-${{ matrix.wgpu_method }}-${{ env.WGPU_VERSION }}
         restore-keys: |
-          ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
+          ${{ runner.os }}-${{ env.CMAKE_OSX_ARCHITECTURES }}-wgpu-${{ matrix.wgpu_method }}-
     
     - name: Configure CMake
       run: |
@@ -252,7 +267,9 @@ jobs:
         
         cmake -B $BUILD_DIR/${{ matrix.config }} \
           -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+          -DCMAKE_OSX_ARCHITECTURES=$CMAKE_OSX_ARCHITECTURES \
           -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=$VCPKG_TARGET_TRIPLET \
           -DVCPKG_MANIFEST_FEATURES="tests" \
           -DBUILD_TESTS=ON \
           $FORCE_DOWNLOAD $FORCE_COMPILE

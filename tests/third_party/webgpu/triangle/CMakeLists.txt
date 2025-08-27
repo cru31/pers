@@ -50,16 +50,16 @@ if(APPLE)
     )
 endif()
 
+# Set output directory to match other tests
+set_target_properties(webgpu_triangle PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
 # Copy shader file to output directory
 add_custom_command(TARGET webgpu_triangle POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_CURRENT_SOURCE_DIR}/shader.wgsl"
     $<TARGET_FILE_DIR:webgpu_triangle>
-)
-
-# Set output directory to match other tests
-set_target_properties(webgpu_triangle PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 # Copy runtime dependencies
@@ -69,6 +69,7 @@ copy_runtime_dependencies(webgpu_triangle)
 enable_testing()
 add_test(NAME webgpu_triangle COMMAND webgpu_triangle)
 set_tests_properties(webgpu_triangle PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:webgpu_triangle>"
     ENVIRONMENT "CI_SKIP=1"  # Skip in CI since it needs a display
 )
 
