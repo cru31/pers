@@ -30,7 +30,15 @@ function(fix_macos_dylib_references target_name)
         return()
     endif()
     
-    # Set RPATH for the target
+    # Get target type
+    get_target_property(target_type ${target_name} TYPE)
+    
+    # Skip static libraries - they don't need dylib path fixing
+    if(target_type STREQUAL "STATIC_LIBRARY")
+        return()
+    endif()
+    
+    # Set RPATH for the target (only for executables and shared libraries)
     set_target_properties(${target_name} PROPERTIES
         BUILD_RPATH "${WGPU_LIB_DIR}"
         INSTALL_RPATH "@loader_path;@loader_path/../lib;${WGPU_LIB_DIR}"
