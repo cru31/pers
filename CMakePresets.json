@@ -182,6 +182,80 @@
       }
     },
     {
+      "name": "clion-windows-debug",
+      "displayName": "CLion Windows Debug",
+      "description": "Windows debug build for CLion with vcpkg",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/cmake-build-debug-visual-studio",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "clion-windows-release",
+      "displayName": "CLion Windows Release",
+      "description": "Windows release build for CLion with vcpkg",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/cmake-build-release-visual-studio",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "clion-macos-debug",
+      "inherits": "macos-arm64-base",
+      "displayName": "CLion macOS Debug",
+      "description": "macOS debug build for CLion with vcpkg",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "clion-macos-release",
+      "inherits": "macos-arm64-base",
+      "displayName": "CLion macOS Release",
+      "description": "macOS release build for CLion with vcpkg",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
       "name": "windows-debug-download",
       "inherits": "windows-base",
       "displayName": "Windows Debug (WebGPU Download)",
