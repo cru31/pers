@@ -90,8 +90,19 @@ ctest --test-dir build
 - [ ] Runtime dependencies copied (DLLs on Windows)?
 - [ ] Include paths set correctly?
 - [ ] Link libraries in correct order?
+- [ ] **ExternalProject dependencies explicitly declared?** (Critical for macOS)
 - [ ] Platform-specific code wrapped in conditionals?
 - [ ] CI cache keys include dependency version?
+
+## Critical: Build Order Dependencies
+
+When using ExternalProject_Add, **ALWAYS** add explicit dependencies:
+```cmake
+if(TARGET external-library-install)
+    add_dependencies(your_target external-library-install)
+endif()
+```
+Without this, macOS/Xcode builds will fail with missing library errors!
 
 ## Environment Variables
 

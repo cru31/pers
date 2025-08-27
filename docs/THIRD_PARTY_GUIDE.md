@@ -249,7 +249,43 @@ Used for: Test-only dependencies
 }
 ```
 
-## 6. Troubleshooting
+## 6. Build Order and Dependencies
+
+### Critical: ExternalProject Build Order Issues
+
+When using `ExternalProject_Add` to build libraries from source, you MUST explicitly declare dependencies:
+
+```cmake
+# Example from wgpu-native integration
+ExternalProject_Add(wgpu-native-build ...)
+
+# Create install target that depends on build completion
+add_custom_target(wgpu-native-install ALL DEPENDS "${LIBRARY_OUTPUT}")
+
+# CRITICAL: Add explicit dependencies for all consuming targets
+add_library(your_library ...)
+if(TARGET wgpu-native-install)
+    add_dependencies(your_library wgpu-native-install)
+endif()
+```
+
+**Why This Is Critical:**
+- **macOS/Xcode**: Aggressively parallelizes all targets, causing link failures if library isn't built yet
+- **Windows/Linux**: Handle dependencies better but still need explicit ordering for correctness
+- **Symptom**: "no such file or directory" errors during linking despite successful configuration
+
+**Real-world Example:**
+```cmake
+# pers/CMakeLists.txt
+target_link_libraries(pers_static PUBLIC ${WGPU_NATIVE_LIB})
+
+# Without this, macOS builds fail with missing libwgpu_native.dylib
+if(TARGET wgpu-native-install)
+    add_dependencies(pers_static wgpu-native-install)
+endif()
+```
+
+## 7. Troubleshooting
 
 ### Common Issues and Solutions
 
