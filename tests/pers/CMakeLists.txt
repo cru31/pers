@@ -12,8 +12,10 @@ target_link_libraries(test_pers_shared PRIVATE pers_shared)
 add_executable(test_pers_webgpu test_webgpu.cpp)
 target_link_libraries(test_pers_webgpu PRIVATE pers_static)
 
-# Fix macOS dylib references for all test executables
-fix_macos_dylib_for_targets(test_pers_static test_pers_shared test_pers_webgpu)
+# Fix macOS dylib references for all test executables (only on macOS)
+if(APPLE)
+    fix_macos_dylib_for_targets(test_pers_static test_pers_shared test_pers_webgpu)
+endif()
 
 # Add tests
 enable_testing()

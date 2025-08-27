@@ -351,8 +351,10 @@ if(WIN32 AND WGPU_NATIVE_DLL)
     )
 endif()
 
-# Fix macOS dylib references for both libraries
-fix_macos_dylib_for_targets(pers_static pers_shared)
+# Fix macOS dylib references for both libraries (only on macOS)
+if(APPLE)
+    fix_macos_dylib_for_targets(pers_static pers_shared)
+endif()
 
 # Export configuration
 message(STATUS "===========================================")
