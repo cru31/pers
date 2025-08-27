@@ -225,14 +225,9 @@ jobs:
     
     - name: Setup Build Tools
       run: |
-        # Check if cmake is already installed
-        if command -v cmake &> /dev/null; then
-          echo "CMake already installed: $(cmake --version | head -n1)"
-        else
-          # Handle potential tap conflicts
-          brew uninstall cmake 2>/dev/null || true
-          brew install cmake
-        fi
+        # Always uninstall and reinstall cmake to avoid tap conflicts
+        brew uninstall cmake 2>/dev/null || true
+        brew install cmake
         # Install other tools if needed
         brew list ninja &>/dev/null || brew install ninja
         brew list pkg-config &>/dev/null || brew install pkg-config
