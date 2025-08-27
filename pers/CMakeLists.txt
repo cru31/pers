@@ -232,30 +232,43 @@ elseif(RUST_AVAILABLE)
     endif()
     
     # Add a custom command to copy after build
-    add_custom_command(
-        OUTPUT "${WGPU_RUNTIME_LIB}"
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-                "${WGPU_RUNTIME_DIR}/include/webgpu"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${WGPU_SOURCE_DIR}/ffi/wgpu.h"
-                "${WGPU_RUNTIME_DIR}/include/webgpu/wgpu.h"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${WGPU_SOURCE_DIR}/ffi/webgpu-headers/webgpu.h"
-                "${WGPU_RUNTIME_DIR}/include/webgpu/webgpu.h"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${WGPU_BUILD_LIB}"
-                "${WGPU_RUNTIME_LIB}"
-        COMMAND ${CMAKE_COMMAND} -E echo "Installed wgpu-native to runtime directory"
-        DEPENDS wgpu-native-build
-    )
-    
-    # macOS: Fix the install name after copying
     if(APPLE)
+        # macOS: 복사와 install_name 수정을 한 번에
         add_custom_command(
             OUTPUT "${WGPU_RUNTIME_LIB}"
-            APPEND
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "${WGPU_RUNTIME_DIR}/include/webgpu"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${WGPU_SOURCE_DIR}/ffi/wgpu.h"
+                    "${WGPU_RUNTIME_DIR}/include/webgpu/wgpu.h"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${WGPU_SOURCE_DIR}/ffi/webgpu-headers/webgpu.h"
+                    "${WGPU_RUNTIME_DIR}/include/webgpu/webgpu.h"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${WGPU_BUILD_LIB}"
+                    "${WGPU_RUNTIME_LIB}"
+            # 바로 이어서 install_name 수정
             COMMAND install_name_tool -id "@rpath/libwgpu_native.dylib" "${WGPU_RUNTIME_LIB}"
-            COMMAND ${CMAKE_COMMAND} -E echo "Fixed dylib install name"
+            COMMAND ${CMAKE_COMMAND} -E echo "Installed and fixed wgpu-native"
+            DEPENDS wgpu-native-build
+        )
+    else()
+        # Windows/Linux: 원래대로
+        add_custom_command(
+            OUTPUT "${WGPU_RUNTIME_LIB}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "${WGPU_RUNTIME_DIR}/include/webgpu"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${WGPU_SOURCE_DIR}/ffi/wgpu.h"
+                    "${WGPU_RUNTIME_DIR}/include/webgpu/wgpu.h"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${WGPU_SOURCE_DIR}/ffi/webgpu-headers/webgpu.h"
+                    "${WGPU_RUNTIME_DIR}/include/webgpu/webgpu.h"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${WGPU_BUILD_LIB}"
+                    "${WGPU_RUNTIME_LIB}"
+            COMMAND ${CMAKE_COMMAND} -E echo "Installed wgpu-native to runtime directory"
+            DEPENDS wgpu-native-build
         )
     endif()
     
