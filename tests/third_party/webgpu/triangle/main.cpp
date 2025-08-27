@@ -10,6 +10,13 @@
 #ifdef _WIN32
     #define GLFW_EXPOSE_NATIVE_WIN32
     #include <windows.h>
+#elif defined(__linux__)
+    #define GLFW_EXPOSE_NATIVE_X11
+    #include <X11/Xlib.h>
+#elif defined(__APPLE__)
+    #define GLFW_EXPOSE_NATIVE_COCOA
+    #import <Cocoa/Cocoa.h>
+    #import <QuartzCore/CAMetalLayer.h>
 #endif
 
 #define GLFW_INCLUDE_NONE
@@ -147,7 +154,7 @@ int main() {
         return -1;
     }
     
-    // Create surface for Windows
+    // Create surface - platform specific
 #ifdef _WIN32
     HWND hwnd = glfwGetWin32Window(window);
     HINSTANCE hinstance = GetModuleHandle(nullptr);
@@ -161,8 +168,34 @@ int main() {
     surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
     
     demo.surface = wgpuInstanceCreateSurface(demo.instance, &surfaceDesc);
+#elif defined(__linux__)
+    // Linux/X11 surface creation
+    Display* display = glfwGetX11Display();
+    Window x11Window = glfwGetX11Window(window);
+    
+    WGPUSurfaceSourceXlibWindow surfaceSource = {};
+    surfaceSource.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
+    surfaceSource.display = display;
+    surfaceSource.window = x11Window;
+    
+    WGPUSurfaceDescriptor surfaceDesc = {};
+    surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
+    
+    demo.surface = wgpuInstanceCreateSurface(demo.instance, &surfaceDesc);
+#elif defined(__APPLE__)
+    // macOS surface creation
+    id metalLayer = glfwGetCocoaMetalLayer(window);
+    
+    WGPUSurfaceSourceMetalLayer surfaceSource = {};
+    surfaceSource.chain.sType = WGPUSType_SurfaceSourceMetalLayer;
+    surfaceSource.layer = metalLayer;
+    
+    WGPUSurfaceDescriptor surfaceDesc = {};
+    surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
+    
+    demo.surface = wgpuInstanceCreateSurface(demo.instance, &surfaceDesc);
 #else
-    #error "Only Windows platform is currently supported"
+    #error "Unsupported platform"
 #endif
     
     if (!demo.surface) {
