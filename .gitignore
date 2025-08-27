@@ -77,7 +77,8 @@ build.ninja
 # Logs
 *.log
 
-# Backup files
+# Backup files and directories
+backup/
 *.bak
 *~
 *.swp

@@ -37,7 +37,11 @@ jobs:
           libxi-dev \
           libgl1-mesa-dev \
           libglu1-mesa-dev \
-          pkg-config
+          pkg-config \
+          libltdl-dev \
+          autoconf \
+          automake \
+          libtool
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
