@@ -30,14 +30,44 @@ endif()
 
 # Setup wgpu-native
 set(WGPU_NATIVE_AVAILABLE FALSE)
-set(WGPU_NATIVE_PREBUILT_DIR "${CMAKE_CURRENT_BINARY_DIR}/wgpu-native-prebuilt")
+# Use third_party directory for persistent storage of dependencies
+get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
-# Check if Rust is available
-if(NOT RUST_AVAILABLE)
+# Define the single reference location for wgpu-native runtime
+set(WGPU_RUNTIME_DIR "${PROJECT_ROOT}/third_party/wgpu-native-runtime")
+file(MAKE_DIRECTORY "${WGPU_RUNTIME_DIR}")
+file(MAKE_DIRECTORY "${WGPU_RUNTIME_DIR}/include")
+file(MAKE_DIRECTORY "${WGPU_RUNTIME_DIR}/lib")
+
+# Check if wgpu-native is already available in the runtime directory
+if(WIN32)
+    set(WGPU_RUNTIME_LIB "${WGPU_RUNTIME_DIR}/lib/wgpu_native.dll.lib")
+    set(WGPU_RUNTIME_DLL "${WGPU_RUNTIME_DIR}/lib/wgpu_native.dll")
+elseif(APPLE)
+    set(WGPU_RUNTIME_LIB "${WGPU_RUNTIME_DIR}/lib/libwgpu_native.dylib")
+else()
+    set(WGPU_RUNTIME_LIB "${WGPU_RUNTIME_DIR}/lib/libwgpu_native.so")
+endif()
+
+set(WGPU_RUNTIME_HEADER "${WGPU_RUNTIME_DIR}/include/wgpu.h")
+
+# Check if wgpu-native is already installed
+if(EXISTS "${WGPU_RUNTIME_LIB}" AND EXISTS "${WGPU_RUNTIME_HEADER}")
+    message(STATUS "Using existing wgpu-native from: ${WGPU_RUNTIME_DIR}")
+    set(WGPU_NATIVE_AVAILABLE TRUE)
+    set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include")
+    if(WIN32)
+        set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}")
+    endif()
+elseif(NOT RUST_AVAILABLE)
     # No pre-built binary and no Rust compiler, download pre-built binaries
     message(STATUS "Downloading pre-built wgpu-native binaries...")
     
     include(FetchContent)
+    
+    # Download to a temporary location
+    set(WGPU_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/wgpu-native-download")
     
     # Determine platform and architecture
     if(WIN32)
@@ -62,36 +92,37 @@ if(NOT RUST_AVAILABLE)
     FetchContent_Declare(
         wgpu_native_download
         URL ${WGPU_URL}
-        SOURCE_DIR ${WGPU_NATIVE_PREBUILT_DIR}
+        SOURCE_DIR ${WGPU_DOWNLOAD_DIR}
     )
     
     FetchContent_MakeAvailable(wgpu_native_download)
     
-    # Verify download and set paths for v25+ structure
-    if(NOT EXISTS "${WGPU_NATIVE_PREBUILT_DIR}/include/webgpu/wgpu.h")
-        message(FATAL_ERROR "Failed to download wgpu-native v25+ binaries - header not found")
+    # Copy downloaded files to the runtime directory
+    message(STATUS "Installing wgpu-native to runtime directory...")
+    
+    # Copy header
+    file(COPY "${WGPU_DOWNLOAD_DIR}/include/webgpu/wgpu.h" 
+         DESTINATION "${WGPU_RUNTIME_DIR}/include")
+    
+    # Copy libraries
+    file(GLOB WGPU_LIBS "${WGPU_DOWNLOAD_DIR}/lib/*")
+    file(COPY ${WGPU_LIBS} DESTINATION "${WGPU_RUNTIME_DIR}/lib")
+    
+    # Verify installation
+    if(NOT EXISTS "${WGPU_RUNTIME_HEADER}")
+        message(FATAL_ERROR "Failed to install wgpu-native header")
+    endif()
+    if(NOT EXISTS "${WGPU_RUNTIME_LIB}")
+        message(FATAL_ERROR "Failed to install wgpu-native library")
     endif()
     
-    message(STATUS "Successfully downloaded wgpu-native to ${WGPU_NATIVE_PREBUILT_DIR}")
-    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_NATIVE_PREBUILT_DIR}/include/webgpu")
-    
-    # Set platform-specific library paths
+    message(STATUS "Successfully installed wgpu-native to ${WGPU_RUNTIME_DIR}")
+    set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include")
     if(WIN32)
-        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/lib/wgpu_native.dll.lib")
-        set(WGPU_NATIVE_DLL "${WGPU_NATIVE_PREBUILT_DIR}/lib/wgpu_native.dll")
-    elseif(APPLE)
-        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/lib/libwgpu_native.dylib")
-    else()
-        set(WGPU_NATIVE_LIB "${WGPU_NATIVE_PREBUILT_DIR}/lib/libwgpu_native.so")
+        set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}")
     endif()
-    
-    # Verify library exists
-    if(NOT EXISTS "${WGPU_NATIVE_LIB}")
-        message(FATAL_ERROR "wgpu-native library not found at: ${WGPU_NATIVE_LIB}")
-    endif()
-    
     set(WGPU_NATIVE_AVAILABLE TRUE)
-    set(WGPU_NATIVE_PREBUILT_USED TRUE)
 elseif(RUST_AVAILABLE)
     # If Rust is available, build from source
     message(STATUS "Building wgpu-native from source...")
@@ -112,25 +143,48 @@ elseif(RUST_AVAILABLE)
         INSTALL_COMMAND ""
     )
     
-    # Set paths for the built library
+    # After build, copy to runtime directory
     if(WIN32)
-        set(WGPU_NATIVE_LIB ${WGPU_SOURCE_DIR}/target/release/wgpu_native.dll.lib)
-        set(WGPU_NATIVE_DLL ${WGPU_SOURCE_DIR}/target/release/wgpu_native.dll)
+        set(WGPU_BUILD_LIB ${WGPU_SOURCE_DIR}/target/release/wgpu_native.dll.lib)
+        set(WGPU_BUILD_DLL ${WGPU_SOURCE_DIR}/target/release/wgpu_native.dll)
     elseif(APPLE)
-        set(WGPU_NATIVE_LIB ${WGPU_SOURCE_DIR}/target/release/libwgpu_native.dylib)
+        set(WGPU_BUILD_LIB ${WGPU_SOURCE_DIR}/target/release/libwgpu_native.dylib)
     else()
-        set(WGPU_NATIVE_LIB ${WGPU_SOURCE_DIR}/target/release/libwgpu_native.so)
+        set(WGPU_BUILD_LIB ${WGPU_SOURCE_DIR}/target/release/libwgpu_native.so)
     endif()
-    set(WGPU_NATIVE_INCLUDE_DIR ${WGPU_SOURCE_DIR}/ffi)
     
-    # Create imported target
-    add_library(wgpu_native INTERFACE)
-    target_link_libraries(wgpu_native INTERFACE ${WGPU_NATIVE_LIB})
-    target_include_directories(wgpu_native INTERFACE ${WGPU_NATIVE_INCLUDE_DIR})
-    add_dependencies(wgpu_native wgpu-native-build)
+    # Add a custom command to copy after build
+    add_custom_command(
+        OUTPUT "${WGPU_RUNTIME_LIB}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${WGPU_SOURCE_DIR}/ffi/wgpu.h"
+                "${WGPU_RUNTIME_DIR}/include/wgpu.h"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${WGPU_BUILD_LIB}"
+                "${WGPU_RUNTIME_LIB}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Installed wgpu-native to runtime directory"
+        DEPENDS wgpu-native-build
+    )
     
+    if(WIN32)
+        add_custom_command(
+            OUTPUT "${WGPU_RUNTIME_DLL}"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${WGPU_BUILD_DLL}"
+                    "${WGPU_RUNTIME_DLL}"
+            DEPENDS wgpu-native-build
+        )
+        add_custom_target(wgpu-native-install ALL DEPENDS "${WGPU_RUNTIME_LIB}" "${WGPU_RUNTIME_DLL}")
+    else()
+        add_custom_target(wgpu-native-install ALL DEPENDS "${WGPU_RUNTIME_LIB}")
+    endif()
+    
+    set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include")
+    if(WIN32)
+        set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}")
+    endif()
     set(WGPU_NATIVE_AVAILABLE TRUE)
-    set(WGPU_NATIVE_PREBUILT_USED FALSE)
 endif()
 
 # Check if wgpu-native is available

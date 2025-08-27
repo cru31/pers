@@ -3,6 +3,11 @@ build/
 **/build/
 cmake-build-*/
 out/
+# Pattern for debug/release build directories
+build-*-debug/
+build-*-release/
+**/build-*-debug/
+**/build-*-release/
 
 # IDE files
 .vs/
@@ -26,6 +31,13 @@ vcpkg_installed/
 # Manual third-party sources (if any)
 third_party/*/
 !third_party/README.md
+
+# wgpu-native runtime directory (contains downloaded/built binaries)
+third_party/wgpu-native-runtime/
+
+# wgpu-native build artifacts (if building from source)
+third_party/wgpu-native-build/
+third_party/wgpu-native-src/
 
 # But don't ignore test programs that test third-party libraries
 !tests/third_party/
