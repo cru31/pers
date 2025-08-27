@@ -105,7 +105,7 @@ jobs:
           build/*/lib/${{ matrix.config }}/*.lib
 
   build-linux:
-    name: Linux Build
+    name: Linux Build  
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -198,7 +198,8 @@ jobs:
         else
           BUILD_DIR="build/wgpu-compile"
         fi
-        ctest --test-dir $BUILD_DIR/${{ matrix.config }} --output-on-failure
+        # Exclude GUI tests that require display (triangle tests)
+        ctest --test-dir $BUILD_DIR/${{ matrix.config }} --output-on-failure --exclude-regex "triangle"
     
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
