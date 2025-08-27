@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "Modern C++ Graphics Engine with WebGPU",
   "dependencies": [
-    "glm"
+    "glm",
+    "assimp",
+    "sdl3"
   ],
   "features": {
     "tests": {
