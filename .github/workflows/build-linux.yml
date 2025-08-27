@@ -41,8 +41,6 @@ jobs:
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'c9140b3b500812ad3206317885860d9553b93f13'
 
     - name: Setup Rust (for compile method)
       if: matrix.wgpu_method == 'compile'

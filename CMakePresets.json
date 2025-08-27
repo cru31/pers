@@ -43,7 +43,8 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "generator": "Ninja",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
       "cacheVariables": {
         "BUILD_TESTS": "ON",
         "VCPKG_MANIFEST_FEATURES": "tests"
@@ -59,7 +60,8 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "generator": "Ninja",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
       "cacheVariables": {
         "BUILD_TESTS": "ON",
         "VCPKG_MANIFEST_FEATURES": "tests"
