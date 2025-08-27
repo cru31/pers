@@ -76,10 +76,10 @@ set_tests_properties(webgpu_triangle2 PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:webgpu_triangle2>"
 )
 
-# Mark as expected to fail in headless CI environments
-if(DEFINED ENV{CI})
+# Mark as expected to fail in headless CI environments (Linux only)
+if(DEFINED ENV{CI} AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set_tests_properties(webgpu_triangle2 PROPERTIES
-        WILL_FAIL TRUE  # Test is expected to fail in CI without display
+        WILL_FAIL TRUE  # Test is expected to fail in CI without display on Linux
     )
 endif()
 
