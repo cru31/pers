@@ -5,21 +5,58 @@ function(copy_runtime_dependencies target_name)
     # Get project root
     get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/.." ABSOLUTE)
     
-    # Define the single runtime directory
-    set(WGPU_RUNTIME_DIR "${PROJECT_ROOT}/third_party/wgpu-native-runtime/lib")
-    
     if(WIN32)
-        # Copy wgpu_native.dll
-        if(EXISTS "${WGPU_RUNTIME_DIR}/wgpu_native.dll")
+        # Copy wgpu_native.dll using the CACHE variable from pers/CMakeLists.txt
+        if(DEFINED WGPU_NATIVE_DLL AND EXISTS "${WGPU_NATIVE_DLL}")
             add_custom_command(TARGET ${target_name} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${WGPU_RUNTIME_DIR}/wgpu_native.dll"
+                "${WGPU_NATIVE_DLL}"
                 $<TARGET_FILE_DIR:${target_name}>
                 COMMENT "Copying wgpu_native.dll for ${target_name}"
             )
         endif()
         
-        # Copy GLFW DLL if it exists (vcpkg may build it as shared)
+        # Find vcpkg installed directory (could be in different locations)
+        if(EXISTS "${CMAKE_BINARY_DIR}/vcpkg_installed")
+            set(VCPKG_INSTALL_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed")
+        elseif(EXISTS "${_VCPKG_INSTALLED_DIR}")
+            set(VCPKG_INSTALL_DIR "${_VCPKG_INSTALLED_DIR}")
+        else()
+            # Try to find it relative to the binary dir
+            file(GLOB VCPKG_DIRS "${CMAKE_BINARY_DIR}/../*/vcpkg_installed")
+            if(VCPKG_DIRS)
+                list(GET VCPKG_DIRS 0 VCPKG_INSTALL_DIR)
+            endif()
+        endif()
+        
+        # Copy vcpkg DLLs if found
+        if(VCPKG_INSTALL_DIR)
+            # For Debug configuration, look in debug/bin first
+            if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND EXISTS "${VCPKG_INSTALL_DIR}/x64-windows/debug/bin")
+                file(GLOB DEBUG_DLLS "${VCPKG_INSTALL_DIR}/x64-windows/debug/bin/*.dll")
+                foreach(DLL ${DEBUG_DLLS})
+                    add_custom_command(TARGET ${target_name} POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${DLL}"
+                        $<TARGET_FILE_DIR:${target_name}>
+                        COMMENT "Copying ${DLL} for ${target_name}"
+                    )
+                endforeach()
+            else()
+                # For Release or if debug/bin doesn't exist, use regular bin
+                file(GLOB RELEASE_DLLS "${VCPKG_INSTALL_DIR}/x64-windows/bin/*.dll")
+                foreach(DLL ${RELEASE_DLLS})
+                    add_custom_command(TARGET ${target_name} POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${DLL}"
+                        $<TARGET_FILE_DIR:${target_name}>
+                        COMMENT "Copying ${DLL} for ${target_name}"
+                    )
+                endforeach()
+            endif()
+        endif()
+        
+        # Also check for GLFW DLL specifically (fallback)
         if(EXISTS "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/glfw3.dll")
             add_custom_command(TARGET ${target_name} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
