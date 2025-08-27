@@ -55,6 +55,14 @@ set_target_properties(webgpu_triangle PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
+# macOS: Set RPATH if WGPU_RUNTIME_DIR is available from parent
+if(APPLE AND DEFINED WGPU_RUNTIME_DIR)
+    set_target_properties(webgpu_triangle PROPERTIES
+        BUILD_RPATH "${WGPU_RUNTIME_DIR}/lib"
+        INSTALL_RPATH "@loader_path;@loader_path/../lib;${WGPU_RUNTIME_DIR}/lib"
+    )
+endif()
+
 # Copy shader file to output directory
 add_custom_command(TARGET webgpu_triangle POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
