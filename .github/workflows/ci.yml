@@ -225,8 +225,9 @@ jobs:
     
     - name: Setup Build Tools
       run: |
-        # Always uninstall and reinstall cmake to avoid tap conflicts
-        brew uninstall cmake 2>/dev/null || true
+        # Fix tap conflicts after brew update
+        brew untap local/pinned 2>/dev/null || true
+        brew uninstall --ignore-dependencies cmake 2>/dev/null || true
         brew install cmake
         # Install other tools if needed
         brew list ninja &>/dev/null || brew install ninja
