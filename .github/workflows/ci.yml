@@ -225,12 +225,16 @@ jobs:
     
     - name: Fix Homebrew CMake Conflict
       run: |
+        # Disable brew auto-update to prevent conflicts
+        export HOMEBREW_NO_AUTO_UPDATE=1
         # Remove conflicting tap and cmake
         brew untap local/pinned || true
         brew uninstall --force cmake || true
         # Install cmake from homebrew/core
         brew install cmake
         brew link cmake
+        # Export for all subsequent steps
+        echo "HOMEBREW_NO_AUTO_UPDATE=1" >> $GITHUB_ENV
     
     - name: Verify CMake is available
       run: |
