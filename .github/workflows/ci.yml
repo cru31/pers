@@ -223,14 +223,8 @@ jobs:
       with:
         submodules: recursive
     
-    - name: Setup Build Tools
-      run: |
-        # Handle potential tap conflicts
-        brew uninstall cmake 2>/dev/null || true
-        brew install cmake
-        # Install other tools if needed
-        brew list ninja &>/dev/null || brew install ninja
-        brew list pkg-config &>/dev/null || brew install pkg-config
+    # Build tools are pre-installed on GitHub Actions macOS runners
+    # No need for brew installation
     
     - name: Detect Architecture
       run: |
