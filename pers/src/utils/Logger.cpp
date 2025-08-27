@@ -6,6 +6,23 @@
 #include <ctime>
 #include <map>
 
+// Platform detection check
+#if defined(__APPLE__)
+    #if defined(_WIN32)
+        #error "CRITICAL: _WIN32 is defined on macOS! This should never happen. Check your build configuration."
+    #endif
+    #if defined(_MSC_VER)
+        #error "CRITICAL: _MSC_VER is defined on macOS! This indicates MSVC compiler on macOS which is impossible."
+    #endif
+#elif defined(__linux__)
+    #if defined(_WIN32)
+        #error "CRITICAL: _WIN32 is defined on Linux! This should never happen. Check your build configuration."
+    #endif
+    #if defined(_MSC_VER)
+        #error "CRITICAL: _MSC_VER is defined on Linux! This indicates MSVC compiler on Linux which is impossible."
+    #endif
+#endif
+
 namespace pers {
 
 // ConsoleOutput implementation
