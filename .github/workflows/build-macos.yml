@@ -25,8 +25,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        brew update
-        brew install cmake ninja pkg-config
+        # Skip brew update entirely to avoid tap conflicts
+        # Check if tools are already installed
+        brew list cmake &>/dev/null || brew install cmake || true
+        brew list ninja &>/dev/null || brew install ninja || true
+        brew list pkg-config &>/dev/null || brew install pkg-config || true
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
