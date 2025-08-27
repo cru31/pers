@@ -28,12 +28,9 @@ set_target_properties(webgpu_init_test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-# macOS: Set RPATH if WGPU_RUNTIME_DIR is available from parent
-if(APPLE AND DEFINED WGPU_RUNTIME_DIR)
-    set_target_properties(webgpu_init_test PROPERTIES
-        BUILD_RPATH "${WGPU_RUNTIME_DIR}/lib"
-        INSTALL_RPATH "@loader_path;@loader_path/../lib;${WGPU_RUNTIME_DIR}/lib"
-    )
+# Fix macOS dylib references (only on macOS)
+if(APPLE)
+    fix_macos_dylib_for_targets(webgpu_init_test)
 endif()
 
 # Copy runtime dependencies
