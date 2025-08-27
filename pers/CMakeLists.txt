@@ -215,9 +215,10 @@ elseif(RUST_AVAILABLE)
         SOURCE_DIR ${WGPU_SOURCE_DIR}
         BINARY_DIR ${WGPU_BUILD_DIR}
         CONFIGURE_COMMAND ""
-        BUILD_COMMAND ${CARGO_EXECUTABLE} build --release --manifest-path ${WGPU_SOURCE_DIR}/Cargo.toml
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${WGPU_SOURCE_DIR}/target ${CARGO_EXECUTABLE} build --release --manifest-path ${WGPU_SOURCE_DIR}/Cargo.toml
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
+        BUILD_ALWAYS 0
     )
     
     # After build, copy to runtime directory
@@ -297,6 +298,11 @@ target_link_libraries(pers_static PUBLIC glm::glm)
 target_include_directories(pers_static PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
 target_link_libraries(pers_static PUBLIC ${WGPU_NATIVE_LIB})
 
+# Add dependency on wgpu-native build target if building from source
+if(TARGET wgpu-native-install)
+    add_dependencies(pers_static wgpu-native-install)
+endif()
+
 set_target_properties(pers_static PROPERTIES OUTPUT_NAME "pers_static")
 
 # Create shared library
@@ -310,6 +316,11 @@ target_include_directories(pers_shared PUBLIC
 target_link_libraries(pers_shared PUBLIC glm::glm)
 target_include_directories(pers_shared PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
 target_link_libraries(pers_shared PUBLIC ${WGPU_NATIVE_LIB})
+
+# Add dependency on wgpu-native build target if building from source
+if(TARGET wgpu-native-install)
+    add_dependencies(pers_shared wgpu-native-install)
+endif()
 
 set_target_properties(pers_shared PROPERTIES 
     OUTPUT_NAME "pers"
