@@ -229,6 +229,8 @@ jobs:
         if command -v cmake &> /dev/null; then
           echo "CMake already installed: $(cmake --version | head -n1)"
         else
+          # Handle potential tap conflicts
+          brew uninstall cmake 2>/dev/null || true
           brew install cmake
         fi
         # Install other tools if needed
