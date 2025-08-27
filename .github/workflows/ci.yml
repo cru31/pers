@@ -223,6 +223,15 @@ jobs:
       with:
         submodules: recursive
     
+    - name: Fix Homebrew CMake Conflict
+      run: |
+        # Remove conflicting tap and cmake
+        brew untap local/pinned || true
+        brew uninstall --force cmake || true
+        # Install cmake from homebrew/core
+        brew install cmake
+        brew link cmake
+    
     - name: Verify CMake is available
       run: |
         which cmake
