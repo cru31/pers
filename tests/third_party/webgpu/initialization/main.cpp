@@ -79,15 +79,15 @@ int main() {
     
     WGPUFuture future = wgpuInstanceRequestAdapter(instance, &adapterOptions, callbackInfo);
     
-    // Wait for the adapter request to complete
-    WGPUFutureWaitInfo waitInfo = {};
-    waitInfo.future = future;
-    waitInfo.completed = false;
-    
-    wgpuInstanceWaitAny(instance, 1, &waitInfo, UINT64_MAX);
-    
-    if (!waitInfo.completed) {
-        std::cerr << "Adapter request timed out" << std::endl;
+    // Poll the instance to process callbacks
+    // wgpu-native v25 requires polling instead of waitAny
+    for (int i = 0; i < 100 && !adapter; ++i) {
+        wgpuInstanceProcessEvents(instance);
+        #ifdef _WIN32
+            Sleep(10);
+        #else
+            usleep(10000);
+        #endif
     }
     
     if (!adapter) {
@@ -133,15 +133,15 @@ int main() {
     
     WGPUFuture deviceFuture = wgpuAdapterRequestDevice(adapter, &deviceDesc, deviceCallbackInfo);
     
-    // Wait for the device request to complete
-    WGPUFutureWaitInfo deviceWaitInfo = {};
-    deviceWaitInfo.future = deviceFuture;
-    deviceWaitInfo.completed = false;
-    
-    wgpuInstanceWaitAny(instance, 1, &deviceWaitInfo, UINT64_MAX);
-    
-    if (!deviceWaitInfo.completed) {
-        std::cerr << "Device request timed out" << std::endl;
+    // Poll the instance to process callbacks
+    // wgpu-native v25 requires polling instead of waitAny
+    for (int i = 0; i < 100 && !device; ++i) {
+        wgpuInstanceProcessEvents(instance);
+        #ifdef _WIN32
+            Sleep(10);
+        #else
+            usleep(10000);
+        #endif
     }
     
     if (!device) {

@@ -105,6 +105,16 @@ void handleFramebufferSize(GLFWwindow* window, int width, int height) {
     
     demo->config.width = width;
     demo->config.height = height;
+    
+    // [PERS V2 CALL STACK]
+    // Window::OnResize(width, height)
+    // └─> Application::OnWindowResize(width, height)
+    //     └─> ISwapChain::Resize(width, height)
+    //         └─> WebGPUSwapChain::Resize(width, height)
+    //             └─> _config.width = width; _config.height = height;
+    //             └─> wgpuSurfaceConfigure(_surface, &_config)
+    // Note: SwapChain이 window resize를 직접 처리
+    // State: SwapChain config 업데이트 및 surface 재구성
     wgpuSurfaceConfigure(demo->surface, &demo->config);
 }
 
@@ -115,39 +125,38 @@ void handleKeyPress(GLFWwindow* window, int key, int scancode, int action, int m
 }
 
 int main() {
-    std::cout << "=== WebGPU Triangle2 Example ===" << std::endl;
-    
+    std::cout << "=== WebGPU Triangle Example ===" << std::endl;
+
     // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
-    
+
     // Create window
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "WebGPU Triangle2", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "WebGPU Triangle", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    
+
     Demo demo;
     glfwSetWindowUserPointer(window, &demo);
     glfwSetFramebufferSizeCallback(window, handleFramebufferSize);
     glfwSetKeyCallback(window, handleKeyPress);
-    
+
     // Create WebGPU instance
-    // [PERS ENGINE CALL STACK]
-    // Application::OnInitialize()
-    // └─> Renderer::Initialize(RendererConfig{backend: WebGPU, validation: true})
-    //     └─> WebGPURenderer::CreateInstance()
-    //         └─> wgpuCreateInstance(&instanceDesc)
-    // Parameters:
-    //   - instanceDesc: 엔진에서는 RendererConfig로부터 생성
-    //     - validation layers 설정
-    //     - backend 선택 (WebGPU/Vulkan/D3D12)
-    //     - 로깅 콜백 설정
+    // [PERS V2 CALL STACK]
+    // Application::Initialize()
+    // └─> CreateInstance(InstanceDesc{.backend = GraphicsBackend::WebGPU})
+    //     └─> WebGPUBackend::CreateWebGPUInstance()
+    //         └─> WebGPUInstance::WebGPUInstance(InstanceDesc desc)
+    //             └─> WGPUInstanceDescriptor instanceDesc = {};
+    //             └─> _instance = wgpuCreateInstance(&instanceDesc)
+    // Returns: std::shared_ptr<IInstance>
+    // Components: IInstance는 모든 graphics 시스템의 시작점
     WGPUInstanceDescriptor instanceDesc = {};
     demo.instance = wgpuCreateInstance(&instanceDesc);
     if (!demo.instance) {
@@ -156,107 +165,152 @@ int main() {
         glfwTerminate();
         return -1;
     }
-    
+
     // Create surface for Windows
 #ifdef _WIN32
     HWND hwnd = glfwGetWin32Window(window);
     HINSTANCE hinstance = GetModuleHandle(nullptr);
-    
+
     WGPUSurfaceSourceWindowsHWND surfaceSource = {};
     surfaceSource.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
     surfaceSource.hinstance = hinstance;
     surfaceSource.hwnd = hwnd;
-    
+
     WGPUSurfaceDescriptor surfaceDesc = {};
     surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
-    
-    // [PERS ENGINE CALL STACK]
-    // Application::OnInitialize()
-    // └─> Window::CreateSurface() [Platform layer에서 처리]
-    //     └─> WebGPURenderer::CreateSurface(windowHandle)
-    //         └─> wgpuInstanceCreateSurface(instance, &surfaceDesc)
-    // Parameters:
-    //   - surfaceDesc: Window system integration (HWND, NSWindow, X11, etc.)
-    //   - Pers에서는 플랫폼 추상화 레이어가 처리
+
+    // [PERS V2 CALL STACK]
+    // Application::CreateWindow(WindowDesc{width: 800, height: 600})
+    // └─> Window::GetNativeHandle() → void* hwnd
+    // └─> IInstance::createSurface(hwnd)
+    //     └─> WebGPUInstance::createSurface(void* windowHandle)
+    //         └─> WGPUSurfaceDescriptor surfaceDesc = BuildSurfaceDesc(hwnd)
+    //         └─> _surfaces.push_back(wgpuInstanceCreateSurface(_instance, &surfaceDesc))
+    // Returns: std::shared_ptr<ISurface>
+    // Note: Surface는 OS window와 GPU를 연결하는 인터페이스
     demo.surface = wgpuInstanceCreateSurface(demo.instance, &surfaceDesc);
 #else
     #error "Only Windows platform is currently supported"
 #endif
-    
+
     if (!demo.surface) {
         std::cerr << "Failed to create surface" << std::endl;
+        
+        // [PERS V2 CALL STACK]
+        // Error cleanup - surface 생성 실패
+        // ~WebGPUInstance() [shared_ptr destructor]
+        // └─> if (_instance) wgpuInstanceRelease(_instance)
+        // Note: V2는 RAII와 shared_ptr로 자동 cleanup
         wgpuInstanceRelease(demo.instance);
         glfwDestroyWindow(window);
         glfwTerminate();
         return -1;
     }
-    
+
     // Request adapter
     WGPURequestAdapterOptions adapterOptions = {};
     adapterOptions.compatibleSurface = demo.surface;
     adapterOptions.powerPreference = WGPUPowerPreference_HighPerformance;
-    
+
     WGPURequestAdapterCallbackInfo adapterCallbackInfo = {};
     adapterCallbackInfo.callback = handleRequestAdapter;
     adapterCallbackInfo.userdata1 = &demo;
-    
-    // [PERS ENGINE CALL STACK]
-    // Renderer::Initialize()
-    // └─> WebGPURenderer::RequestAdapter()
-    //     └─> wgpuInstanceRequestAdapter(instance, &adapterOptions, callback)
-    // Parameters:
-    //   - adapterOptions.powerPreference: RendererConfig.powerMode
-    //   - adapterOptions.compatibleSurface: SwapChain의 surface
-    //   - callback: 내부 핸들러가 처리 후 Promise/Future로 반환
+
+    // [PERS V2 CALL STACK]
+    // Application::Initialize() [continued]
+    // └─> IInstance::requestAdapter(AdapterOptions{.powerPreference = PowerPreference::HighPerformance})
+    //     └─> WebGPUInstance::requestAdapter(const AdapterOptions& options)
+    //         └─> WGPURequestAdapterOptions wgpuOptions = ConvertToWGPU(options)
+    //         └─> wgpuOptions.compatibleSurface = surface ? surface->GetHandle() : nullptr
+    //         └─> wgpuInstanceRequestAdapter(_instance, &wgpuOptions, callback)
+    //         └─> while (!adapterReceived) {
+    //                 wgpuInstanceProcessEvents(_instance);
+    //                 std::this_thread::sleep_for(10ms);
+    //             }
+    // Returns: std::shared_ptr<IAdapter>
+    // Note: V2는 비동기 API를 동기적으로 래핑하여 사용 편의성 제공
     wgpuInstanceRequestAdapter(demo.instance, &adapterOptions, adapterCallbackInfo);
     wgpuInstanceProcessEvents(demo.instance);
-    
+
     if (!demo.adapter) {
         std::cerr << "Failed to get adapter" << std::endl;
+        
+        // [PERS V2 CALL STACK]
+        // Error cleanup - adapter 요청 실패
+        // ~WebGPUSurface() → wgpuSurfaceRelease(_surface)
+        // ~WebGPUInstance() → wgpuInstanceRelease(_instance)
+        // Note: 역순으로 cleanup (LIFO)
         wgpuSurfaceRelease(demo.surface);
         wgpuInstanceRelease(demo.instance);
         glfwDestroyWindow(window);
         glfwTerminate();
         return -1;
     }
-    
+
     // Get adapter info
+    // [PERS V2 CALL STACK]
+    // IAdapter::getProperties()
+    // └─> WebGPUAdapter::getProperties()
+    //     └─> WGPUAdapterInfo info = {};
+    //     └─> wgpuAdapterGetInfo(_adapter, &info)
+    //     └─> return AdapterProperties{
+    //            .vendorID = info.vendorID,
+    //            .deviceID = info.deviceID,
+    //            .name = std::string(info.device),
+    //            .driverDescription = std::string(info.description),
+    //            .adapterType = ConvertAdapterType(info.adapterType),
+    //            .backendType = ConvertBackendType(info.backendType)
+    //         }
+    // Returns: AdapterProperties struct
     WGPUAdapterInfo adapterInfo = {};
     wgpuAdapterGetInfo(demo.adapter, &adapterInfo);
     std::cout << "Adapter: ";
     printStringView(adapterInfo.description);
     std::cout << std::endl;
-    
+
     // Request device
     WGPUDeviceDescriptor deviceDesc = {};
     deviceDesc.label = makeStringView("Triangle Device");
-    
+
     WGPUDeviceLostCallbackInfo lostInfo = {};
     lostInfo.callback = handleDeviceLost;
     deviceDesc.deviceLostCallbackInfo = lostInfo;
-    
+
     WGPUUncapturedErrorCallbackInfo errorInfo = {};
     errorInfo.callback = handleUncapturedError;
     deviceDesc.uncapturedErrorCallbackInfo = errorInfo;
-    
+
     WGPURequestDeviceCallbackInfo deviceCallbackInfo = {};
     deviceCallbackInfo.callback = handleRequestDevice;
     deviceCallbackInfo.userdata1 = &demo;
-    
-    // [PERS ENGINE CALL STACK]
-    // Renderer::Initialize()
-    // └─> WebGPURenderer::CreateDevice()
-    //     └─> wgpuAdapterRequestDevice(adapter, &deviceDesc, callback)
-    // Parameters:
-    //   - deviceDesc.requiredFeatures: 엔진이 필요로 하는 기능들
-    //   - deviceDesc.requiredLimits: 최소 리소스 제한
-    //   - deviceLostCallback: 엔진의 에러 복구 시스템과 연결
-    //   - uncapturedErrorCallback: Logger 시스템으로 전달
+
+    // [PERS V2 CALL STACK]
+    // IAdapter::createDevice(DeviceDescriptor{.requiredFeatures = {}, .requiredLimits = {}})
+    // └─> WebGPUAdapter::createDevice(const DeviceDescriptor& desc)
+    //     └─> WGPUDeviceDescriptor wgpuDesc = ConvertToWGPU(desc)
+    //     └─> SetupCallbacks(wgpuDesc) [device lost, uncaptured error]
+    //     └─> wgpuAdapterRequestDevice(_adapter, &wgpuDesc, callback)
+    //     └─> while (!deviceReceived) {
+    //             wgpuInstanceProcessEvents(_instance);
+    //         }
+    //     └─> auto device = std::make_shared<WebGPUDevice>(wgpuDevice)
+    //     └─> device->Initialize() [
+    //             _queue = std::make_shared<WebGPUQueue>(wgpuDeviceGetQueue(_device)),
+    //             _resourceFactory = std::make_shared<WebGPUResourceFactory>(_device)
+    //         ]
+    // Returns: std::shared_ptr<IDevice>
+    // Creates: IQueue, IResourceFactory 자동 생성
     wgpuAdapterRequestDevice(demo.adapter, &deviceDesc, deviceCallbackInfo);
     wgpuInstanceProcessEvents(demo.instance);
-    
+
     if (!demo.device) {
         std::cerr << "Failed to get device" << std::endl;
+        
+        // [PERS V2 CALL STACK]
+        // Error cleanup - device 생성 실패
+        // ~WebGPUAdapter() → wgpuAdapterRelease(_adapter)
+        // ~WebGPUSurface() → wgpuSurfaceRelease(_surface)
+        // ~WebGPUInstance() → wgpuInstanceRelease(_instance)
         wgpuAdapterRelease(demo.adapter);
         wgpuSurfaceRelease(demo.surface);
         wgpuInstanceRelease(demo.instance);
@@ -264,18 +318,29 @@ int main() {
         glfwTerminate();
         return -1;
     }
-    
+
     // Get queue
-    // [PERS ENGINE CALL STACK]
-    // Renderer::Initialize()
-    // └─> WebGPURenderer::_queue = wgpuDeviceGetQueue(_device)
-    // Note: Queue는 Renderer 내부에서 관리, 외부 노출 없음
+    // [PERS V2 CALL STACK]
+    // IDevice::getQueue()
+    // └─> WebGPUDevice::getQueue()
+    //     └─> return _queue; // 이미 device 생성시 초기화됨
+    // Note: WebGPUDevice 생성자에서:
+    //       _queue = std::make_shared<WebGPUQueue>(wgpuDeviceGetQueue(_device))
+    // Returns: std::shared_ptr<IQueue>
+    // Usage: Command buffer submission
     WGPUQueue queue = wgpuDeviceGetQueue(demo.device);
-    
+
     // Load shader
     std::string shaderCode = loadShaderFile("shader.wgsl");
     if (shaderCode.empty()) {
         std::cerr << "Failed to load shader" << std::endl;
+        
+        // [PERS V2 CALL STACK] - Error cleanup
+        // ~WebGPUQueue() → wgpuQueueRelease(_queue)
+        // ~WebGPUDevice() → wgpuDeviceRelease(_device)
+        // ~WebGPUAdapter() → wgpuAdapterRelease(_adapter)
+        // ~WebGPUSurface() → wgpuSurfaceRelease(_surface)
+        // ~WebGPUInstance() → wgpuInstanceRelease(_instance)
         wgpuQueueRelease(queue);
         wgpuDeviceRelease(demo.device);
         wgpuAdapterRelease(demo.adapter);
@@ -285,28 +350,35 @@ int main() {
         glfwTerminate();
         return -1;
     }
-    
+
     // Create shader module
-    // [PERS ENGINE CALL STACK]
-    // Material::Create("shaders/basic.wgsl")
-    // └─> ShaderManager::LoadShader(path)
-    //     └─> WebGPURenderer::CreateShaderModule(shaderCode)
-    //         └─> wgpuDeviceCreateShaderModule(device, &shaderDesc)
-    // Parameters:
-    //   - shaderCode: 파일에서 로드하거나 #include 처리 후 전달
-    //   - label: 디버깅용 이름 (파일명 기반)
-    //   - Pers는 ShaderCache로 중복 컴파일 방지
     WGPUShaderSourceWGSL wgslSource = {};
     wgslSource.chain.sType = WGPUSType_ShaderSourceWGSL;
     wgslSource.code = makeStringView(shaderCode.c_str());
-    
+
     WGPUShaderModuleDescriptor shaderDesc = {};
     shaderDesc.label = makeStringView("Triangle Shader");
     shaderDesc.nextInChain = &wgslSource.chain;
-    
+
+    // [PERS V2 CALL STACK]
+    // ShaderLibrary::LoadShader("triangle.wgsl")
+    // └─> IResourceFactory::createShaderModule(ShaderModuleDesc{.source = code, .stage = ShaderStage::Vertex|Fragment})
+    //     └─> WebGPUResourceFactory::createShaderModule(const ShaderModuleDesc& desc)
+    //         └─> WGPUShaderModuleDescriptor shaderDesc = {};
+    //         └─> shaderDesc.label = desc.label.c_str();
+    //         └─> WGPUShaderSourceWGSL wgslDesc = {};
+    //         └─> wgslDesc.code = desc.source.c_str();
+    //         └─> shaderDesc.nextInChain = &wgslDesc.chain;
+    //         └─> WGPUShaderModule module = wgpuDeviceCreateShaderModule(_device, &shaderDesc)
+    //         └─> return std::make_shared<WebGPUShaderModule>(module)
+    // Returns: std::shared_ptr<IShaderModule>
+    // Note: ShaderLibrary caches modules by hash(source) to avoid recompilation
     WGPUShaderModule shaderModule = wgpuDeviceCreateShaderModule(demo.device, &shaderDesc);
     if (!shaderModule) {
         std::cerr << "Failed to create shader module" << std::endl;
+        
+        // [PERS V2 CALL STACK] - Shader creation failure cleanup
+        // Resource cleanup in reverse order
         wgpuQueueRelease(queue);
         wgpuDeviceRelease(demo.device);
         wgpuAdapterRelease(demo.adapter);
@@ -316,51 +388,67 @@ int main() {
         glfwTerminate();
         return -1;
     }
-    
+
     // Create pipeline layout
-    // [PERS ENGINE CALL STACK]
-    // Pipeline::Create(PipelineDesc{shader, vertexLayout, ...})
-    // └─> WebGPURenderer::CreatePipelineLayout(bindGroupLayouts[])
-    //     └─> wgpuDeviceCreatePipelineLayout(device, &layoutDesc)
-    // Parameters:
-    //   - bindGroupLayouts: Pers의 4-set 계층 (Frame/Pass/Material/Object)
-    //   - Pers는 표준 레이아웃을 캐싱하여 재사용
     WGPUPipelineLayoutDescriptor pipelineLayoutDesc = {};
     pipelineLayoutDesc.label = makeStringView("Pipeline Layout");
     pipelineLayoutDesc.bindGroupLayoutCount = 0;
-    
+
+    // [PERS V2 CALL STACK]
+    // IResourceFactory::createPipelineLayout(PipelineLayoutDesc{.bindGroupLayouts = {}})
+    // └─> WebGPUResourceFactory::createPipelineLayout(const PipelineLayoutDesc& desc)
+    //     └─> WGPUPipelineLayoutDescriptor layoutDesc = {};
+    //     └─> layoutDesc.label = desc.label.c_str();
+    //     └─> std::vector<WGPUBindGroupLayout> wgpuLayouts;
+    //     └─> for (auto& layout : desc.bindGroupLayouts) {
+    //             wgpuLayouts.push_back(layout->GetHandle());
+    //         }
+    //     └─> layoutDesc.bindGroupLayoutCount = wgpuLayouts.size();
+    //     └─> layoutDesc.bindGroupLayouts = wgpuLayouts.data();
+    //     └─> WGPUPipelineLayout layout = wgpuDeviceCreatePipelineLayout(_device, &layoutDesc)
+    //     └─> return std::make_shared<WebGPUPipelineLayout>(layout)
+    // Returns: std::shared_ptr<IPipelineLayout>
+    // Note: V2 uses 4-tier binding model (Frame/Pass/Material/Object)
     WGPUPipelineLayout pipelineLayout = wgpuDeviceCreatePipelineLayout(demo.device, &pipelineLayoutDesc);
-    
+
     // Get surface capabilities
-    // [PERS ENGINE CALL STACK]
-    // SwapChain::Initialize()
-    // └─> wgpuSurfaceGetCapabilities(surface, adapter, &caps)
-    // Note: SwapChain이 내부적으로 처리, 표면 포맷 자동 선택
+    // [PERS V2 CALL STACK]
+    // ISurface::GetCapabilities(adapter)
+    // └─> WebGPUSurface::GetCapabilities(const std::shared_ptr<IAdapter>& adapter)
+    //     └─> WGPUSurfaceCapabilities caps = {};
+    //     └─> wgpuSurfaceGetCapabilities(_surface, adapter->GetHandle(), &caps)
+    //     └─> return SurfaceCapabilities{
+    //            .formats = ConvertFormats(caps.formats, caps.formatCount),
+    //            .presentModes = ConvertPresentModes(caps.presentModes, caps.presentModeCount),
+    //            .alphaModes = ConvertAlphaModes(caps.alphaModes, caps.alphaModeCount)
+    //         }
+    // Returns: SurfaceCapabilities
+    // Used for: SwapChain configuration
     WGPUSurfaceCapabilities surfaceCapabilities = {};
     wgpuSurfaceGetCapabilities(demo.surface, demo.adapter, &surfaceCapabilities);
-    
+
     // Create render pipeline
     WGPUVertexState vertexState = {};
     vertexState.module = shaderModule;
     vertexState.entryPoint = makeStringView("vs_main");
-    
+
     WGPUColorTargetState colorTarget = {};
     colorTarget.format = surfaceCapabilities.formats[0];
     colorTarget.writeMask = WGPUColorWriteMask_All;
-    
+
     WGPUFragmentState fragmentState = {};
     fragmentState.module = shaderModule;
     fragmentState.entryPoint = makeStringView("fs_main");
     fragmentState.targetCount = 1;
     fragmentState.targets = &colorTarget;
-    
+
     WGPUPrimitiveState primitiveState = {};
     primitiveState.topology = WGPUPrimitiveTopology_TriangleList;
-    
+
     WGPUMultisampleState multisampleState = {};
     multisampleState.count = 1;
     multisampleState.mask = 0xFFFFFFFF;
-    
+
     WGPURenderPipelineDescriptor pipelineDesc = {};
     pipelineDesc.label = makeStringView("Render Pipeline");
     pipelineDesc.layout = pipelineLayout;
@@ -368,20 +456,38 @@ int main() {
     pipelineDesc.fragment = &fragmentState;
     pipelineDesc.primitive = primitiveState;
     pipelineDesc.multisample = multisampleState;
-    
-    // [PERS ENGINE CALL STACK]
-    // Pipeline::Create(PipelineDesc{...})
-    // └─> PipelineCache::GetOrCreate(desc) [중복 생성 방지]
-    //     └─> WebGPURenderer::CreateRenderPipeline(pipelineDesc)
-    //         └─> wgpuDeviceCreateRenderPipeline(device, &pipelineDesc)
-    // Parameters:
-    //   - vertexState: VertexLayout에서 자동 생성
-    //   - fragmentState: Material의 shader 설정
-    //   - primitiveState: Mesh의 topology
-    //   - Pers는 PSO(Pipeline State Object) 캐싱으로 성능 최적화
+
+    // [PERS V2 CALL STACK]
+    // PipelineCache::GetOrCreateGraphicsPipeline(GraphicsPipelineDesc{...})
+    // └─> uint64_t hash = HashPipelineDesc(desc)
+    // └─> if (cache.contains(hash)) return cache[hash];
+    // └─> IResourceFactory::createGraphicsPipeline(desc)
+    //     └─> WebGPUResourceFactory::createGraphicsPipeline(const GraphicsPipelineDesc& desc)
+    //         └─> WGPURenderPipelineDescriptor pipelineDesc = {};
+    //         └─> SetupVertexState(pipelineDesc.vertex, desc.vertexShader, desc.vertexLayout)
+    //         └─> SetupFragmentState(pipelineDesc.fragment, desc.fragmentShader, desc.colorTargets)
+    //         └─> SetupPrimitiveState(pipelineDesc.primitive, desc.primitiveTopology)
+    //         └─> SetupDepthStencilState(pipelineDesc.depthStencil, desc.depthStencil)
+    //         └─> SetupMultisampleState(pipelineDesc.multisample, desc.multisample)
+    //         └─> pipelineDesc.layout = desc.layout ? desc.layout->GetHandle() : nullptr
+    //         └─> WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(_device, &pipelineDesc)
+    //         └─> auto result = std::make_shared<WebGPUGraphicsPipeline>(pipeline, desc)
+    //         └─> cache[hash] = result;
+    //         └─> return result;
+    // Returns: std::shared_ptr<IGraphicsPipeline>
+    // Cached by: Pipeline state hash for reuse
     demo.renderPipeline = wgpuDeviceCreateRenderPipeline(demo.device, &pipelineDesc);
     if (!demo.renderPipeline) {
         std::cerr << "Failed to create render pipeline" << std::endl;
+        
+        // [PERS V2 CALL STACK] - Pipeline creation failure cleanup
+        // ~WebGPUPipelineLayout() → wgpuPipelineLayoutRelease(_layout)
+        // ~WebGPUShaderModule() → wgpuShaderModuleRelease(_module)
+        // ~WebGPUQueue() → wgpuQueueRelease(_queue)
+        // ~WebGPUDevice() → wgpuDeviceRelease(_device)
+        // ~WebGPUAdapter() → wgpuAdapterRelease(_adapter)
+        // ~WebGPUSurface() → wgpuSurfaceRelease(_surface)
+        // ~WebGPUInstance() → wgpuInstanceRelease(_instance)
         wgpuPipelineLayoutRelease(pipelineLayout);
         wgpuShaderModuleRelease(shaderModule);
         wgpuQueueRelease(queue);
@@ -393,145 +499,228 @@ int main() {
         glfwTerminate();
         return -1;
     }
-    
+
     // Configure surface
     demo.config.device = demo.device;
     demo.config.usage = WGPUTextureUsage_RenderAttachment;
     demo.config.format = surfaceCapabilities.formats[0];
     demo.config.presentMode = WGPUPresentMode_Fifo;
     demo.config.alphaMode = surfaceCapabilities.alphaModes[0];
-    
+
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     demo.config.width = width;
     demo.config.height = height;
-    
-    // [PERS ENGINE CALL STACK]
-    // SwapChain::Configure(width, height, format)
-    // └─> wgpuSurfaceConfigure(surface, &config)
-    // Note: Window resize 시에도 호출됨
+
+    // [PERS V2 CALL STACK]
+    // IDevice::createSwapChain(surface, SwapChainDesc{.width = 800, .height = 600, .format = BGRA8Unorm})
+    // └─> WebGPUDevice::createSwapChain(const std::shared_ptr<ISurface>& surface, const SwapChainDesc& desc)
+    //     └─> WGPUSurfaceConfiguration config = {};
+    //     └─> config.device = _device;
+    //     └─> config.format = ConvertToWGPU(desc.format);
+    //     └─> config.usage = WGPUTextureUsage_RenderAttachment;
+    //     └─> config.presentMode = ConvertToWGPU(desc.presentMode);
+    //     └─> config.alphaMode = ConvertToWGPU(desc.alphaMode);
+    //     └─> config.width = desc.width;
+    //     └─> config.height = desc.height;
+    //     └─> wgpuSurfaceConfigure(surface->GetHandle(), &config)
+    //     └─> return std::make_shared<WebGPUSwapChain>(surface, config)
+    // Returns: std::shared_ptr<ISwapChain>
+    // State: SwapChain ready for rendering
     wgpuSurfaceConfigure(demo.surface, &demo.config);
     demo.isInitialized = true;
-    
+
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        
+
         // Get current texture
-        // [PERS ENGINE CALL STACK]
-        // Renderer::BeginFrame()
-        // └─> SwapChain::AcquireNextTexture()
-        //     └─> wgpuSurfaceGetCurrentTexture(surface, &texture)
-        // Returns: 현재 프레임의 백버퍼 텍스처
-        // Note: Pers는 이를 RenderTarget으로 래핑
+        // [PERS V2 CALL STACK]
+        // Application::RenderFrame()
+        // └─> ISwapChain::getCurrentTextureView()
+        //     └─> WebGPUSwapChain::getCurrentTextureView()
+        //         └─> WGPUSurfaceTexture surfaceTexture = {};
+        //         └─> wgpuSurfaceGetCurrentTexture(_surface, &surfaceTexture)
+        //         └─> if (surfaceTexture.status != Success) HandleError();
+        //         └─> WGPUTextureView view = wgpuTextureCreateView(surfaceTexture.texture, nullptr)
+        //         └─> _currentTexture = surfaceTexture.texture;
+        //         └─> return std::make_shared<WebGPUTextureView>(view)
+        // Returns: std::shared_ptr<ITextureView>
+        // Note: SwapChain manages texture lifetime until present
         WGPUSurfaceTexture surfaceTexture = {};
         wgpuSurfaceGetCurrentTexture(demo.surface, &surfaceTexture);
-        
+
         if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
             surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
             if (surfaceTexture.texture) {
+                // [PERS V2 CALL STACK]
+                // SwapChain texture acquisition failed
+                // ~WebGPUTexture() → wgpuTextureRelease(_texture)
                 wgpuTextureRelease(surfaceTexture.texture);
             }
             continue;
         }
-        
+
         // Create texture view
+        // [PERS V2 CALL STACK]
+        // ISwapChain::getCurrentTextureView() [continued]
+        // └─> wgpuTextureCreateView(surfaceTexture.texture, nullptr)
+        // Note: V2에서는 SwapChain이 내부에서 처리하여 ITextureView로 반환
         WGPUTextureView textureView = wgpuTextureCreateView(surfaceTexture.texture, nullptr);
-        
+
         // Create command encoder
-        // [PERS ENGINE CALL STACK]
-        // Renderer::BeginFrame()
-        // └─> CommandPool::GetOrCreate() [재사용 풀]
-        //     └─> WebGPUCommandRecorder::WebGPUCommandRecorder()
-        //         └─> wgpuDeviceCreateCommandEncoder(device, &desc)
-        // Returns: std::shared_ptr<ICommandRecorder>
-        // Note: Pers는 CommandRecorder를 프레임마다 재사용
+        // [PERS V2 CALL STACK]
+        // Application::RenderFrame() [continued]
+        // └─> IDevice::createCommandEncoder(CommandEncoderDesc{.label = "Frame Encoder"})
+        //     └─> WebGPUDevice::createCommandEncoder(const CommandEncoderDesc& desc)
+        //         └─> WGPUCommandEncoderDescriptor encoderDesc = {};
+        //         └─> encoderDesc.label = desc.label.c_str();
+        //         └─> WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(_device, &encoderDesc)
+        //         └─> return std::make_shared<WebGPUCommandEncoder>(encoder)
+        // Returns: std::shared_ptr<ICommandEncoder>
+        // State: Ready for command recording
         WGPUCommandEncoderDescriptor encoderDesc = {};
         encoderDesc.label = makeStringView("Command Encoder");
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(demo.device, &encoderDesc);
-        
+
         // Begin render pass
         WGPUColor clearColor = {0.0f, 0.2f, 0.4f, 1.0f};
-        
+
         WGPURenderPassColorAttachment colorAttachment = {};
         colorAttachment.view = textureView;
         colorAttachment.loadOp = WGPULoadOp_Clear;
         colorAttachment.storeOp = WGPUStoreOp_Store;
         colorAttachment.clearValue = clearColor;
         colorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-        
+
         WGPURenderPassDescriptor renderPassDesc = {};
         renderPassDesc.label = makeStringView("Render Pass");
         renderPassDesc.colorAttachmentCount = 1;
         renderPassDesc.colorAttachments = &colorAttachment;
-        
-        // [PERS ENGINE CALL STACK]
-        // ICommandRecorder::BeginRenderPass(nullptr, ClearValue{0.0f, 0.2f, 0.4f, 1.0f})
-        // └─> WebGPUCommandRecorder::BeginRenderPass(target, clear)
-        //     └─> wgpuCommandEncoderBeginRenderPass(encoder, &passDesc)
-        // Parameters:
-        //   - nullptr: 현재 백버퍼를 의미 (Pers의 핵심 철학)
-        //   - clear: ClearValue 구조체로 전달
-        //   - passDesc.colorAttachments[0].view: 백버퍼 texture view
-        // State: _state = RecorderState::InRenderPass
+
+        // [PERS V2 CALL STACK]
+        // ICommandEncoder::beginRenderPass(RenderPassDesc{.colorAttachments = {{.view = backbuffer, .clearValue = {0.0f, 0.2f, 0.4f, 1.0f}}}})
+        // └─> WebGPUCommandEncoder::beginRenderPass(const RenderPassDesc& desc)
+        //     └─> WGPURenderPassDescriptor renderPassDesc = {};
+        //     └─> std::vector<WGPURenderPassColorAttachment> colorAttachments;
+        //     └─> for (auto& attachment : desc.colorAttachments) {
+        //             WGPURenderPassColorAttachment wgpuAttachment = {};
+        //             wgpuAttachment.view = attachment.view->GetHandle();
+        //             wgpuAttachment.loadOp = ConvertLoadOp(attachment.loadOp);
+        //             wgpuAttachment.storeOp = ConvertStoreOp(attachment.storeOp);
+        //             wgpuAttachment.clearValue = ConvertColor(attachment.clearValue);
+        //             colorAttachments.push_back(wgpuAttachment);
+        //         }
+        //     └─> renderPassDesc.colorAttachments = colorAttachments.data();
+        //     └─> renderPassDesc.colorAttachmentCount = colorAttachments.size();
+        //     └─> WGPURenderPassEncoder encoder = wgpuCommandEncoderBeginRenderPass(_encoder, &renderPassDesc)
+        //     └─> return std::make_shared<WebGPURenderPassEncoder>(encoder)
+        // Returns: std::shared_ptr<IRenderPassEncoder>
+        // State: Recording render commands
         WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
-        
+
         // Draw triangle
-        // [PERS ENGINE CALL STACK]
-        // ICommandRecorder::SetPipeline(pipeline)
-        // └─> WebGPUCommandRecorder::SetPipeline(pipeline)
-        //     └─> wgpuRenderPassEncoderSetPipeline(pass, pipeline->GetHandle())
+        // [PERS V2 CALL STACK]
+        // IRenderPassEncoder::cmdSetGraphicsPipeline(pipeline)
+        // └─> WebGPURenderPassEncoder::cmdSetGraphicsPipeline(const std::shared_ptr<IGraphicsPipeline>& pipeline)
+        //     └─> wgpuRenderPassEncoderSetPipeline(_encoder, pipeline->GetHandle())
+        //     └─> _currentPipeline = pipeline;
+        // State: Pipeline bound for drawing
         wgpuRenderPassEncoderSetPipeline(renderPass, demo.renderPipeline);
-        
-        // [PERS ENGINE CALL STACK]
-        // ICommandRecorder::Draw(3, 1)
-        // └─> WebGPUCommandRecorder::Draw(vertexCount, instanceCount)
-        //     └─> wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0)
-        // Note: Pers에서는 주로 DrawIndexed 사용 (Mesh 기반)
+        // [PERS V2 CALL STACK]
+        // IRenderPassEncoder::cmdDraw(3, 1, 0, 0)
+        // └─> WebGPURenderPassEncoder::cmdDraw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+        //     └─> ValidateDrawState() [check pipeline, vertex buffers bound]
+        //     └─> wgpuRenderPassEncoderDraw(_encoder, vertexCount, instanceCount, firstVertex, firstInstance)
+        // Parameters:
+        //   - vertexCount: 3 (triangle)
+        //   - instanceCount: 1 (single instance)
+        //   - firstVertex: 0
+        //   - firstInstance: 0
         wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0);
-        
-        // [PERS ENGINE CALL STACK]
-        // ICommandRecorder::EndRenderPass()
-        // └─> WebGPUCommandRecorder::EndRenderPass()
-        //     └─> wgpuRenderPassEncoderEnd(pass)
-        // State: _state = RecorderState::Recording
-        // Note: Pers는 EndRenderPass 호출 없이 EndFrame 시 에러 발생
+        // [PERS V2 CALL STACK]
+        // IRenderPassEncoder::end()
+        // └─> WebGPURenderPassEncoder::end()
+        //     └─> wgpuRenderPassEncoderEnd(_encoder)
+        //     └─> _ended = true;
+        // State: Render pass commands finalized
         wgpuRenderPassEncoderEnd(renderPass);
-        wgpuRenderPassEncoderRelease(renderPass);
         
+        // [PERS V2 CALL STACK]
+        // ~WebGPURenderPassEncoder()
+        // └─> if (_encoder) wgpuRenderPassEncoderRelease(_encoder)
+        wgpuRenderPassEncoderRelease(renderPass);
+
         // Finish command buffer
+        // [PERS V2 CALL STACK]
+        // ICommandEncoder::finish()
+        // └─> WebGPUCommandEncoder::finish()
+        //     └─> ValidateState() [ensure no open render/compute passes]
+        //     └─> WGPUCommandBufferDescriptor cmdBufferDesc = {};
+        //     └─> cmdBufferDesc.label = "Command Buffer";
+        //     └─> WGPUCommandBuffer cmdBuffer = wgpuCommandEncoderFinish(_encoder, &cmdBufferDesc)
+        //     └─> return std::make_shared<WebGPUCommandBuffer>(cmdBuffer)
+        // Returns: std::shared_ptr<ICommandBuffer>
+        // State: Commands ready for submission
         WGPUCommandBufferDescriptor cmdBufferDesc = {};
         cmdBufferDesc.label = makeStringView("Command Buffer");
         WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(encoder, &cmdBufferDesc);
+        
+        // [PERS V2 CALL STACK]
+        // ~WebGPUCommandEncoder()
+        // └─> if (_encoder) wgpuCommandEncoderRelease(_encoder)
         wgpuCommandEncoderRelease(encoder);
-        
+
         // Submit command buffer
-        // [PERS ENGINE CALL STACK]
-        // Renderer::EndFrame(commandRecorder)
-        // └─> WebGPUCommandRecorder::Finish() [validation check]
-        //     └─> wgpuCommandEncoderFinish(encoder, &desc)
-        // └─> WebGPURenderer::Submit(commandBuffer)
-        //     └─> wgpuQueueSubmit(queue, 1, &commandBuffer)
-        // Validation:
-        //   - if (IsInRenderPass()) throw "RenderPass not ended!"
-        //   - Frame경계 검증
+        // [PERS V2 CALL STACK]
+        // IQueue::submit(commandBuffer)
+        // └─> WebGPUQueue::submit(const std::shared_ptr<ICommandBuffer>& commandBuffer)
+        //     └─> WGPUCommandBuffer buffers[] = { commandBuffer->GetHandle() };
+        //     └─> wgpuQueueSubmit(_queue, 1, buffers)
+        //     └─> _submittedCommandBuffers.push_back(commandBuffer) [keep alive until GPU done]
+        // State: Commands submitted to GPU for execution
         wgpuQueueSubmit(queue, 1, &commandBuffer);
+        
+        // [PERS V2 CALL STACK]
+        // ~WebGPUCommandBuffer()
+        // └─> if (_commandBuffer) wgpuCommandBufferRelease(_commandBuffer)
         wgpuCommandBufferRelease(commandBuffer);
-        
+
         // Present
-        // [PERS ENGINE CALL STACK]
-        // Renderer::EndFrame(commandRecorder) [계속]
-        // └─> SwapChain::Present()
-        //     └─> wgpuSurfacePresent(surface)
-        // Note: Triple buffering - 다음 프레임 준비
+        // [PERS V2 CALL STACK]
+        // ISwapChain::present()
+        // └─> WebGPUSwapChain::present()
+        //     └─> wgpuSurfacePresent(_surface)
+        //     └─> _frameIndex = (_frameIndex + 1) % 3; [triple buffering]
+        //     └─> ReleaseCurrentTexture() [cleanup current frame resources]
+        // State: Frame presented to screen, next frame ready
         wgpuSurfacePresent(demo.surface);
-        
+
         // Cleanup frame resources
+        // [PERS V2 CALL STACK]
+        // Frame resource cleanup (V2에서는 SwapChain이 자동 관리)
+        // ~WebGPUTextureView() → wgpuTextureViewRelease(_view)
+        // SwapChain::ReleaseCurrentTexture() → wgpuTextureRelease(_currentTexture)
         wgpuTextureViewRelease(textureView);
         wgpuTextureRelease(surfaceTexture.texture);
     }
-    
+
     // Cleanup
+    // [PERS V2 CALL STACK]
+    // Application::Shutdown()
+    // └─> GraphicsSystem::Shutdown()
+    //     └─> PipelineCache::Clear()
+    //         └─> ~WebGPUGraphicsPipeline() → wgpuRenderPipelineRelease(_pipeline)
+    //     └─> ResourceFactory::ReleaseAll()
+    //         └─> ~WebGPUPipelineLayout() → wgpuPipelineLayoutRelease(_layout)
+    //         └─> ~WebGPUShaderModule() → wgpuShaderModuleRelease(_module)
+    //     └─> Device::Shutdown()
+    //         └─> ~WebGPUQueue() → wgpuQueueRelease(_queue)
+    //         └─> ~WebGPUDevice() → wgpuDeviceRelease(_device)
+    //     └─> ~WebGPUAdapter() → wgpuAdapterRelease(_adapter)
+    //     └─> ~WebGPUSurface() → wgpuSurfaceRelease(_surface)
+    //     └─> ~WebGPUInstance() → wgpuInstanceRelease(_instance)
+    // Note: V2 uses RAII and shared_ptr for automatic cleanup in correct order
     wgpuRenderPipelineRelease(demo.renderPipeline);
     wgpuPipelineLayoutRelease(pipelineLayout);
     wgpuShaderModuleRelease(shaderModule);
@@ -540,10 +729,10 @@ int main() {
     wgpuAdapterRelease(demo.adapter);
     wgpuSurfaceRelease(demo.surface);
     wgpuInstanceRelease(demo.instance);
-    
+
     glfwDestroyWindow(window);
     glfwTerminate();
-    
+
     std::cout << "=== Triangle2 example completed ===" << std::endl;
     return 0;
 }

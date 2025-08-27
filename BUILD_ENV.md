@@ -25,21 +25,21 @@
   - Required for all builds
 
 #### WebGPU Implementation
-- **wgpu-native**: v0.19.4.1
+- **wgpu-native**: v25.0.2.1
   - Can use pre-built binaries OR build from source
   - Source build requires Rust toolchain
-  - Pre-built location: `third_party/wgpu-native-bin/`
+  - Pre-built automatically downloaded to: `build/pers/wgpu-native-prebuilt/`
 
 ### Version Lock Details
 
-#### wgpu-native v0.19.4.1
+#### wgpu-native v25.0.2.1
 - **Repository**: https://github.com/gfx-rs/wgpu-native
-- **Tag**: v0.19.4.1
-- **Dependencies**:
-  - wgpu: 0.19.3
-  - wgpu-core: 0.19.3
-  - wgpu-hal: 0.19.3
-  - naga: 0.19.2
+- **Tag**: v25.0.2.1
+- **Release Date**: August 2025
+- **API Changes**: Uses Future-based async API
+- **Directory Structure**: 
+  - Headers in: `include/webgpu/`
+  - Libraries in: `lib/`
 
 #### Rust Toolchain (rust-toolchain.toml)
 ```toml
@@ -58,6 +58,7 @@ profile = "minimal"
 - **Compiler**: MSVC 19.44.35207.0
 - **CPU Architecture**: x64
 - **Build Type**: Debug/Release
+- **WebGPU Version**: wgpu-native v25.0.2.1
 
 ### Directory Structure
 
@@ -73,8 +74,9 @@ pers_graphics_engine/
 │   └── src/                 # Implementation
 ├── tests/                   # Test programs
 ├── third_party/            # External dependencies
-│   └── wgpu-native-bin/    # Pre-built WebGPU (optional)
+│   └── glm/                # GLM math library
 └── build/                   # Build output (generated)
+    └── pers/wgpu-native-prebuilt/  # Auto-downloaded WebGPU
 ```
 
 ### Build Instructions
@@ -108,13 +110,14 @@ ctest --test-dir build -C Debug
 
 ### Using Pre-built wgpu-native
 
-To avoid Rust dependency, download pre-built wgpu-native:
-1. Download from: https://github.com/gfx-rs/wgpu-native/releases/tag/v0.19.4.1
-2. Extract to: `third_party/wgpu-native-bin/`
-3. Files needed:
-   - `wgpu_native.dll`
-   - `wgpu_native.dll.lib`
-   - `wgpu.h` (header file)
+The build system automatically downloads pre-built wgpu-native binaries if Rust is not installed.
+- **Automatic download**: CMake fetches platform-specific binaries
+- **Version**: v25.0.2.1
+- **Location**: `build/pers/wgpu-native-prebuilt/`
+- **Platform naming**:
+  - Windows: `windows-x86_64-msvc`
+  - macOS: `macos-universal`
+  - Linux: `linux-x86_64`
 
 ### Troubleshooting
 
@@ -130,7 +133,8 @@ To avoid Rust dependency, download pre-built wgpu-native:
 - **Error**: LNK2019 unresolved external symbol
 - **Solution**: 
   1. Check if wgpu-native built successfully
-  2. Or use pre-built binaries in `third_party/wgpu-native-bin/`
+  2. Pre-built binaries are automatically downloaded if Rust is not installed
+  3. Check `build/pers/wgpu-native-prebuilt/` for downloaded files
 
 ### CI/CD Configuration
 
@@ -140,7 +144,7 @@ env:
   VCPKG_ROOT: C:/vcpkg
   CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake
   RUST_VERSION: 1.79.0
-  WGPU_NATIVE_VERSION: v0.19.4.1
+  WGPU_NATIVE_VERSION: v25.0.2.1
 ```
 
 ### Version Upgrade Guidelines
