@@ -212,7 +212,14 @@ int main() {
     demo.surface = wgpuInstanceCreateSurface(demo.instance, &surfaceDesc);
 #elif defined(__APPLE__)
     // macOS surface creation
-    id metalLayer = glfwGetCocoaMetalLayer(window);
+    // Create a CAMetalLayer and get the raw layer pointer
+    id metalLayer = nullptr;
+    NSWindow* nsWindow = glfwGetCocoaWindow(window);
+    if (nsWindow) {
+        [nsWindow.contentView setWantsLayer:YES];
+        metalLayer = [CAMetalLayer layer];
+        [nsWindow.contentView setLayer:metalLayer];
+    }
     
     WGPUSurfaceSourceMetalLayer surfaceSource = {};
     surfaceSource.chain.sType = WGPUSType_SurfaceSourceMetalLayer;

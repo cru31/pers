@@ -28,11 +28,26 @@ endif()
 # Create triangle2 executable
 add_executable(webgpu_triangle2 main.cpp)
 
+# For macOS, compile as Objective-C++ to use Cocoa
+if(APPLE)
+    set_source_files_properties(main.cpp PROPERTIES
+        COMPILE_FLAGS "-x objective-c++"
+    )
+endif()
+
 # Link libraries
 target_link_libraries(webgpu_triangle2 PRIVATE 
     pers_static  # Includes WebGPU
     glfw
 )
+
+# Link macOS frameworks if needed
+if(APPLE)
+    target_link_libraries(webgpu_triangle2 PRIVATE
+        "-framework Cocoa"
+        "-framework QuartzCore"
+    )
+endif()
 
 # Copy shader file to output directory
 add_custom_command(TARGET webgpu_triangle2 POST_BUILD
