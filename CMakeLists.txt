@@ -18,6 +18,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # Export compile commands for IDEs
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Include macOS-specific dylib fix module
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MacOSFixDylib.cmake)
+
 # Add pers library subdirectory
 add_subdirectory(pers)
 

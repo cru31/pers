@@ -12,18 +12,8 @@ target_link_libraries(test_pers_shared PRIVATE pers_shared)
 add_executable(test_pers_webgpu test_webgpu.cpp)
 target_link_libraries(test_pers_webgpu PRIVATE pers_static)
 
-# macOS-specific: Set RPATH for test executables to find wgpu-native dylib
-if(APPLE)
-    # Get the wgpu runtime directory from parent scope
-    get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
-    set(WGPU_RUNTIME_DIR "${PROJECT_ROOT}/third_party/wgpu-native-runtime")
-    
-    # Set RPATH for all test executables
-    set_target_properties(test_pers_static test_pers_shared test_pers_webgpu PROPERTIES
-        BUILD_RPATH "${WGPU_RUNTIME_DIR}/custom-build/lib;${WGPU_RUNTIME_DIR}/prebuilt/lib"
-        INSTALL_RPATH "@loader_path;@loader_path/../lib;${WGPU_RUNTIME_DIR}/custom-build/lib;${WGPU_RUNTIME_DIR}/prebuilt/lib"
-    )
-endif()
+# Fix macOS dylib references for all test executables
+fix_macos_dylib_for_targets(test_pers_static test_pers_shared test_pers_webgpu)
 
 # Add tests
 enable_testing()
