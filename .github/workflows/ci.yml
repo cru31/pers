@@ -223,6 +223,18 @@ jobs:
       with:
         submodules: recursive
     
+    - name: Setup Build Tools
+      run: |
+        # Check if cmake is already installed
+        if command -v cmake &> /dev/null; then
+          echo "CMake already installed: $(cmake --version | head -n1)"
+        else
+          brew install cmake
+        fi
+        # Install other tools if needed
+        brew list ninja &>/dev/null || brew install ninja
+        brew list pkg-config &>/dev/null || brew install pkg-config
+    
     - name: Detect Architecture
       run: |
         ARCH=$(uname -m)
