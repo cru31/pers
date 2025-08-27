@@ -53,9 +53,13 @@ pers_graphics_engine/
    ~/vcpkg/bootstrap-vcpkg.sh
    ```
 4. **Rust** (Optional - for building wgpu-native from source):
+   - Required version: 1.82.0 or later
    ```bash
    # Install from https://rustup.rs
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   
+   # The project uses rust-toolchain.toml to pin Rust version to 1.82.0
+   # This will be automatically installed when building from source
    ```
    Note: If Rust is not installed, pre-built WebGPU binaries will be downloaded automatically.
 
@@ -118,10 +122,10 @@ After building, test the libraries:
 
 ### Core Dependencies (Required)
 Managed automatically via vcpkg manifest mode:
-- **GLM** (1.0.1#1) - Graphics mathematics library
-- **wgpu-native** (v0.19.4.1) - WebGPU implementation
+- **GLM** (1.0.1#3) - Graphics mathematics library
+- **wgpu-native** (v25.0.2.1) - WebGPU implementation
   - Can use pre-built binaries or build from source
-  - Requires Rust 1.79.0 for source builds
+  - Requires Rust 1.82.0+ for source builds
 
 ### Optional Dependencies
 - **GLFW** - Window management (for samples/tests only)
@@ -129,13 +133,27 @@ Managed automatically via vcpkg manifest mode:
   - Not needed for core library
 
 ### WebGPU Build Options
-1. **Automatic (Recommended)**: CMake automatically handles WebGPU:
-   - If Rust is available: Builds from source (~1-2 minutes)
-   - If Rust is not available: Downloads pre-built binaries automatically
-   
-2. **Manual Pre-built**: To force using specific pre-built binaries:
-   - Download from [wgpu-native releases](https://github.com/gfx-rs/wgpu-native/releases/tag/v0.19.4.1)
-   - Extract to `third_party/wgpu-native-bin/`
+
+The project supports two WebGPU build methods, organized in separate directories:
+
+1. **Pre-built Binaries (Default)**: 
+   - Downloads pre-built wgpu-native binaries automatically
+   - Stored in `third_party/wgpu-native-runtime/prebuilt/`
+   - Build output: `build/wgpu-prebuilt/`
+   - Use CMake preset: `cmake --preset=windows-debug-download`
+
+2. **Build from Source**:
+   - Requires Rust 1.82.0+ (automatically installed via rust-toolchain.toml)
+   - Compiles wgpu-native from source (~5-10 minutes first build)
+   - Stored in `third_party/wgpu-native-runtime/custom-build/`
+   - Build output: `build/wgpu-compile/`
+   - Use CMake preset: `cmake --preset=windows-debug-compile`
+
+Available CMake presets:
+- `windows-debug-download` - Debug build with pre-built WebGPU
+- `windows-release-download` - Release build with pre-built WebGPU
+- `windows-debug-compile` - Debug build compiling WebGPU from source
+- `windows-release-compile` - Release build compiling WebGPU from source
 
 ## 📄 License
 

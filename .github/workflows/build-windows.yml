@@ -54,22 +54,14 @@ jobs:
     - name: Configure CMake (Download WebGPU)
       if: matrix.wgpu_method == 'download'
       run: |
-        cmake --preset windows-${{ matrix.build_type == 'Debug' && 'debug' || 'release' }} `
-          -DBUILD_TESTS=ON `
-          -DVCPKG_MANIFEST_FEATURES="tests"
+        cmake --preset windows-$(echo ${{ matrix.build_type }} | tr '[:upper:]' '[:lower:]')
+      shell: bash
 
     - name: Configure CMake (Compile WebGPU)
       if: matrix.wgpu_method == 'compile'
       run: |
-        # Ensure Rust is not found by temporarily renaming rustc
-        $rustPath = (Get-Command rustc -ErrorAction SilentlyContinue).Path
-        if ($rustPath) {
-          # Force CMake to think Rust is available for compilation
-          cmake --preset windows-${{ matrix.build_type == 'Debug' && 'debug' || 'release' }} `
-            -DBUILD_TESTS=ON `
-            -DVCPKG_MANIFEST_FEATURES="tests"
-        }
-      shell: pwsh
+        cmake --preset windows-$(echo ${{ matrix.build_type }} | tr '[:upper:]' '[:lower:]')
+      shell: bash
 
     - name: Build
       run: cmake --build build --config ${{ matrix.build_type }} --parallel

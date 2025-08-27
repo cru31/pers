@@ -2,91 +2,280 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  build:
+  build-windows:
+    name: Windows Build
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        build_type: [Debug, Release]
-        config: [core-only, with-tests]
-    
-    runs-on: ${{ matrix.os }}
+        config: [Debug, Release]
+        wgpu_method: [download, compile]
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     
-    - name: Install Linux dependencies
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y xorg-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
     
     - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: '6ecbbbdf31cba47aafa7cf6189b1e73e10ac61f8'
-        vcpkgJsonGlob: '**/vcpkg.json'
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+        C:\vcpkg\bootstrap-vcpkg.bat
+        echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
     
-    - name: Install Rust (50% chance to test source build)
-      if: hashFiles('**/vcpkg.json') != '' && matrix.build_type == 'Release'
+    - name: Setup Rust (for compile method)
+      if: matrix.wgpu_method == 'compile'
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.79.0
+        toolchain: 1.82.0
     
-    - name: Configure CMake (Core Only)
-      if: matrix.config == 'core-only'
-      run: |
-        cmake -B build \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
-          -DBUILD_TESTS=OFF \
-          -DBUILD_SAMPLES=OFF
-      shell: bash
+    - name: Cache vcpkg packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          C:\vcpkg\installed
+          C:\vcpkg\packages
+        key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-
     
-    - name: Configure CMake (With Tests and GLFW)
-      if: matrix.config == 'with-tests'
+    - name: Cache wgpu-native runtime
+      uses: actions/cache@v4
+      with:
+        path: third_party/wgpu-native-runtime
+        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-v25.0.2.1
+        restore-keys: |
+          ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
+    
+    - name: Configure CMake (Download)
+      if: matrix.wgpu_method == 'download'
       run: |
-        cmake -B build \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
-          -DVCPKG_MANIFEST_FEATURES="tests" \
-          -DBUILD_TESTS=ON \
-          -DBUILD_SAMPLES=OFF
-      shell: bash
+        cmake --preset=windows-${{ matrix.config }}-download
+    
+    - name: Configure CMake (Compile)
+      if: matrix.wgpu_method == 'compile'
+      run: |
+        cmake --preset=windows-${{ matrix.config }}-compile
     
     - name: Build
-      run: cmake --build build --config ${{ matrix.build_type }}
-    
-    - name: List build outputs
       run: |
-        echo "=== Build output structure ==="
-        ls -la build/ || dir build\
-        echo "=== Libraries ==="
-        ls -la build/lib/ || dir build\lib
-        echo "=== Binaries ==="
-        ls -la build/bin/ || dir build\bin
-      shell: bash
-      continue-on-error: true
+        $buildDir = if ("${{ matrix.wgpu_method }}" -eq "download") { "build/wgpu-prebuilt" } else { "build/wgpu-compile" }
+        $configDir = "${{ matrix.config }}".ToLower()
+        cmake --build "$buildDir/$configDir" --config ${{ matrix.config }} --parallel 4
     
-    - name: Test
-      if: matrix.config == 'with-tests'
-      working-directory: build
-      run: ctest -C ${{ matrix.build_type }} --output-on-failure
-    
-    - name: Run WebGPU Test
-      if: matrix.config == 'with-tests'
+    - name: Run Tests
       run: |
-        if [ -f "build/bin/${{ matrix.build_type }}/test_pers_webgpu" ]; then
-          ./build/bin/${{ matrix.build_type }}/test_pers_webgpu
-        elif [ -f "build/bin/${{ matrix.build_type }}/test_pers_webgpu.exe" ]; then
-          ./build/bin/${{ matrix.build_type }}/test_pers_webgpu.exe
-        elif [ -f "build/bin/test_pers_webgpu" ]; then
-          ./build/bin/test_pers_webgpu
+        $buildDir = if ("${{ matrix.wgpu_method }}" -eq "download") { "build/wgpu-prebuilt" } else { "build/wgpu-compile" }
+        $configDir = "${{ matrix.config }}".ToLower()
+        ctest --test-dir "$buildDir/$configDir" -C ${{ matrix.config }} --output-on-failure
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-${{ matrix.config }}-${{ matrix.wgpu_method }}
+        path: |
+          build/*/bin/${{ matrix.config }}/*.exe
+          build/*/bin/${{ matrix.config }}/*.dll
+          build/*/lib/${{ matrix.config }}/*.lib
+
+  build-linux:
+    name: Linux Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+        wgpu_method: [download, compile]
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          libx11-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          pkg-config
+    
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git $HOME/vcpkg
+        $HOME/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    
+    - name: Setup Rust (for compile method)
+      if: matrix.wgpu_method == 'compile'
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: 1.82.0
+    
+    - name: Cache vcpkg packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/vcpkg/installed
+          ~/vcpkg/packages
+        key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-
+    
+    - name: Cache wgpu-native runtime
+      uses: actions/cache@v4
+      with:
+        path: third_party/wgpu-native-runtime
+        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-v25.0.2.1
+        restore-keys: |
+          ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
+    
+    - name: Configure CMake
+      run: |
+        if [ "${{ matrix.wgpu_method }}" = "download" ]; then
+          FORCE_DOWNLOAD="-DFORCE_WGPU_DOWNLOAD=ON"
+          BUILD_DIR="build/wgpu-prebuilt"
+        else
+          FORCE_COMPILE="-DFORCE_WGPU_COMPILE=ON"
+          BUILD_DIR="build/wgpu-compile"
         fi
-      shell: bash
-      continue-on-error: true
+        
+        cmake -B $BUILD_DIR/${{ matrix.config }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+          -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_MANIFEST_FEATURES="tests" \
+          -DBUILD_TESTS=ON \
+          $FORCE_DOWNLOAD $FORCE_COMPILE \
+          -G Ninja
+    
+    - name: Build
+      run: |
+        if [ "${{ matrix.wgpu_method }}" = "download" ]; then
+          BUILD_DIR="build/wgpu-prebuilt"
+        else
+          BUILD_DIR="build/wgpu-compile"
+        fi
+        cmake --build $BUILD_DIR/${{ matrix.config }} --parallel 4
+    
+    - name: Run Tests
+      run: |
+        if [ "${{ matrix.wgpu_method }}" = "download" ]; then
+          BUILD_DIR="build/wgpu-prebuilt"
+        else
+          BUILD_DIR="build/wgpu-compile"
+        fi
+        ctest --test-dir $BUILD_DIR/${{ matrix.config }} --output-on-failure
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-${{ matrix.config }}-${{ matrix.wgpu_method }}
+        path: |
+          build/*/bin/*
+          build/*/lib/*.so
+          build/*/lib/*.a
+
+  build-macos:
+    name: macOS Build
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+        wgpu_method: [download, compile]
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git $HOME/vcpkg
+        $HOME/vcpkg/bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+    
+    - name: Setup Rust (for compile method)
+      if: matrix.wgpu_method == 'compile'
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: 1.82.0
+    
+    - name: Cache vcpkg packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/vcpkg/installed
+          ~/vcpkg/packages
+        key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-
+    
+    - name: Cache wgpu-native runtime
+      uses: actions/cache@v4
+      with:
+        path: third_party/wgpu-native-runtime
+        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-v25.0.2.1
+        restore-keys: |
+          ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
+    
+    - name: Configure CMake
+      run: |
+        if [ "${{ matrix.wgpu_method }}" = "download" ]; then
+          FORCE_DOWNLOAD="-DFORCE_WGPU_DOWNLOAD=ON"
+          BUILD_DIR="build/wgpu-prebuilt"
+        else
+          FORCE_COMPILE="-DFORCE_WGPU_COMPILE=ON"
+          BUILD_DIR="build/wgpu-compile"
+        fi
+        
+        cmake -B $BUILD_DIR/${{ matrix.config }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+          -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_MANIFEST_FEATURES="tests" \
+          -DBUILD_TESTS=ON \
+          $FORCE_DOWNLOAD $FORCE_COMPILE
+    
+    - name: Build
+      run: |
+        if [ "${{ matrix.wgpu_method }}" = "download" ]; then
+          BUILD_DIR="build/wgpu-prebuilt"
+        else
+          BUILD_DIR="build/wgpu-compile"
+        fi
+        cmake --build $BUILD_DIR/${{ matrix.config }} --parallel 4
+    
+    - name: Run Tests
+      run: |
+        if [ "${{ matrix.wgpu_method }}" = "download" ]; then
+          BUILD_DIR="build/wgpu-prebuilt"
+        else
+          BUILD_DIR="build/wgpu-compile"
+        fi
+        ctest --test-dir $BUILD_DIR/${{ matrix.config }} --output-on-failure
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-${{ matrix.config }}-${{ matrix.wgpu_method }}
+        path: |
+          build/*/bin/*
+          build/*/lib/*.dylib
+          build/*/lib/*.a

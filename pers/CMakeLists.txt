@@ -13,18 +13,42 @@ message(STATUS "Found GLM")
 # GLFW is NOT needed for pers library itself
 # It will be needed for tests/samples
 
+# Options for WebGPU build method
+option(FORCE_WGPU_DOWNLOAD "Force download of pre-built wgpu-native binaries" OFF)
+option(FORCE_WGPU_COMPILE "Force compilation of wgpu-native from source" OFF)
+
 # Check for Rust compiler (for wgpu-native)
-execute_process(
-    COMMAND rustc --version
-    OUTPUT_VARIABLE RUST_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE RUST_RESULT
-)
-if(RUST_RESULT EQUAL 0)
-    message(STATUS "Found Rust: ${RUST_VERSION}")
-    set(RUST_AVAILABLE TRUE)
+if(NOT FORCE_WGPU_DOWNLOAD)
+    execute_process(
+        COMMAND rustc --version
+        OUTPUT_VARIABLE RUST_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE RUST_RESULT
+        ERROR_QUIET
+    )
+    if(RUST_RESULT EQUAL 0)
+        message(STATUS "Found Rust: ${RUST_VERSION}")
+        set(RUST_AVAILABLE TRUE)
+    else()
+        # Try with full path if rustc is not in PATH
+        execute_process(
+            COMMAND C:/Users/quake/.cargo/bin/rustc --version
+            OUTPUT_VARIABLE RUST_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE RUST_RESULT
+            ERROR_QUIET
+        )
+        if(RUST_RESULT EQUAL 0)
+            message(STATUS "Found Rust: ${RUST_VERSION}")
+            set(RUST_AVAILABLE TRUE)
+            set(ENV{PATH} "$ENV{PATH};C:/Users/quake/.cargo/bin")
+        else()
+            message(WARNING "Rust compiler not found. Will check for pre-built wgpu-native.")
+            set(RUST_AVAILABLE FALSE)
+        endif()
+    endif()
 else()
-    message(WARNING "Rust compiler not found. Will check for pre-built wgpu-native.")
+    message(STATUS "FORCE_WGPU_DOWNLOAD is ON, skipping Rust detection")
     set(RUST_AVAILABLE FALSE)
 endif()
 
@@ -33,8 +57,19 @@ set(WGPU_NATIVE_AVAILABLE FALSE)
 # Use third_party directory for persistent storage of dependencies
 get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
-# Define the single reference location for wgpu-native runtime
-set(WGPU_RUNTIME_DIR "${PROJECT_ROOT}/third_party/wgpu-native-runtime")
+# Define the runtime directory based on build method
+set(WGPU_RUNTIME_BASE_DIR "${PROJECT_ROOT}/third_party/wgpu-native-runtime")
+
+# Determine which subdirectory to use based on options
+if(FORCE_WGPU_COMPILE OR (RUST_AVAILABLE AND NOT FORCE_WGPU_DOWNLOAD))
+    set(WGPU_BUILD_METHOD "custom-build")
+    message(STATUS "WebGPU build method: Custom build from source")
+else()
+    set(WGPU_BUILD_METHOD "prebuilt")
+    message(STATUS "WebGPU build method: Pre-built binaries")
+endif()
+
+set(WGPU_RUNTIME_DIR "${WGPU_RUNTIME_BASE_DIR}/${WGPU_BUILD_METHOD}")
 file(MAKE_DIRECTORY "${WGPU_RUNTIME_DIR}")
 file(MAKE_DIRECTORY "${WGPU_RUNTIME_DIR}/include")
 file(MAKE_DIRECTORY "${WGPU_RUNTIME_DIR}/lib")
@@ -49,19 +84,25 @@ else()
     set(WGPU_RUNTIME_LIB "${WGPU_RUNTIME_DIR}/lib/libwgpu_native.so")
 endif()
 
-set(WGPU_RUNTIME_HEADER "${WGPU_RUNTIME_DIR}/include/wgpu.h")
+set(WGPU_RUNTIME_HEADER "${WGPU_RUNTIME_DIR}/include/webgpu/wgpu.h")
 
-# Check if wgpu-native is already installed
-if(EXISTS "${WGPU_RUNTIME_LIB}" AND EXISTS "${WGPU_RUNTIME_HEADER}")
+# Determine build strategy
+if(FORCE_WGPU_COMPILE AND NOT RUST_AVAILABLE)
+    message(FATAL_ERROR "FORCE_WGPU_COMPILE is ON but Rust compiler is not available")
+endif()
+
+# Check if wgpu-native is already installed (unless forcing rebuild)
+if(NOT FORCE_WGPU_COMPILE AND NOT FORCE_WGPU_DOWNLOAD AND 
+   EXISTS "${WGPU_RUNTIME_LIB}" AND EXISTS "${WGPU_RUNTIME_HEADER}")
     message(STATUS "Using existing wgpu-native from: ${WGPU_RUNTIME_DIR}")
     set(WGPU_NATIVE_AVAILABLE TRUE)
     set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
-    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include/webgpu")
     if(WIN32)
         set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}")
     endif()
-elseif(NOT RUST_AVAILABLE)
-    # No pre-built binary and no Rust compiler, download pre-built binaries
+elseif(FORCE_WGPU_DOWNLOAD OR (NOT RUST_AVAILABLE AND NOT FORCE_WGPU_COMPILE))
+    # Download pre-built binaries
     message(STATUS "Downloading pre-built wgpu-native binaries...")
     
     include(FetchContent)
@@ -100,8 +141,8 @@ elseif(NOT RUST_AVAILABLE)
     # Copy downloaded files to the runtime directory
     message(STATUS "Installing wgpu-native to runtime directory...")
     
-    # Copy header
-    file(COPY "${WGPU_DOWNLOAD_DIR}/include/webgpu/wgpu.h" 
+    # Copy all headers (preserving webgpu directory structure)
+    file(COPY "${WGPU_DOWNLOAD_DIR}/include/" 
          DESTINATION "${WGPU_RUNTIME_DIR}/include")
     
     # Copy libraries
@@ -118,7 +159,7 @@ elseif(NOT RUST_AVAILABLE)
     
     message(STATUS "Successfully installed wgpu-native to ${WGPU_RUNTIME_DIR}")
     set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
-    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include/webgpu")
     if(WIN32)
         set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}")
     endif()
@@ -131,6 +172,13 @@ elseif(RUST_AVAILABLE)
     set(WGPU_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/wgpu-native-src)
     set(WGPU_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/wgpu-native-build)
     
+    # Set cargo path
+    if(WIN32 AND EXISTS "C:/Users/quake/.cargo/bin/cargo.exe")
+        set(CARGO_EXECUTABLE "C:/Users/quake/.cargo/bin/cargo.exe")
+    else()
+        set(CARGO_EXECUTABLE "cargo")
+    endif()
+    
     ExternalProject_Add(
         wgpu-native-build
         GIT_REPOSITORY https://github.com/gfx-rs/wgpu-native
@@ -138,7 +186,7 @@ elseif(RUST_AVAILABLE)
         SOURCE_DIR ${WGPU_SOURCE_DIR}
         BINARY_DIR ${WGPU_BUILD_DIR}
         CONFIGURE_COMMAND ""
-        BUILD_COMMAND cargo build --release --manifest-path ${WGPU_SOURCE_DIR}/Cargo.toml
+        BUILD_COMMAND ${CARGO_EXECUTABLE} build --release --manifest-path ${WGPU_SOURCE_DIR}/Cargo.toml
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
     )
@@ -156,9 +204,14 @@ elseif(RUST_AVAILABLE)
     # Add a custom command to copy after build
     add_custom_command(
         OUTPUT "${WGPU_RUNTIME_LIB}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${WGPU_RUNTIME_DIR}/include/webgpu"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${WGPU_SOURCE_DIR}/ffi/wgpu.h"
-                "${WGPU_RUNTIME_DIR}/include/wgpu.h"
+                "${WGPU_RUNTIME_DIR}/include/webgpu/wgpu.h"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${WGPU_SOURCE_DIR}/ffi/webgpu-headers/webgpu.h"
+                "${WGPU_RUNTIME_DIR}/include/webgpu/webgpu.h"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${WGPU_BUILD_LIB}"
                 "${WGPU_RUNTIME_LIB}"
@@ -180,7 +233,7 @@ elseif(RUST_AVAILABLE)
     endif()
     
     set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
-    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include/webgpu")
     if(WIN32)
         set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}")
     endif()
@@ -212,14 +265,8 @@ target_include_directories(pers_static PUBLIC
 
 # Link required dependencies
 target_link_libraries(pers_static PUBLIC glm::glm)
-if(WGPU_NATIVE_PREBUILT_USED)
-    # Using pre-built binary
-    target_include_directories(pers_static PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
-    target_link_libraries(pers_static PUBLIC ${WGPU_NATIVE_LIB})
-else()
-    # Using source build
-    target_link_libraries(pers_static PUBLIC wgpu_native)
-endif()
+target_include_directories(pers_static PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
+target_link_libraries(pers_static PUBLIC ${WGPU_NATIVE_LIB})
 
 set_target_properties(pers_static PROPERTIES OUTPUT_NAME "pers_static")
 
@@ -232,14 +279,8 @@ target_include_directories(pers_shared PUBLIC
 
 # Link required dependencies
 target_link_libraries(pers_shared PUBLIC glm::glm)
-if(WGPU_NATIVE_PREBUILT_USED)
-    # Using pre-built binary
-    target_include_directories(pers_shared PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
-    target_link_libraries(pers_shared PUBLIC ${WGPU_NATIVE_LIB})
-else()
-    # Using source build
-    target_link_libraries(pers_shared PUBLIC wgpu_native)
-endif()
+target_include_directories(pers_shared PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
+target_link_libraries(pers_shared PUBLIC ${WGPU_NATIVE_LIB})
 
 set_target_properties(pers_shared PROPERTIES 
     OUTPUT_NAME "pers"

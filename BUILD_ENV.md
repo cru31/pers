@@ -13,7 +13,7 @@
 
 #### Language Requirements
 - **C++ Standard**: C++20
-- **Rust**: 1.79.0 (specified in rust-toolchain.toml)
+- **Rust**: 1.82.0 (specified in rust-toolchain.toml)
   - Target: `x86_64-pc-windows-msvc`
   - Required for building wgpu-native from source
 
@@ -44,7 +44,7 @@
 #### Rust Toolchain (rust-toolchain.toml)
 ```toml
 [toolchain]
-channel = "1.79.0"
+channel = "1.82.0"
 components = ["rustfmt", "clippy"]
 targets = ["x86_64-pc-windows-msvc"]
 profile = "minimal"
@@ -75,8 +75,13 @@ pers_graphics_engine/
 ├── tests/                   # Test programs
 ├── third_party/            # External dependencies
 │   └── glm/                # GLM math library
-└── build/                   # Build output (generated)
-    └── pers/wgpu-native-prebuilt/  # Auto-downloaded WebGPU
+├── build/                   # Build output (generated)
+│   ├── wgpu-prebuilt/       # Pre-built WebGPU binaries
+│   └── wgpu-compile/        # Source-built WebGPU
+└── third_party/
+    └── wgpu-native-runtime/ # WebGPU runtime storage
+        ├── prebuilt/        # Downloaded binaries
+        └── custom-build/    # Built from source
 ```
 
 ### Build Instructions
@@ -97,23 +102,47 @@ pers_graphics_engine/
    ```
 
 #### Build Commands
+
+##### Using CMake Presets (Recommended)
 ```bash
-# Configure (first time)
-cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+# Pre-built WebGPU (faster)
+cmake --preset=windows-debug-download
+cmake --build build/wgpu-prebuilt/debug --config Debug
 
-# Build
+# Build from source (requires Rust)
+cmake --preset=windows-debug-compile
+cmake --build build/wgpu-compile/debug --config Debug
+```
+
+##### Manual Configuration
+```bash
+# Configure with pre-built WebGPU
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DFORCE_WGPU_DOWNLOAD=ON
+
+# Configure with source build
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DFORCE_WGPU_COMPILE=ON
+
+# Build and test
 cmake --build build --config Debug
-
-# Run tests
 ctest --test-dir build -C Debug
 ```
 
-### Using Pre-built wgpu-native
+### WebGPU Build Options
 
+#### Using Pre-built wgpu-native (Default)
 The build system automatically downloads pre-built wgpu-native binaries if Rust is not installed.
 - **Automatic download**: CMake fetches platform-specific binaries
 - **Version**: v25.0.2.1
-- **Location**: `build/pers/wgpu-native-prebuilt/`
+- **Runtime Location**: `third_party/wgpu-native-runtime/prebuilt/`
+- **Build Output**: `build/wgpu-prebuilt/`
+- **CMake Option**: `-DFORCE_WGPU_DOWNLOAD=ON`
+
+#### Building from Source
+If Rust is available, wgpu-native can be built from source.
+- **Requires**: Rust 1.82.0+
+- **Runtime Location**: `third_party/wgpu-native-runtime/custom-build/`
+- **Build Output**: `build/wgpu-compile/`
+- **CMake Option**: `-DFORCE_WGPU_COMPILE=ON`
 - **Platform naming**:
   - Windows: `windows-x86_64-msvc`
   - macOS: `macos-universal`
@@ -143,7 +172,7 @@ For automated builds, use these environment variables:
 env:
   VCPKG_ROOT: C:/vcpkg
   CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-  RUST_VERSION: 1.79.0
+  RUST_VERSION: 1.82.0
   WGPU_NATIVE_VERSION: v25.0.2.1
 ```
 
