@@ -223,8 +223,10 @@ jobs:
       with:
         submodules: recursive
     
-    # Build tools are pre-installed on GitHub Actions macOS runners
-    # No need for brew installation
+    - name: Verify CMake is available
+      run: |
+        which cmake
+        cmake --version
     
     - name: Detect Architecture
       run: |
