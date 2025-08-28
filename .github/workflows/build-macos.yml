@@ -14,9 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         build_type: [Debug, Release]
-        wgpu_method: [download, compile]
 
-    name: macOS - ${{ matrix.build_type }} - WebGPU ${{ matrix.wgpu_method }}
+    name: macOS - ${{ matrix.build_type }}
     
     steps:
     - uses: actions/checkout@v4
@@ -34,28 +33,13 @@ jobs:
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
 
-    - name: Setup Rust (for compile method)
-      if: matrix.wgpu_method == 'compile'
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: x86_64-apple-darwin,aarch64-apple-darwin
-
-    - name: Remove Rust (for download method)
-      if: matrix.wgpu_method == 'download'
-      run: |
-        # Temporarily hide Rust to force download method
-        if command -v rustc &> /dev/null; then
-          sudo mv $(which rustc) $(which rustc).bak || true
-          sudo mv $(which cargo) $(which cargo).bak || true
-        fi
-
     - name: Cache wgpu-native runtime
       uses: actions/cache@v4
       with:
         path: third_party/wgpu-native-runtime
-        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-${{ hashFiles('pers/CMakeLists.txt') }}
+        key: ${{ runner.os }}-wgpu-download-${{ hashFiles('pers/CMakeLists.txt') }}
         restore-keys: |
-          ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
+          ${{ runner.os }}-wgpu-download-
           ${{ runner.os }}-wgpu-
 
     - name: Configure CMake
@@ -83,19 +67,11 @@ jobs:
         # Exclude graphical tests that require display
         ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2"
 
-    - name: Restore Rust (if hidden)
-      if: matrix.wgpu_method == 'download' && always()
-      run: |
-        if [ -f "$(which rustc).bak" ]; then
-          sudo mv $(which rustc).bak $(which rustc) || true
-          sudo mv $(which cargo).bak $(which cargo) || true
-        fi
-
     - name: Upload artifacts on failure
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: macos-${{ matrix.build_type }}-${{ matrix.wgpu_method }}-logs
+        name: macos-${{ matrix.build_type }}-logs
         path: |
           build/CMakeFiles/CMakeOutput.log
           build/CMakeFiles/CMakeError.log
