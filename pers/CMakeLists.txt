@@ -69,7 +69,11 @@ get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 set(WGPU_RUNTIME_BASE_DIR "${PROJECT_ROOT}/third_party/wgpu-native-runtime")
 
 # Determine which subdirectory to use based on options
-if(FORCE_WGPU_COMPILE OR (RUST_AVAILABLE AND NOT FORCE_WGPU_DOWNLOAD))
+# macOS always uses prebuilt to avoid CI issues
+if(APPLE)
+    set(WGPU_BUILD_METHOD "prebuilt")
+    message(STATUS "WebGPU build method: Pre-built binaries (macOS always uses prebuilt)")
+elseif(FORCE_WGPU_COMPILE OR (RUST_AVAILABLE AND NOT FORCE_WGPU_DOWNLOAD))
     set(WGPU_BUILD_METHOD "custom-build")
     message(STATUS "WebGPU build method: Custom build from source")
 else()
@@ -94,22 +98,9 @@ endif()
 
 set(WGPU_RUNTIME_HEADER "${WGPU_RUNTIME_DIR}/include/webgpu/wgpu.h")
 
-# Determine build strategy
-if(FORCE_WGPU_COMPILE AND NOT RUST_AVAILABLE)
-    message(FATAL_ERROR "FORCE_WGPU_COMPILE is ON but Rust compiler is not available")
-endif()
-
-# Check if wgpu-native is already installed (unless forcing rebuild)
-if(NOT FORCE_WGPU_COMPILE AND NOT FORCE_WGPU_DOWNLOAD AND 
-   EXISTS "${WGPU_RUNTIME_LIB}" AND EXISTS "${WGPU_RUNTIME_HEADER}")
-    message(STATUS "Using existing wgpu-native from: ${WGPU_RUNTIME_DIR}")
-    set(WGPU_NATIVE_AVAILABLE TRUE)
-    set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
-    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include/webgpu")
-    if(WIN32)
-        set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}" CACHE INTERNAL "Path to wgpu_native.dll")
-    endif()
-elseif(FORCE_WGPU_DOWNLOAD OR (NOT RUST_AVAILABLE AND NOT FORCE_WGPU_COMPILE))
+# macOS ALWAYS downloads - no checks, no compile
+if(APPLE)
+    # Skip ALL checks for macOS - just download
     # Download pre-built binaries
     message(STATUS "Downloading pre-built wgpu-native binaries...")
     

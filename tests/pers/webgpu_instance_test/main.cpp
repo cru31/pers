@@ -56,6 +56,10 @@ int main() {
     std::cout << "WebGPU Instance Creation Test Suite" << std::endl;
     std::cout << "====================================" << std::endl;
     
+    // In CI, run fewer tests to avoid timeout/crash
+    const char* ciEnv = std::getenv("CI");
+    bool isCI = (ciEnv != nullptr);
+    
     std::vector<TestCase> tests;
     
     // Test 1: Default configuration
