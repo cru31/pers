@@ -5,22 +5,6 @@
 #include <wgpu.h>  // For wgpu-native specific extensions
 #include <iostream>
 
-// Platform-specific includes for surface creation
-#ifdef _WIN32
-    #define GLFW_EXPOSE_NATIVE_WIN32
-    #include <GLFW/glfw3.h>
-    #include <GLFW/glfw3native.h>
-    #include <windows.h>
-#elif defined(__linux__)
-    #define GLFW_EXPOSE_NATIVE_X11
-    #include <GLFW/glfw3.h>
-    #include <GLFW/glfw3native.h>
-#elif defined(__APPLE__)
-    #define GLFW_EXPOSE_NATIVE_COCOA
-    #include <GLFW/glfw3.h>
-    #include <GLFW/glfw3native.h>
-#endif
-
 namespace pers {
 
 WebGPUInstance::WebGPUInstance() = default;
@@ -134,67 +118,21 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
 }
 
 void* WebGPUInstance::createSurface(void* windowHandle) {
-    if (!_instance) {
-        std::cerr << "[WebGPUInstance] Instance not initialized" << std::endl;
-        return nullptr;
-    }
+    // Surface creation requires platform-specific window system integration.
+    // This should be handled by the application layer, not the core library.
+    // Applications should create surfaces using platform-specific APIs and
+    // pass the native handles directly.
     
-    if (!windowHandle) {
-        std::cerr << "[WebGPUInstance] Invalid window handle" << std::endl;
-        return nullptr;
-    }
+    NotImplemented::Log(
+        "WebGPUInstance::createSurface",
+        "Platform-specific surface creation - should be handled by application layer",
+        PERS_SOURCE_LOC
+    );
     
-    GLFWwindow* window = static_cast<GLFWwindow*>(windowHandle);
-    WGPUSurface surface = nullptr;
+    // TODO: Consider accepting a SurfaceDescriptor struct with platform-specific
+    // native handles instead of assuming window handle types
     
-#ifdef _WIN32
-    std::cout << "[WebGPUInstance] Creating Windows surface..." << std::endl;
-    
-    HWND hwnd = glfwGetWin32Window(window);
-    HINSTANCE hinstance = GetModuleHandle(nullptr);
-    
-    WGPUSurfaceSourceWindowsHWND surfaceSource = {};
-    surfaceSource.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
-    surfaceSource.hinstance = hinstance;
-    surfaceSource.hwnd = hwnd;
-    
-    WGPUSurfaceDescriptor surfaceDesc = {};
-    surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
-    
-    surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
-    
-#elif defined(__linux__)
-    std::cout << "[WebGPUInstance] Creating Linux/X11 surface..." << std::endl;
-    
-    Display* display = glfwGetX11Display();
-    Window x11Window = glfwGetX11Window(window);
-    
-    WGPUSurfaceSourceXlibWindow surfaceSource = {};
-    surfaceSource.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
-    surfaceSource.display = display;
-    surfaceSource.window = x11Window;
-    
-    WGPUSurfaceDescriptor surfaceDesc = {};
-    surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
-    
-    surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
-    
-#elif defined(__APPLE__)
-    // macOS implementation is in WebGPUInstance_macOS.mm
-    return createSurfaceMacOS(windowHandle);
-    
-#else
-    std::cerr << "[WebGPUInstance] Unsupported platform" << std::endl;
     return nullptr;
-#endif
-    
-    if (!surface) {
-        std::cerr << "[WebGPUInstance] Failed to create surface" << std::endl;
-        return nullptr;
-    }
-    
-    std::cout << "[WebGPUInstance] Surface created successfully" << std::endl;
-    return surface;
 }
 
 } // namespace pers
