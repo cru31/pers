@@ -1,6 +1,8 @@
 #include "PersTriangleApp.h"
 #include "TriangleRenderer.h"
 #include <iostream>
+#include <chrono>
+#include <cstdlib>
 
 PersTriangleApp::PersTriangleApp() = default;
 
@@ -30,9 +32,25 @@ bool PersTriangleApp::initialize() {
 }
 
 void PersTriangleApp::run() {
+    // In CI environment, run for 5 seconds only
+    const char* ciEnv = std::getenv("CI");
+    bool isCI = (ciEnv != nullptr);
+    auto startTime = std::chrono::steady_clock::now();
+    const int maxCISeconds = 5;
+    
     while (!glfwWindowShouldClose(_window)) {
         glfwPollEvents();
         render();
+        
+        // Exit after 5 seconds in CI environment
+        if (isCI) {
+            auto currentTime = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+            if (elapsed >= maxCISeconds) {
+                std::cout << "[PersTriangleApp] CI mode: Exiting after " << maxCISeconds << " seconds" << std::endl;
+                break;
+            }
+        }
     }
 }
 
