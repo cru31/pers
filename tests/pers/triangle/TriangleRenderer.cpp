@@ -4,6 +4,23 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+// Platform-specific includes for native window handles
+#ifdef _WIN32
+    #define GLFW_EXPOSE_NATIVE_WIN32
+    #include <GLFW/glfw3native.h>
+#elif defined(__APPLE__)
+    #define GLFW_EXPOSE_NATIVE_COCOA
+    #include <GLFW/glfw3native.h>
+#elif defined(__linux__)
+    #define GLFW_EXPOSE_NATIVE_X11
+    #include <GLFW/glfw3native.h>
+#endif
+
+#ifdef __APPLE__
+// Forward declare the function to create Metal layer
+void* createMetalLayer(GLFWwindow* window);
+#endif
+
 TriangleRenderer::~TriangleRenderer() {
     cleanup();
 }
@@ -43,7 +60,27 @@ bool TriangleRenderer::initialize(GLFWwindow* window) {
     std::cout << "[TriangleRenderer] Instance created successfully" << std::endl;
     
     // Step 3: Create surface from GLFW window
-    _surface = _instance->createSurface(_window);
+    // Get platform-specific native handles from GLFW
+    void* nativeHandle = nullptr;
+    
+#ifdef _WIN32
+    // Windows: Get HWND
+    nativeHandle = glfwGetWin32Window(_window);
+#elif defined(__APPLE__)
+    // macOS: Create CAMetalLayer and attach to window
+    nativeHandle = createMetalLayer(_window);
+    if (!nativeHandle) {
+        std::cerr << "[TriangleRenderer] Failed to create Metal layer" << std::endl;
+        return false;
+    }
+#elif defined(__linux__)
+    // Linux: Need X11 display and window
+    // TODO: Implement Linux native handle extraction
+    std::cerr << "[TriangleRenderer] Linux surface creation not yet implemented" << std::endl;
+    return false;
+#endif
+    
+    _surface = _instance->createSurface(nativeHandle);
     if (!_surface) {
         std::cerr << "[TriangleRenderer] Failed to create surface" << std::endl;
         return false;

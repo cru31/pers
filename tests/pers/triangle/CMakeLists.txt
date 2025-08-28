@@ -26,13 +26,20 @@ if(NOT glfw3_FOUND)
 endif()
 
 # Create triangle executable
-add_executable(pers_triangle 
+set(TRIANGLE_SOURCES
     main.cpp
     PersTriangleApp.cpp
     PersTriangleApp.h
     TriangleRenderer.cpp
     TriangleRenderer.h
 )
+
+# Add macOS-specific sources
+if(APPLE)
+    list(APPEND TRIANGLE_SOURCES TriangleRenderer_macOS.mm)
+endif()
+
+add_executable(pers_triangle ${TRIANGLE_SOURCES})
 
 # For macOS, compile as Objective-C++ to use Cocoa
 if(APPLE)
@@ -52,6 +59,7 @@ if(APPLE)
     target_link_libraries(pers_triangle PRIVATE
         "-framework Cocoa"
         "-framework QuartzCore"
+        "-framework Metal"
     )
 endif()
 
