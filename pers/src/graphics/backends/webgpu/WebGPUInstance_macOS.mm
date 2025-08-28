@@ -2,6 +2,7 @@
 
 #include "WebGPUInstance.h"
 #include <iostream>
+#include <cstring>  // For strlen
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
 #include <GLFW/glfw3.h>
@@ -65,7 +66,10 @@ void* WebGPUInstance::createSurfaceMacOS(void* windowHandle) {
         
         WGPUSurfaceDescriptor surfaceDesc = {};
         surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
-        surfaceDesc.label = "macOS Metal Surface";
+        // WGPUStringView requires data pointer and length
+        const char* labelStr = "macOS Metal Surface";
+        surfaceDesc.label.data = labelStr;
+        surfaceDesc.label.length = strlen(labelStr);
         
         WGPUSurface surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
         if (!surface) {
