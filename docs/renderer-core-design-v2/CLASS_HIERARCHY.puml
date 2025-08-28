@@ -9,18 +9,18 @@ title Pers Graphics Engine V2 - Class Hierarchy
 package "Core System" #E8F4F8 {
     together {
         interface IInstance {
-            + EnumerateAdapters()
-            + RequestAdapter()
+            + EnumeratePhysicalDevices()
+            + RequestPhysicalDevice()
             + CreateSurface()
         }
 
-        interface IAdapter {
-            + CreateDevice()
+        interface IPhysicalDevice {
+            + CreateLogicalDevice()
             + GetProperties()
             + GetLimits()
         }
 
-        interface IDevice {
+        interface ILogicalDevice {
             + GetQueue()
             + GetResourceFactory()
             + CreateCommandEncoder()
@@ -35,9 +35,9 @@ package "Core System" #E8F4F8 {
         }
     }
     
-    IInstance --> IAdapter : creates
-    IAdapter --> IDevice : creates
-    IDevice --> IQueue : provides
+    IInstance --> IPhysicalDevice : creates
+    IPhysicalDevice --> ILogicalDevice : creates
+    ILogicalDevice --> IQueue : provides
 }
 
 ' Resource Factory
@@ -55,7 +55,7 @@ package "Resource Factory" #E8FFE8 {
         + CreateBindGroup()
     }
     
-     IDevice --> IResourceFactory : provides
+     ILogicalDevice --> IResourceFactory : provides
 }
 
 ' Buffer Hierarchy
@@ -205,13 +205,13 @@ package "Command System" #E8FFE8 {
 
 ' WebGPU Implementation
 package "WebGPU Backend" #FFE8E8 {
-    class WebGPUDevice {
+    class WebGPULogicalDevice {
         - wgpuDevice : WGPUDevice
         - wgpuQueue : WGPUQueue
     }
 
     class WebGPUResourceFactory {
-        - device : WebGPUDevice*
+        - device : WebGPULogicalDevice*
         - bufferCache : map
         - textureCache : map
     }
@@ -240,7 +240,7 @@ package "WebGPU Backend" #FFE8E8 {
         - isActive : bool
     }
 
-    WebGPUDevice ..|> IDevice
+    WebGPULogicalDevice ..|> ILogicalDevice
     WebGPUResourceFactory ..|> IResourceFactory
     WebGPUVertexBuffer ..|> IVertexBuffer
     WebGPUIndexBuffer ..|> IIndexBuffer
@@ -253,15 +253,15 @@ IResourceFactory --> IBuffer : creates
 IResourceFactory --> ITexture : creates
 IResourceFactory --> IPipeline : creates
 
-IDevice --> ICommandEncoder : creates
+ILogicalDevice --> ICommandEncoder : creates
 
-IInstance -[hidden]right->IAdapter
-IAdapter -[hidden]right->IDevice
-IDevice -[hidden]right->IQueue
+IInstance -[hidden]right->IPhysicalDevice
+IPhysicalDevice -[hidden]right->ILogicalDevice
+ILogicalDevice -[hidden]right->IQueue
 
 ITexture -[hidden]right->ITexture2D
 ITexture2D -[hidden]left->IRenderTexture
-IDevice-[hidden]right->IResourceFactory
+ILogicalDevice-[hidden]right->IResourceFactory
 
 
 ICommandEncoder -[hidden]right->IRenderPassEncoder
@@ -279,5 +279,5 @@ note top of WebGPUVertexBuffer
     Interfaces separated by type
     Internal uses unified WebGPU buffer
 end note
-
+CLASS_HIERARCHY.puml
 @enduml

@@ -10,7 +10,7 @@ The RAL provides direct, low-level access to GPU resources with clear command re
 
 ```cpp
 #include <pers/graphics/IInstance.h>
-#include <pers/graphics/IDevice.h>
+#include <pers/graphics/ILogicalDevice.h>
 #include <pers/graphics/IResourceFactory.h>
 
 void RenderTriangle(Application& app) {
@@ -19,11 +19,11 @@ void RenderTriangle(Application& app) {
         .backend = GraphicsBackend::WebGPU
     });
     
-    // Request adapter and create device
-    auto adapter = instance->RequestAdapter(AdapterOptions{
+    // Request physical device and create logical device
+    auto physicalDevice = instance->RequestPhysicalDevice(PhysicalDeviceOptions{
         .powerPreference = PowerPreference::HighPerformance
     });
-    auto device = adapter->CreateDevice(DeviceDesc{});
+    auto device = physicalDevice->CreateLogicalDevice(LogicalDeviceDesc{});
     
     // Get core components
     auto queue = device->GetQueue();

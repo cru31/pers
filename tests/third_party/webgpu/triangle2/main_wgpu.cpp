@@ -135,12 +135,26 @@ int main() {
     std::cout << "=== WebGPU Triangle Example ===" << std::endl;
 
     // Initialize GLFW
+    // [PERS V2 CALL STACK]
+    // Application::main()
+    // └─> GLFWSurfaceProvider::Initialize()
+    //     └─> glfwInit()
+    // Note: V2에서는 Application이 아닌 SurfaceProvider가 GLFW 관리
+    // Returns: GLFW_TRUE on success
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
 
     // Create window
+    // [PERS V2 CALL STACK]
+    // Application::CreateWindow(WindowDesc{width: 800, height: 600, title: "WebGPU Triangle"})
+    // └─> GLFWSurfaceProvider::CreateWindow(desc)
+    //     └─> glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API) // No OpenGL/Vulkan context
+    //     └─> _window = glfwCreateWindow(desc.width, desc.height, desc.title, nullptr, nullptr)
+    //     └─> glfwSetWindowUserPointer(_window, this)
+    // Returns: GLFWwindow* (managed by SurfaceProvider)
+    // Note: GLFW_NO_API critical for WebGPU/Vulkan
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(800, 600, "WebGPU Triangle", nullptr, nullptr);
     if (!window) {
@@ -150,6 +164,15 @@ int main() {
     }
 
     Demo demo;
+    // [PERS V2 CALL STACK]
+    // GLFWSurfaceProvider::SetupCallbacks()
+    // └─> glfwSetWindowUserPointer(window, &demo) // Store app data
+    // └─> GLFWEventForwarder::RegisterCallbacks(window)
+    //     └─> glfwSetFramebufferSizeCallback(window, OnFramebufferSize)
+    //         └─> Forward to ISurfaceEventHandler::OnSurfaceResized()
+    //     └─> glfwSetKeyCallback(window, OnKey)
+    //         └─> Forward to IInputEventHandler::OnKeyEvent()
+    // Note: V2 uses EventForwarder to decouple GLFW from engine
     glfwSetWindowUserPointer(window, &demo);
     glfwSetFramebufferSizeCallback(window, handleFramebufferSize);
     glfwSetKeyCallback(window, handleKeyPress);
@@ -157,13 +180,15 @@ int main() {
     // Create WebGPU instance
     // [PERS V2 CALL STACK]
     // Application::Initialize()
-    // └─> CreateInstance(InstanceDesc{.backend = GraphicsBackend::WebGPU})
-    //     └─> WebGPUBackend::CreateWebGPUInstance()
-    //         └─> WebGPUInstance::WebGPUInstance(InstanceDesc desc)
-    //             └─> WGPUInstanceDescriptor instanceDesc = {};
-    //             └─> _instance = wgpuCreateInstance(&instanceDesc)
+    // └─> auto factory = pers::renderer::CreateWebGPUBackendFactory()
+    // └─> factory->CreateInstance(InstanceDescriptor{.enableValidation = true})
+    //     └─> WebGPUBackendFactory::CreateInstance(const InstanceDescriptor& desc)
+    //         └─> WGPUInstanceDescriptor wgpuDesc = {};
+    //         └─> // Setup validation if desc.enableValidation
+    //         └─> WGPUInstance instance = wgpuCreateInstance(&wgpuDesc)
+    //         └─> return std::make_shared<WebGPUInstance>(instance)
     // Returns: std::shared_ptr<IInstance>
-    // Components: IInstance는 모든 graphics 시스템의 시작점
+    // Note: Factory는 Engine이 제공, Application이 선택
     WGPUInstanceDescriptor instanceDesc = {};
     demo.instance = wgpuCreateInstance(&instanceDesc);
     if (!demo.instance) {
@@ -175,6 +200,10 @@ int main() {
 
     // Create surface - platform specific
 #ifdef _WIN32
+    // [PERS V2 CALL STACK]
+    // GLFWSurfaceProvider::GetNativeWindowHandle()
+    // └─> glfwGetWin32Window(_window) → HWND
+    // Platform: Windows
     HWND hwnd = glfwGetWin32Window(window);
     HINSTANCE hinstance = GetModuleHandle(nullptr);
 
@@ -187,17 +216,22 @@ int main() {
     surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
 
     // [PERS V2 CALL STACK]
-    // Application::CreateWindow(WindowDesc{width: 800, height: 600})
-    // └─> Window::GetNativeHandle() → void* hwnd
-    // └─> IInstance::createSurface(hwnd)
-    //     └─> WebGPUInstance::createSurface(void* windowHandle)
-    //         └─> WGPUSurfaceDescriptor surfaceDesc = BuildSurfaceDesc(hwnd)
-    //         └─> _surfaces.push_back(wgpuInstanceCreateSurface(_instance, &surfaceDesc))
-    // Returns: std::shared_ptr<ISurface>
-    // Note: Surface는 OS window와 GPU를 연결하는 인터페이스
+    // GLFWSurfaceProvider::InitializeSurface(instance, GraphicsBackendType::WebGPU)
+    // └─> CreateWebGPUSurface(instance->GetNativeHandle())
+    //     └─> Build platform-specific WGPUSurfaceDescriptor
+    //     └─> WGPUSurface surface = wgpuInstanceCreateSurface(wgpuInstance, &surfaceDesc)
+    //     └─> _nativeSurfaceHandle = surface
+    // Returns: void* (opaque handle)
+    // Note: SurfaceProvider manages surface, separate from graphics backend
+    // Graphics backend only receives void* handle, doesn't know about GLFW
     demo.surface = wgpuInstanceCreateSurface(demo.instance, &surfaceDesc);
 #elif defined(__linux__)
     // Linux/X11 surface creation
+    // [PERS V2 CALL STACK]
+    // GLFWSurfaceProvider::GetNativeWindowHandle()
+    // └─> glfwGetX11Display() → Display*
+    // └─> glfwGetX11Window(_window) → Window
+    // Platform: Linux/X11
     Display* display = glfwGetX11Display();
     Window x11Window = glfwGetX11Window(window);
     
@@ -214,6 +248,10 @@ int main() {
     // macOS surface creation
     // Create a CAMetalLayer and get the raw layer pointer
     id metalLayer = nullptr;
+    // [PERS V2 CALL STACK]
+    // GLFWSurfaceProvider::GetNativeWindowHandle()
+    // └─> glfwGetCocoaWindow(_window) → NSWindow*
+    // Platform: macOS
     NSWindow* nsWindow = glfwGetCocoaWindow(window);
     if (nsWindow) {
         [nsWindow.contentView setWantsLayer:YES];
@@ -258,17 +296,18 @@ int main() {
 
     // [PERS V2 CALL STACK]
     // Application::Initialize() [continued]
-    // └─> IInstance::requestAdapter(AdapterOptions{.powerPreference = PowerPreference::HighPerformance})
-    //     └─> WebGPUInstance::requestAdapter(const AdapterOptions& options)
-    //         └─> WGPURequestAdapterOptions wgpuOptions = ConvertToWGPU(options)
-    //         └─> wgpuOptions.compatibleSurface = surface ? surface->GetHandle() : nullptr
+    // └─> IInstance::RequestPhysicalDevice(PhysicalDeviceOptions{.powerPreference = PowerPreference::HighPerformance}, surfaceHandle)
+    //     └─> WebGPUInstance::RequestPhysicalDevice(const PhysicalDeviceOptions& options, void* compatibleSurfaceHandle)
+    //         └─> WGPURequestAdapterOptions wgpuOptions = {};
+    //         └─> wgpuOptions.compatibleSurface = static_cast<WGPUSurface>(compatibleSurfaceHandle)
+    //         └─> wgpuOptions.powerPreference = ConvertPowerPreference(options.powerPreference)
     //         └─> wgpuInstanceRequestAdapter(_instance, &wgpuOptions, callback)
     //         └─> while (!adapterReceived) {
     //                 wgpuInstanceProcessEvents(_instance);
     //                 std::this_thread::sleep_for(10ms);
     //             }
-    // Returns: std::shared_ptr<IAdapter>
-    // Note: V2는 비동기 API를 동기적으로 래핑하여 사용 편의성 제공
+    // Returns: std::shared_ptr<IPhysicalDevice>
+    // Note: Surface handle passed as void* for backend independence
     wgpuInstanceRequestAdapter(demo.instance, &adapterOptions, adapterCallbackInfo);
     wgpuInstanceProcessEvents(demo.instance);
 
@@ -289,8 +328,8 @@ int main() {
 
     // Get adapter info
     // [PERS V2 CALL STACK]
-    // IAdapter::getProperties()
-    // └─> WebGPUAdapter::getProperties()
+    // IPhysicalDevice::GetInfo()
+    // └─> WebGPUPhysicalDevice::GetInfo()
     //     └─> WGPUAdapterInfo info = {};
     //     └─> wgpuAdapterGetInfo(_adapter, &info)
     //     └─> return AdapterProperties{
@@ -325,20 +364,20 @@ int main() {
     deviceCallbackInfo.userdata1 = &demo;
 
     // [PERS V2 CALL STACK]
-    // IAdapter::createDevice(DeviceDescriptor{.requiredFeatures = {}, .requiredLimits = {}})
-    // └─> WebGPUAdapter::createDevice(const DeviceDescriptor& desc)
+    // IPhysicalDevice::CreateLogicalDevice(LogicalDeviceDescriptor{.requiredFeatures = {}, .requiredLimits = {}})
+    // └─> WebGPUPhysicalDevice::CreateLogicalDevice(const LogicalDeviceDescriptor& desc)
     //     └─> WGPUDeviceDescriptor wgpuDesc = ConvertToWGPU(desc)
     //     └─> SetupCallbacks(wgpuDesc) [device lost, uncaptured error]
     //     └─> wgpuAdapterRequestDevice(_adapter, &wgpuDesc, callback)
     //     └─> while (!deviceReceived) {
     //             wgpuInstanceProcessEvents(_instance);
     //         }
-    //     └─> auto device = std::make_shared<WebGPUDevice>(wgpuDevice)
+    //     └─> auto device = std::make_shared<WebGPULogicalDevice>(wgpuDevice)
     //     └─> device->Initialize() [
     //             _queue = std::make_shared<WebGPUQueue>(wgpuDeviceGetQueue(_device)),
-    //             _resourceFactory = std::make_shared<WebGPUResourceFactory>(_device)
+    //             _resourceFactory = std::make_shared<WebGPUResourceFactory>(this)
     //         ]
-    // Returns: std::shared_ptr<IDevice>
+    // Returns: std::shared_ptr<ILogicalDevice>
     // Creates: IQueue, IResourceFactory 자동 생성
     wgpuAdapterRequestDevice(demo.adapter, &deviceDesc, deviceCallbackInfo);
     wgpuInstanceProcessEvents(demo.instance);
@@ -361,8 +400,8 @@ int main() {
 
     // Get queue
     // [PERS V2 CALL STACK]
-    // IDevice::getQueue()
-    // └─> WebGPUDevice::getQueue()
+    // ILogicalDevice::GetQueue()
+    // └─> WebGPULogicalDevice::GetQueue()
     //     └─> return _queue; // 이미 device 생성시 초기화됨
     // Note: WebGPUDevice 생성자에서:
     //       _queue = std::make_shared<WebGPUQueue>(wgpuDeviceGetQueue(_device))
@@ -453,8 +492,8 @@ int main() {
 
     // Get surface capabilities
     // [PERS V2 CALL STACK]
-    // ISurface::GetCapabilities(adapter)
-    // └─> WebGPUSurface::GetCapabilities(const std::shared_ptr<IAdapter>& adapter)
+    // IPhysicalDevice::GetSurfacePreferredFormats(void* surfaceHandle)
+    // └─> WebGPUPhysicalDevice::GetSurfacePreferredFormats(void* surfaceHandle)
     //     └─> WGPUSurfaceCapabilities caps = {};
     //     └─> wgpuSurfaceGetCapabilities(_surface, adapter->GetHandle(), &caps)
     //     └─> return SurfaceCapabilities{
@@ -548,13 +587,19 @@ int main() {
     demo.config.alphaMode = surfaceCapabilities.alphaModes[0];
 
     int width, height;
+    // [PERS V2 CALL STACK]
+    // ISurfaceProvider::GetSurfaceSize(width, height)
+    // └─> GLFWSurfaceProvider::GetSurfaceSize()
+    //     └─> glfwGetFramebufferSize(_window, &w, &h) // Use framebuffer size for high-DPI
+    //     └─> width = w; height = h;
+    // Note: Framebuffer size != window size on high-DPI displays
     glfwGetWindowSize(window, &width, &height);
     demo.config.width = width;
     demo.config.height = height;
 
     // [PERS V2 CALL STACK]
-    // IDevice::createSwapChain(surface, SwapChainDesc{.width = 800, .height = 600, .format = BGRA8Unorm})
-    // └─> WebGPUDevice::createSwapChain(const std::shared_ptr<ISurface>& surface, const SwapChainDesc& desc)
+    // ILogicalDevice::CreateSwapChain(surfaceHandle, SwapChainDescriptor{.width = 800, .height = 600, .format = BGRA8Unorm})
+    // └─> WebGPULogicalDevice::CreateSwapChain(void* surfaceHandle, const SwapChainDescriptor& desc)
     //     └─> WGPUSurfaceConfiguration config = {};
     //     └─> config.device = _device;
     //     └─> config.format = ConvertToWGPU(desc.format);
@@ -563,8 +608,8 @@ int main() {
     //     └─> config.alphaMode = ConvertToWGPU(desc.alphaMode);
     //     └─> config.width = desc.width;
     //     └─> config.height = desc.height;
-    //     └─> wgpuSurfaceConfigure(surface->GetHandle(), &config)
-    //     └─> return std::make_shared<WebGPUSwapChain>(surface, config)
+    //     └─> wgpuSurfaceConfigure(static_cast<WGPUSurface>(surfaceHandle), &config)
+    //     └─> return std::make_shared<WebGPUSwapChain>(surfaceHandle, config)
     // Returns: std::shared_ptr<ISwapChain>
     // State: SwapChain ready for rendering
     wgpuSurfaceConfigure(demo.surface, &demo.config);
@@ -575,19 +620,33 @@ int main() {
     const int maxFramesInCI = 300; // Run for 300 frames (about 5 seconds at 60fps) in CI
     const bool isCI = std::getenv("CI") != nullptr;
     
+    // [PERS V2 CALL STACK]
+    // Application::Run()
+    // └─> while (!ShouldExit())
+    //     └─> GLFWSurfaceProvider::ShouldClose()
+    //         └─> glfwWindowShouldClose(_window)
+    // Note: Main loop controlled by Application, not raw GLFW
     while (!glfwWindowShouldClose(window)) {
         // Auto-exit in CI after rendering enough frames
         if (isCI && frameCount++ >= maxFramesInCI) {
             std::cout << "CI mode: Rendered " << frameCount << " frames successfully, exiting..." << std::endl;
             break;
         }
+        // [PERS V2 CALL STACK]
+        // Application::Run() main loop
+        // └─> glfwPollEvents()
+        //     └─> Triggers registered callbacks:
+        //         - handleFramebufferSize → ISurfaceEventHandler::OnSurfaceResized()
+        //         - handleKeyPress → IInputEventHandler::OnKeyEvent()
+        //         - mouse callbacks → IInputEventHandler::OnMouse*()
+        // Note: Event-driven architecture, callbacks trigger engine updates
         glfwPollEvents();
 
         // Get current texture
         // [PERS V2 CALL STACK]
         // Application::RenderFrame()
-        // └─> ISwapChain::getCurrentTextureView()
-        //     └─> WebGPUSwapChain::getCurrentTextureView()
+        // └─> ISwapChain::GetCurrentTexture()
+        //     └─> WebGPUSwapChain::GetCurrentTexture()
         //         └─> WGPUSurfaceTexture surfaceTexture = {};
         //         └─> wgpuSurfaceGetCurrentTexture(_surface, &surfaceTexture)
         //         └─> if (surfaceTexture.status != Success) HandleError();
@@ -612,7 +671,7 @@ int main() {
 
         // Create texture view
         // [PERS V2 CALL STACK]
-        // ISwapChain::getCurrentTextureView() [continued]
+        // ISwapChain::GetCurrentTexture() [continued]
         // └─> wgpuTextureCreateView(surfaceTexture.texture, nullptr)
         // Note: V2에서는 SwapChain이 내부에서 처리하여 ITextureView로 반환
         WGPUTextureView textureView = wgpuTextureCreateView(surfaceTexture.texture, nullptr);
@@ -620,8 +679,8 @@ int main() {
         // Create command encoder
         // [PERS V2 CALL STACK]
         // Application::RenderFrame() [continued]
-        // └─> IDevice::createCommandEncoder(CommandEncoderDesc{.label = "Frame Encoder"})
-        //     └─> WebGPUDevice::createCommandEncoder(const CommandEncoderDesc& desc)
+        // └─> ILogicalDevice::CreateCommandEncoder(CommandEncoderDescriptor{.label = "Frame Encoder"})
+        //     └─> WebGPULogicalDevice::CreateCommandEncoder(const CommandEncoderDescriptor& desc)
         //         └─> WGPUCommandEncoderDescriptor encoderDesc = {};
         //         └─> encoderDesc.label = desc.label.c_str();
         //         └─> WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(_device, &encoderDesc)
@@ -722,8 +781,8 @@ int main() {
 
         // Submit command buffer
         // [PERS V2 CALL STACK]
-        // IQueue::submit(commandBuffer)
-        // └─> WebGPUQueue::submit(const std::shared_ptr<ICommandBuffer>& commandBuffer)
+        // IQueue::Submit(commandBuffers)
+        // └─> WebGPUQueue::Submit(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers)
         //     └─> WGPUCommandBuffer buffers[] = { commandBuffer->GetHandle() };
         //     └─> wgpuQueueSubmit(_queue, 1, buffers)
         //     └─> _submittedCommandBuffers.push_back(commandBuffer) [keep alive until GPU done]
@@ -737,8 +796,8 @@ int main() {
 
         // Present
         // [PERS V2 CALL STACK]
-        // ISwapChain::present()
-        // └─> WebGPUSwapChain::present()
+        // ISwapChain::Present()
+        // └─> WebGPUSwapChain::Present()
         //     └─> wgpuSurfacePresent(_surface)
         //     └─> _frameIndex = (_frameIndex + 1) % 3; [triple buffering]
         //     └─> ReleaseCurrentTexture() [cleanup current frame resources]
@@ -779,6 +838,13 @@ int main() {
     wgpuSurfaceRelease(demo.surface);
     wgpuInstanceRelease(demo.instance);
 
+    // [PERS V2 CALL STACK]
+    // Application::Shutdown()
+    // └─> ~GLFWSurfaceProvider()
+    //     └─> glfwDestroyWindow(_window)
+    //     └─> glfwTerminate()
+    // Note: GLFW cleanup happens after all graphics resources released
+    // Order: Graphics → Surface → Window System
     glfwDestroyWindow(window);
     glfwTerminate();
 

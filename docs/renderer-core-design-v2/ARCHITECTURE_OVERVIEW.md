@@ -31,8 +31,8 @@
 ### 1. Core System
 ```
 IInstance
-  └─> IAdapter
-        └─> IDevice
+  └─> IPhysicalDevice
+        └─> ILogicalDevice
               ├─> IQueue (command submission)
               ├─> IResourceFactory (resource creation)
               └─> ICommandEncoder (command recording)
@@ -132,11 +132,11 @@ IPipeline (abstract base)
 1. Create Instance
      IInstance* instance = CreateInstance(desc);
      
-2. Enumerate and select Adapter
-     IAdapter* adapter = instance->RequestAdapter(options);
+2. Enumerate and select Physical Device
+     IPhysicalDevice* physicalDevice = instance->RequestPhysicalDevice(options);
      
-3. Create Device
-     IDevice* device = adapter->CreateDevice(desc);
+3. Create Logical Device
+     ILogicalDevice* device = physicalDevice->CreateLogicalDevice(desc);
      
 4. Get ResourceFactory
      IResourceFactory* factory = device->GetResourceFactory();

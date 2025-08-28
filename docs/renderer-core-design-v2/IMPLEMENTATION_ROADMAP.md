@@ -20,8 +20,8 @@ pers/
 ├── include/pers/graphics/
 │   ├── core/
 │   │   ├── IInstance.h
-│   │   ├── IAdapter.h
-│   │   ├── IDevice.h
+│   │   ├── IPhysicalDevice.h
+│   │   ├── ILogicalDevice.h
 │   │   └── IQueue.h
 │   ├── resources/
 │   │   ├── buffers/
@@ -56,8 +56,8 @@ pers/
 
 ### 1.1 인터페이스 정의
 ```cpp
-// IDevice.h
-class IDevice {
+// ILogicalDevice.h
+class ILogicalDevice {
     virtual IQueue* GetQueue() = 0;
     virtual IResourceFactory* GetResourceFactory() = 0;
     virtual ICommandEncoder* CreateCommandEncoder() = 0;
@@ -73,9 +73,9 @@ class IResourceFactory {
 
 ### 1.2 Mock 구현
 ```cpp
-class MockDevice : public IDevice {
+class MockLogicalDevice : public ILogicalDevice {
     IQueue* GetQueue() override {
-        Logger::Info("MockDevice::GetQueue");
+        Logger::Info("MockLogicalDevice::GetQueue");
         return &mockQueue;
     }
 };
@@ -90,10 +90,10 @@ class MockResourceFactory : public IResourceFactory {
 
 ### 1.3 첫 번째 테스트
 ```cpp
-TEST(DeviceTest, CreateDevice) {
+TEST(DeviceTest, CreateLogicalDevice) {
     auto instance = CreateMockInstance();
-    auto adapter = instance->RequestAdapter();
-    auto device = adapter->CreateDevice();
+    auto physicalDevice = instance->RequestPhysicalDevice();
+    auto device = physicalDevice->CreateLogicalDevice();
     
     ASSERT_NE(device, nullptr);
     ASSERT_NE(device->GetQueue(), nullptr);
