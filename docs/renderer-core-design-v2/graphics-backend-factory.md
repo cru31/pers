@@ -258,7 +258,7 @@ public:
 ### WebGPU Backend Factory
 
 ```cpp
-// In engine code (pers/renderer/backends/webgpu/)
+// In engine code (pers/src/graphics/backends/webgpu/)
 namespace pers {
 namespace renderer {
 namespace backends {
@@ -348,7 +348,7 @@ public:
 ### WebGPU Wrapper Classes
 
 ```cpp
-// In engine code (pers/renderer/backends/webgpu/)
+// In engine code (pers/src/graphics/backends/webgpu/)
 namespace pers {
 namespace renderer {
 namespace backends {

@@ -302,6 +302,9 @@ target_include_directories(pers_static PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+target_include_directories(pers_static PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src  # For internal headers
+)
 
 # Link required dependencies
 target_link_libraries(pers_static PUBLIC glm::glm)
@@ -320,6 +323,9 @@ add_library(pers_shared SHARED ${PERS_SOURCES} ${PERS_HEADERS})
 target_include_directories(pers_shared PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+)
+target_include_directories(pers_shared PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src  # For internal headers
 )
 
 # Link required dependencies

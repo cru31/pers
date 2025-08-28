@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(WebGPUTriangle2)
+project(PersTriangle)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,13 +20,19 @@ endif()
 # Check if GLFW is available (should be provided by vcpkg when BUILD_TESTS=ON)
 find_package(glfw3 CONFIG)
 if(NOT glfw3_FOUND)
-    message(WARNING "GLFW not found - WebGPU triangle2 test will be skipped")
+    message(WARNING "GLFW not found - Pers triangle test will be skipped")
     message(STATUS "To enable this test, build with: -DVCPKG_MANIFEST_FEATURES=\"tests\" -DBUILD_TESTS=ON")
     return()
 endif()
 
-# Create triangle2 executable
-add_executable(webgpu_triangle2 main.cpp)
+# Create triangle executable
+add_executable(pers_triangle 
+    main.cpp
+    PersTriangleApp.cpp
+    PersTriangleApp.h
+    TriangleRenderer.cpp
+    TriangleRenderer.h
+)
 
 # For macOS, compile as Objective-C++ to use Cocoa
 if(APPLE)
@@ -36,55 +42,55 @@ if(APPLE)
 endif()
 
 # Link libraries
-target_link_libraries(webgpu_triangle2 PRIVATE 
+target_link_libraries(pers_triangle PRIVATE 
     pers_static  # Includes WebGPU
     glfw
 )
 
 # Link macOS frameworks if needed
 if(APPLE)
-    target_link_libraries(webgpu_triangle2 PRIVATE
+    target_link_libraries(pers_triangle PRIVATE
         "-framework Cocoa"
         "-framework QuartzCore"
     )
 endif()
 
 # Set output directory to match other tests
-set_target_properties(webgpu_triangle2 PROPERTIES
+set_target_properties(pers_triangle PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 # Fix macOS dylib references (only on macOS)
 if(APPLE)
-    fix_macos_dylib_for_targets(webgpu_triangle2)
+    fix_macos_dylib_for_targets(pers_triangle)
 endif()
 
 # Copy shader file to output directory
-add_custom_command(TARGET webgpu_triangle2 POST_BUILD
+add_custom_command(TARGET pers_triangle POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_CURRENT_SOURCE_DIR}/shader.wgsl"
-    $<TARGET_FILE_DIR:webgpu_triangle2>
+    $<TARGET_FILE_DIR:pers_triangle>
 )
 
 # Copy runtime dependencies
-copy_runtime_dependencies(webgpu_triangle2)
+copy_runtime_dependencies(pers_triangle)
 
 # Add to CTest
 enable_testing()
-add_test(NAME webgpu_triangle2 COMMAND webgpu_triangle2)
-set_tests_properties(webgpu_triangle2 PROPERTIES
-    WORKING_DIRECTORY "$<TARGET_FILE_DIR:webgpu_triangle2>"
+add_test(NAME pers_triangle COMMAND pers_triangle)
+set_tests_properties(pers_triangle PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:pers_triangle>"
 )
 
 # Mark as expected to fail in headless CI environments (Linux only)
 if(DEFINED ENV{CI} AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set_tests_properties(webgpu_triangle2 PROPERTIES
+    set_tests_properties(pers_triangle PROPERTIES
         WILL_FAIL TRUE  # Test is expected to fail in CI without display on Linux
     )
 endif()
 
 # Print build information
 message(STATUS "========================================")
-message(STATUS "WebGPU Triangle2 Test")
+message(STATUS "Pers Triangle Test")
 message(STATUS "Using pers library and GLFW from vcpkg")
 message(STATUS "========================================")
