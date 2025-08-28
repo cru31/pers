@@ -228,8 +228,7 @@
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        },
-        "FORCE_WGPU_COMPILE": "ON"
+        }
       }
     },
     {
@@ -245,8 +244,7 @@
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        },
-        "FORCE_WGPU_COMPILE": "ON"
+        }
       }
     }
   ],

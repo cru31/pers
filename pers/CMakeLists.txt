@@ -22,8 +22,7 @@ message(STATUS "Found GLM")
 # It will be needed for tests/samples
 
 # Options for WebGPU build method
-option(FORCE_WGPU_DOWNLOAD "Force download of pre-built wgpu-native binaries" OFF)
-option(FORCE_WGPU_COMPILE "Force compilation of wgpu-native from source" OFF)
+option(FORCE_WGPU_DOWNLOAD "Force download of pre-built wgpu-native binaries instead of compiling" OFF)
 
 # Check for Rust compiler (for wgpu-native)
 if(NOT FORCE_WGPU_DOWNLOAD)
@@ -73,7 +72,7 @@ set(WGPU_RUNTIME_BASE_DIR "${PROJECT_ROOT}/third_party/wgpu-native-runtime")
 if(APPLE)
     set(WGPU_BUILD_METHOD "prebuilt")
     message(STATUS "WebGPU build method: Pre-built binaries (macOS always uses prebuilt)")
-elseif(FORCE_WGPU_COMPILE OR (RUST_AVAILABLE AND NOT FORCE_WGPU_DOWNLOAD))
+elseif(RUST_AVAILABLE AND NOT FORCE_WGPU_DOWNLOAD)
     set(WGPU_BUILD_METHOD "custom-build")
     message(STATUS "WebGPU build method: Custom build from source")
 else()
@@ -109,39 +108,85 @@ if(APPLE)
     # Download to a temporary location
     set(WGPU_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/wgpu-native-download")
     
+    # Check architecture for macOS
+    if(CMAKE_OSX_ARCHITECTURES)
+        if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+            set(WGPU_PLATFORM "macos-aarch64")
+        elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+            set(WGPU_PLATFORM "macos-x86_64")
+        else()
+            message(WARNING "Unknown macOS architecture: ${CMAKE_OSX_ARCHITECTURES}, defaulting to x86_64")
+            set(WGPU_PLATFORM "macos-x86_64")
+        endif()
+    else()
+        # Auto-detect architecture if not specified
+        execute_process(
+            COMMAND uname -m
+            OUTPUT_VARIABLE DETECTED_ARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(DETECTED_ARCH STREQUAL "arm64")
+            set(WGPU_PLATFORM "macos-aarch64")
+            set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "macOS architecture" FORCE)
+        else()
+            set(WGPU_PLATFORM "macos-x86_64")
+            set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "macOS architecture" FORCE)
+        endif()
+        message(STATUS "Auto-detected macOS architecture: ${CMAKE_OSX_ARCHITECTURES}")
+    endif()
+    
+    # Use the version defined at the top
+    set(WGPU_URL "https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_VERSION}/wgpu-${WGPU_PLATFORM}-release.zip")
+    
+    FetchContent_Declare(
+        wgpu_native_download
+        URL ${WGPU_URL}
+        SOURCE_DIR ${WGPU_DOWNLOAD_DIR}
+    )
+    
+    FetchContent_MakeAvailable(wgpu_native_download)
+    
+    # Copy downloaded files to the runtime directory
+    message(STATUS "Installing wgpu-native to runtime directory...")
+    
+    # Copy all headers (preserving webgpu directory structure)
+    file(COPY "${WGPU_DOWNLOAD_DIR}/include/" 
+         DESTINATION "${WGPU_RUNTIME_DIR}/include")
+    
+    # Copy libraries
+    file(GLOB WGPU_LIBS "${WGPU_DOWNLOAD_DIR}/lib/*")
+    file(COPY ${WGPU_LIBS} DESTINATION "${WGPU_RUNTIME_DIR}/lib")
+    
+    # Verify installation
+    if(NOT EXISTS "${WGPU_RUNTIME_HEADER}")
+        message(FATAL_ERROR "Failed to install wgpu-native header")
+    endif()
+    if(NOT EXISTS "${WGPU_RUNTIME_LIB}")
+        message(FATAL_ERROR "Failed to install wgpu-native library")
+    endif()
+    
+    message(STATUS "Successfully installed wgpu-native to ${WGPU_RUNTIME_DIR}")
+    set(WGPU_NATIVE_LIB "${WGPU_RUNTIME_LIB}")
+    set(WGPU_NATIVE_INCLUDE_DIR "${WGPU_RUNTIME_DIR}/include/webgpu")
+    if(WIN32)
+        set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}" CACHE INTERNAL "Path to wgpu_native.dll")
+    endif()
+    set(WGPU_NATIVE_AVAILABLE TRUE)
+elseif(NOT RUST_AVAILABLE OR FORCE_WGPU_DOWNLOAD)
+    # Download pre-built binaries for Linux/Windows
+    message(STATUS "Downloading pre-built wgpu-native binaries...")
+    
+    include(FetchContent)
+    
+    # Download to a temporary location
+    set(WGPU_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/wgpu-native-download")
+    
     # Determine platform and architecture
     if(WIN32)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             set(WGPU_PLATFORM "windows-x86_64-msvc")
         else()
             message(FATAL_ERROR "32-bit Windows is not supported")
-        endif()
-    elseif(APPLE)
-        # Check architecture for macOS
-        if(CMAKE_OSX_ARCHITECTURES)
-            if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-                set(WGPU_PLATFORM "macos-aarch64")
-            elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
-                set(WGPU_PLATFORM "macos-x86_64")
-            else()
-                message(WARNING "Unknown macOS architecture: ${CMAKE_OSX_ARCHITECTURES}, defaulting to x86_64")
-                set(WGPU_PLATFORM "macos-x86_64")
-            endif()
-        else()
-            # Auto-detect architecture if not specified
-            execute_process(
-                COMMAND uname -m
-                OUTPUT_VARIABLE DETECTED_ARCH
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            if(DETECTED_ARCH STREQUAL "arm64")
-                set(WGPU_PLATFORM "macos-aarch64")
-                set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "macOS architecture" FORCE)
-            else()
-                set(WGPU_PLATFORM "macos-x86_64")
-                set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "macOS architecture" FORCE)
-            endif()
-            message(STATUS "Auto-detected macOS architecture: ${CMAKE_OSX_ARCHITECTURES}")
         endif()
     else()
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -188,8 +233,8 @@ if(APPLE)
         set(WGPU_NATIVE_DLL "${WGPU_RUNTIME_DLL}" CACHE INTERNAL "Path to wgpu_native.dll")
     endif()
     set(WGPU_NATIVE_AVAILABLE TRUE)
-elseif(RUST_AVAILABLE)
-    # If Rust is available, build from source
+elseif(RUST_AVAILABLE AND NOT FORCE_WGPU_DOWNLOAD)
+    # If Rust is available and not forced to download, build from source
     message(STATUS "Building wgpu-native from source...")
     include(ExternalProject)
     
