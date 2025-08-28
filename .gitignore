@@ -45,6 +45,7 @@ third_party.backup/wgpu-native-src/
 # Private documentation
 CLAUDE.md
 claude.md
+.claude/
 
 # Compiled binaries
 *.exe
