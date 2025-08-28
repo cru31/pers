@@ -180,20 +180,8 @@ void* WebGPUInstance::createSurface(void* windowHandle) {
     surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
     
 #elif defined(__APPLE__)
-    NotImplemented::Log(
-        "WebGPUInstance::createSurface",
-        "Create macOS Metal surface from GLFW window (requires CAMetalLayer setup via Objective-C)",
-        PERS_SOURCE_LOC
-    );
-    
-    // TODO: Implementation steps:
-    // 1. Get NSWindow from GLFW
-    // 2. Create CAMetalLayer 
-    // 3. Set layer on NSWindow's contentView
-    // 4. Create WGPUSurfaceSourceMetalLayer
-    // 5. Create surface with wgpuInstanceCreateSurface
-    
-    return nullptr;
+    // macOS implementation is in WebGPUInstance_macOS.mm
+    return createSurfaceMacOS(windowHandle);
     
 #else
     std::cerr << "[WebGPUInstance] Unsupported platform" << std::endl;

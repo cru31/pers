@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
-project(pers VERSION 0.1.0 LANGUAGES CXX)
+if(APPLE)
+    project(pers VERSION 0.1.0 LANGUAGES CXX OBJCXX)
+else()
+    project(pers VERSION 0.1.0 LANGUAGES CXX)
+endif()
 
 # C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -291,6 +295,14 @@ file(GLOB_RECURSE PERS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc
 )
 
+# Add macOS-specific sources
+if(APPLE)
+    file(GLOB_RECURSE PERS_SOURCES_OBJC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.mm
+    )
+    list(APPEND PERS_SOURCES ${PERS_SOURCES_OBJC})
+endif()
+
 file(GLOB_RECURSE PERS_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
@@ -310,6 +322,15 @@ target_include_directories(pers_static PRIVATE
 target_link_libraries(pers_static PUBLIC glm::glm)
 target_include_directories(pers_static PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
 target_link_libraries(pers_static PUBLIC ${WGPU_NATIVE_LIB})
+
+# Link macOS frameworks if needed
+if(APPLE)
+    target_link_libraries(pers_static PUBLIC 
+        "-framework Cocoa"
+        "-framework QuartzCore"
+        "-framework Metal"
+    )
+endif()
 
 # Add dependency on wgpu-native build target if building from source
 if(TARGET wgpu-native-install)
@@ -332,6 +353,15 @@ target_include_directories(pers_shared PRIVATE
 target_link_libraries(pers_shared PUBLIC glm::glm)
 target_include_directories(pers_shared PUBLIC ${WGPU_NATIVE_INCLUDE_DIR})
 target_link_libraries(pers_shared PUBLIC ${WGPU_NATIVE_LIB})
+
+# Link macOS frameworks if needed
+if(APPLE)
+    target_link_libraries(pers_shared PUBLIC 
+        "-framework Cocoa"
+        "-framework QuartzCore"
+        "-framework Metal"
+    )
+endif()
 
 # Add dependency on wgpu-native build target if building from source
 if(TARGET wgpu-native-install)

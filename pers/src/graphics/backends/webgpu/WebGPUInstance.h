@@ -39,6 +39,11 @@ public:
 private:
     WGPUInstance _instance = nullptr;
     InstanceDesc _desc; // Stored instance configuration
+    
+#ifdef __APPLE__
+    // macOS-specific surface creation (implemented in WebGPUInstance_macOS.mm)
+    void* createSurfaceMacOS(void* windowHandle);
+#endif
 };
 
 } // namespace pers
