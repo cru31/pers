@@ -142,13 +142,18 @@ void* WebGPUInstance::createSurface(void* windowHandle) {
     HWND hwnd = static_cast<HWND>(windowHandle);
     HINSTANCE hinstance = GetModuleHandle(nullptr);
     
+    std::cout << "[WebGPUInstance] HWND: " << hwnd << std::endl;
+    std::cout << "[WebGPUInstance] HINSTANCE: " << hinstance << std::endl;
+    
     WGPUSurfaceSourceWindowsHWND surfaceSource = {};
     surfaceSource.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
+    surfaceSource.chain.next = nullptr;
     surfaceSource.hinstance = hinstance;
     surfaceSource.hwnd = hwnd;
     
     WGPUSurfaceDescriptor surfaceDesc = {};
     surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
+    // Don't set label - it may cause issues on some platforms
     
     surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
     

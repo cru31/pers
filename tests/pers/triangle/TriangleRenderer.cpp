@@ -52,6 +52,13 @@ bool TriangleRenderer::initialize(GLFWwindow* window) {
     instanceDesc.enableValidation = true;
     instanceDesc.preferHighPerformanceGPU = true;
     
+    // In CI environments, allow software renderer as fallback
+    const char* ciEnv = std::getenv("CI");
+    if (ciEnv && std::string(ciEnv) == "true") {
+        instanceDesc.allowSoftwareRenderer = true;
+        std::cout << "[TriangleRenderer] CI environment detected, allowing software renderer" << std::endl;
+    }
+    
     _instance = _factory->createInstance(instanceDesc);
     if (!_instance) {
         std::cerr << "[TriangleRenderer] Failed to create instance" << std::endl;
@@ -66,6 +73,11 @@ bool TriangleRenderer::initialize(GLFWwindow* window) {
 #ifdef _WIN32
     // Windows: Get HWND
     nativeHandle = glfwGetWin32Window(_window);
+    if (!nativeHandle) {
+        std::cerr << "[TriangleRenderer] Failed to get Win32 window handle from GLFW" << std::endl;
+        return false;
+    }
+    std::cout << "[TriangleRenderer] Got Win32 window handle: " << nativeHandle << std::endl;
 #elif defined(__APPLE__)
     // macOS: Create CAMetalLayer and attach to window
     nativeHandle = createMetalLayer(_window);
