@@ -27,10 +27,8 @@ target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 # Add as a test
 add_test(NAME ${TARGET_NAME} COMMAND ${TARGET_NAME})
 
-# Copy runtime dependencies (for Windows DLLs)
-add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_RUNTIME_DLLS:${TARGET_NAME}>
-    $<TARGET_FILE_DIR:${TARGET_NAME}>
-    COMMAND_EXPAND_LISTS
-)
+# Include the centralized copy runtime dependencies function
+include(${CMAKE_CURRENT_LIST_DIR}/../../../cmake/CopyRuntimeDependencies.cmake)
+
+# Copy runtime dependencies
+copy_runtime_dependencies(${TARGET_NAME})
