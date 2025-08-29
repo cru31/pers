@@ -3,7 +3,7 @@
 #include <glm/vec2.hpp>
 #include <functional>
 #include <memory>
-#include "pers/core/platform/NativeHandle.h"
+#include "pers/core/platform/NativeWindowHandle.h"
 
 // Window event callbacks
 using ResizeCallback = std::function<void(int width, int height)>;

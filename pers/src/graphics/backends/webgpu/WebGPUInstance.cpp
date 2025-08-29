@@ -1,7 +1,7 @@
 #include "graphics/backends/webgpu/WebGPUInstance.h"
 #include "pers/graphics/backends/IGraphicsBackendFactory.h"
 #include "pers/utils/NotImplemented.h"
-#include "pers/core/platform/NativeHandle.h"
+#include "pers/core/platform/NativeWindowHandle.h"
 #include <webgpu.h>
 #include <wgpu.h>  // For wgpu-native specific extensions
 #include <iostream>
