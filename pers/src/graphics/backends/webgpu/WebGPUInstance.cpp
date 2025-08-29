@@ -1,4 +1,4 @@
-#include "graphics/backends/webgpu/WebGPUInstance.h"
+#include "pers/graphics/backends/webgpu/WebGPUInstance.h"
 #include "pers/graphics/backends/IGraphicsBackendFactory.h"
 #include "pers/utils/NotImplemented.h"
 #include "pers/core/platform/NativeWindowHandle.h"
@@ -9,6 +9,10 @@
 
 #ifdef _WIN32
     #include <windows.h>
+#endif
+
+#ifdef __linux__
+    #include <X11/Xlib.h>
 #endif
 
 namespace pers {
