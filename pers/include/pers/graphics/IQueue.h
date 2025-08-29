@@ -35,20 +35,30 @@ public:
     /**
      * @brief Submit command buffers for execution
      * @param commandBuffers Array of command buffers to submit
+     * @return true if submission succeeded
      */
-    virtual void submit(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) = 0;
+    virtual bool submit(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) = 0;
     
     /**
      * @brief Submit a single command buffer for execution
      * @param commandBuffer Command buffer to submit
+     * @return true if submission succeeded
      */
-    virtual void submit(std::shared_ptr<ICommandBuffer> commandBuffer) = 0;
+    virtual bool submit(std::shared_ptr<ICommandBuffer> commandBuffer) = 0;
+    
+    /**
+     * @brief Submit multiple command buffers as a batch
+     * @param commandBuffers Array of command buffers to submit
+     * @return true if submission succeeded
+     */
+    virtual bool submitBatch(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) = 0;
     
     /**
      * @brief Write data to a buffer
      * @param desc Buffer write descriptor
+     * @return true if write succeeded
      */
-    virtual void writeBuffer(const BufferWriteDesc& desc) = 0;
+    virtual bool writeBuffer(const BufferWriteDesc& desc) = 0;
     
     /**
      * @brief Write data to a texture
@@ -56,16 +66,18 @@ public:
      * @param data Source data
      * @param dataSize Size of data in bytes
      * @param mipLevel Target mip level
+     * @return true if write succeeded
      */
-    virtual void writeTexture(std::shared_ptr<ITexture> texture, 
+    virtual bool writeTexture(std::shared_ptr<ITexture> texture, 
                              const void* data, 
                              uint64_t dataSize,
                              uint32_t mipLevel = 0) = 0;
     
     /**
      * @brief Wait for all submitted work to complete
+     * @return true if wait succeeded
      */
-    virtual void waitIdle() = 0;
+    virtual bool waitIdle() = 0;
     
     /**
      * @brief Get native queue handle for backend-specific operations

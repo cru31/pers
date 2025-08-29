@@ -3,6 +3,7 @@
 #include "pers/graphics/IQueue.h"
 #include <webgpu.h>
 #include <memory>
+#include <vector>
 
 namespace pers {
 
@@ -18,25 +19,16 @@ public:
     explicit WebGPUQueue(WGPUQueue queue);
     ~WebGPUQueue() override;
     
-    /**
-     * @brief Submit command buffer to queue
-     * @param commandBuffer Command buffer to submit
-     * @return true if submission succeeded
-     */
+    // IQueue interface implementation
+    bool submit(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) override;
     bool submit(std::shared_ptr<ICommandBuffer> commandBuffer) override;
-    
-    /**
-     * @brief Submit multiple command buffers
-     * @param commandBuffers Array of command buffers
-     * @param count Number of command buffers
-     * @return true if submission succeeded
-     */
-    bool submitBatch(std::shared_ptr<ICommandBuffer>* commandBuffers, uint32_t count) override;
-    
-    /**
-     * @brief Wait for queue to become idle
-     */
-    void waitIdle() override;
+    bool submitBatch(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) override;
+    bool writeBuffer(const BufferWriteDesc& desc) override;
+    bool writeTexture(std::shared_ptr<ITexture> texture, 
+                     const void* data, 
+                     uint64_t dataSize,
+                     uint32_t mipLevel = 0) override;
+    bool waitIdle() override;
     
     /**
      * @brief Get native queue handle
