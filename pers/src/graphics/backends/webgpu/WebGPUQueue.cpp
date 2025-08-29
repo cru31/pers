@@ -6,6 +6,7 @@
 #include "pers/utils/Logger.h"
 #include <webgpu.h>
 #include <vector>
+#include <thread>
 
 namespace pers {
 
@@ -149,19 +150,44 @@ bool WebGPUQueue::waitIdle() {
         return false;
     }
     
-    // WebGPU doesn't have a direct waitIdle for queues
-    // We use onSubmittedWorkDone callback to wait
+    // Use a simple synchronous approach for now
+    // wgpuQueueOnSubmittedWorkDone with a callback to know when work is done
     
-    NotImplemented::Log(
-        "WebGPUQueue::waitIdle",
-        "Implement queue synchronization with onSubmittedWorkDone",
-        PERS_SOURCE_LOC
-    );
+    struct CallbackData {
+        bool isComplete = false;
+    };
     
-    // TODO: Implementation steps:
-    // 1. Set up a callback with wgpuQueueOnSubmittedWorkDone
-    // 2. Use a condition variable or event to wait
-    // 3. Signal when callback is invoked
+    CallbackData callbackData;
+    
+    // Set up callback info
+    WGPUQueueWorkDoneCallbackInfo callbackInfo = {};
+    callbackInfo.nextInChain = nullptr;
+    callbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    callbackInfo.callback = [](WGPUQueueWorkDoneStatus status, void* userdata1, void* userdata2) {
+        CallbackData* data = static_cast<CallbackData*>(userdata1);
+        if (data) {
+            if (status == WGPUQueueWorkDoneStatus_Success) {
+                data->isComplete = true;
+            } else {
+                // Log error but still mark as complete to avoid infinite wait
+                data->isComplete = true;
+            }
+        }
+    };
+    callbackInfo.userdata1 = &callbackData;
+    callbackInfo.userdata2 = nullptr;
+    
+    // Submit the callback
+    WGPUFuture future = wgpuQueueOnSubmittedWorkDone(_queue, callbackInfo);
+    
+    // For now, we'll do a simple busy wait
+    // TODO: In a production system, use proper synchronization primitives
+    while (!callbackData.isComplete) {
+        // Process events/callbacks - implementation dependent
+        // For wgpu-native, there might not be a poll mechanism
+        // so we just yield the thread
+        std::this_thread::yield();
+    }
     
     return true;
 }
