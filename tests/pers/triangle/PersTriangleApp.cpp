@@ -1,22 +1,22 @@
 #include "PersTriangleApp.h"
 #include "TriangleRenderer.h"
+#include "pers/core/IWindow.h"
 #include <iostream>
-#include <chrono>
 #include <cstdlib>
 
-PersTriangleApp::PersTriangleApp() = default;
-
-PersTriangleApp::~PersTriangleApp() {
-    cleanup();
+PersTriangleApp::PersTriangleApp() {
+    // Configure window before initialization
+    _windowTitle = "PERS Triangle Demo";
+    
+    // Check if running in CI environment
+    const char* ciEnv = std::getenv("CI");
+    _isCI = (ciEnv != nullptr);
 }
 
-bool PersTriangleApp::initialize() {
-    std::cout << "=== PERS RAL Triangle Example ===" << std::endl;
-    
-    // Initialize window
-    if (!initializeWindow()) {
-        return false;
-    }
+PersTriangleApp::~PersTriangleApp() = default;
+
+bool PersTriangleApp::onInitialize() {
+    std::cout << "=== PERS Triangle Application ===" << std::endl;
     
     // Initialize renderer
     if (!initializeRenderer()) {
@@ -31,129 +31,78 @@ bool PersTriangleApp::initialize() {
     return true;
 }
 
-void PersTriangleApp::run() {
-    // In CI environment, run for 5 seconds only
-    const char* ciEnv = std::getenv("CI");
-    bool isCI = (ciEnv != nullptr);
-    auto startTime = std::chrono::steady_clock::now();
-    const int maxCISeconds = 5;
-    
-    while (!glfwWindowShouldClose(_window)) {
-        glfwPollEvents();
-        render();
-        
-        // Exit after 5 seconds in CI environment
-        if (isCI) {
-            auto currentTime = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
-            if (elapsed >= maxCISeconds) {
-                std::cout << "[PersTriangleApp] CI mode: Exiting after " << maxCISeconds << " seconds" << std::endl;
-                break;
-            }
-        }
-    }
-}
-
-bool PersTriangleApp::initializeWindow() {
-    // Initialize GLFW
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return false;
-    }
-    
-    // Create window
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    _window = glfwCreateWindow(_width, _height, "PERS Triangle", nullptr, nullptr);
-    if (!_window) {
-        std::cerr << "Failed to create window" << std::endl;
-        glfwTerminate();
-        return false;
-    }
-    
-    // Set user pointer and callbacks
-    glfwSetWindowUserPointer(_window, this);
-    glfwSetFramebufferSizeCallback(_window, onFramebufferSize);
-    glfwSetKeyCallback(_window, onKeyPress);
-    
-    return true;
-}
-
 bool PersTriangleApp::initializeRenderer() {
     // Create and initialize the renderer
     _renderer = std::make_unique<TriangleRenderer>();
     
-    if (!_renderer->initialize(_window)) {
-        std::cerr << "Failed to initialize renderer" << std::endl;
+    // Get framebuffer size to pass to renderer
+    glm::ivec2 size = getFramebufferSize();
+    
+    // Initialize renderer with the instance we got from base class
+    if (!_renderer->initialize(getInstance(), size)) {
+        std::cerr << "[PersTriangleApp] Failed to initialize renderer" << std::endl;
         return false;
     }
+    
+    // Create surface using base class helper and set it on renderer
+    void* surface = createSurface();
+    if (!surface) {
+        std::cerr << "[PersTriangleApp] Failed to create surface" << std::endl;
+        return false;
+    }
+    
+    _renderer->setSurface(surface);
     
     return true;
 }
 
 bool PersTriangleApp::createTriangle() {
-    // Delegate to renderer
     if (!_renderer) {
-        std::cerr << "Renderer not initialized" << std::endl;
+        std::cerr << "[PersTriangleApp] Renderer not initialized" << std::endl;
         return false;
     }
     
     return _renderer->createTriangleResources();
 }
 
-void PersTriangleApp::render() {
-    // Delegate to renderer
+void PersTriangleApp::onUpdate(float deltaTime) {
+    // Exit after timeout in CI environment
+    if (_isCI) {
+        _ciElapsedTime += deltaTime;
+        if (_ciElapsedTime >= CI_MAX_SECONDS) {
+            std::cout << "[PersTriangleApp] CI mode: Exiting after " << CI_MAX_SECONDS << " seconds" << std::endl;
+            getWindow()->setShouldClose(true);
+        }
+    }
+}
+
+void PersTriangleApp::onRender() {
     if (_renderer) {
         _renderer->renderFrame();
     }
 }
 
-void PersTriangleApp::cleanup() {
-    // Clean up renderer first (before destroying window)
-    _renderer.reset();
-    
-    // Then clean up window
-    if (_window) {
-        glfwDestroyWindow(_window);
-        _window = nullptr;
-    }
-    glfwTerminate();
-}
-
-// Static callbacks
-void PersTriangleApp::onFramebufferSize(GLFWwindow* window, int width, int height) {
-    PersTriangleApp* app = static_cast<PersTriangleApp*>(glfwGetWindowUserPointer(window));
-    if (app) {
-        app->handleResize(width, height);
-    }
-}
-
-void PersTriangleApp::onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    PersTriangleApp* app = static_cast<PersTriangleApp*>(glfwGetWindowUserPointer(window));
-    if (app) {
-        app->handleKeyPress(key, scancode, action, mods);
-    }
-}
-
-// Instance event handlers
-void PersTriangleApp::handleResize(int width, int height) {
-    _width = width;
-    _height = height;
-    
+void PersTriangleApp::onResize(int width, int height) {
     // Forward to renderer
     if (_renderer) {
         _renderer->onResize(width, height);
     }
 }
 
-void PersTriangleApp::handleKeyPress(int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
+void PersTriangleApp::onKeyPress(int key, int scancode, int action, int mods) {
+    // Additional key handling (ESC is handled by base class)
+    if (action == 1) { // GLFW_PRESS = 1
         switch (key) {
-            case GLFW_KEY_ESCAPE:
-                glfwSetWindowShouldClose(_window, GLFW_TRUE);
-                break;
-            case GLFW_KEY_F:
-                std::cout << "F key pressed" << std::endl;
+            case 70: // GLFW_KEY_F = 70
+                std::cout << "[PersTriangleApp] F key pressed" << std::endl;
                 break;
         }
     }
+}
+
+void PersTriangleApp::onCleanup() {
+    std::cout << "[PersTriangleApp] Cleaning up triangle resources" << std::endl;
+    
+    // Clean up renderer (must be before instance is destroyed)
+    _renderer.reset();
 }

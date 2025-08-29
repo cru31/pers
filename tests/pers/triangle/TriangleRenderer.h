@@ -1,8 +1,7 @@
 #pragma once
 
 #include <memory>
-
-struct GLFWwindow;
+#include <glm/vec2.hpp>
 
 namespace pers {
     class IGraphicsBackendFactory;
@@ -14,8 +13,14 @@ public:
     TriangleRenderer() = default;
     ~TriangleRenderer();
     
-    // Initialize the renderer with the window
-    bool initialize(GLFWwindow* window);
+    // Initialize the renderer with instance and size
+    bool initialize(std::shared_ptr<pers::IInstance> instance, const glm::ivec2& size);
+    
+    // Get the graphics instance (for surface creation)
+    std::shared_ptr<pers::IInstance> getInstance() const { return _instance; }
+    
+    // Set the surface (created by the app)
+    void setSurface(void* surface) { _surface = surface; }
     
     // Create triangle resources (vertex buffer, shaders, pipeline)
     bool createTriangleResources();
@@ -30,12 +35,9 @@ public:
     void cleanup();
     
 private:
-    GLFWwindow* _window = nullptr;
-    int _width = 800;
-    int _height = 600;
+    glm::ivec2 _windowSize = glm::ivec2(800, 600);
     
     // Pers graphics resources
-    std::shared_ptr<pers::IGraphicsBackendFactory> _factory;
     std::shared_ptr<pers::IInstance> _instance;
     void* _surface = nullptr; // Opaque surface handle
 };

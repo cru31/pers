@@ -32,6 +32,10 @@ set(TRIANGLE_SOURCES
     PersTriangleApp.h
     TriangleRenderer.cpp
     TriangleRenderer.h
+    GLFWWindow.h
+    GLFWWindow.cpp
+    GLFWWindowFactory.h
+    GLFWWindowFactory.cpp
 )
 
 # Add macOS-specific sources

@@ -1,41 +1,35 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
+#include "pers/core/Application.h"
 #include <memory>
 
 class TriangleRenderer;
 
-class PersTriangleApp {
+class PersTriangleApp : public Application {
 public:
     PersTriangleApp();
-    ~PersTriangleApp();
+    ~PersTriangleApp() override;
     
-    bool initialize();
-    void run();
+protected:
+    // Override virtual methods from Application
+    bool onInitialize() override;
+    void onUpdate(float deltaTime) override;
+    void onRender() override;
+    void onResize(int width, int height) override;
+    void onKeyPress(int key, int scancode, int action, int mods) override;
+    void onCleanup() override;
     
 private:
-    // Initialization methods
-    bool initializeWindow();
+    // Triangle-specific initialization
     bool initializeRenderer();
     bool createTriangle();
     
-    // Runtime methods
-    void render();
-    void cleanup();
-    
-    // Static callbacks that forward to instance methods
-    static void onFramebufferSize(GLFWwindow* window, int width, int height);
-    static void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods);
-    
-    // Instance methods for handling events
-    void handleResize(int width, int height);
-    void handleKeyPress(int key, int scancode, int action, int mods);
-    
 private:
-    GLFWwindow* _window = nullptr;
-    int _width = 800;
-    int _height = 600;
-    
     // Renderer
     std::unique_ptr<TriangleRenderer> _renderer;
+    
+    // CI environment tracking
+    bool _isCI = false;
+    float _ciElapsedTime = 0.0f;
+    static constexpr float CI_MAX_SECONDS = 5.0f;
 };
