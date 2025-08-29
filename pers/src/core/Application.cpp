@@ -133,25 +133,25 @@ bool Application::createInstance() {
     return true;
 }
 
-void* Application::createSurface() const {
+pers::NativeSurfaceHandle Application::createSurface() const {
     if (!_instance) {
         std::cerr << "[Application] Instance not initialized" << std::endl;
-        return nullptr;
+        return pers::NativeSurfaceHandle(nullptr);
     }
     
     if (!_window) {
         std::cerr << "[Application] Window not initialized" << std::endl;
-        return nullptr;
+        return pers::NativeSurfaceHandle(nullptr);
     }
     
     // Get native handle from window
     pers::NativeWindowHandle nativeHandle = _window->getNativeHandle();
     
     // Create surface using the instance
-    void* surface = _instance->createSurface(&nativeHandle);
-    if (!surface) {
+    pers::NativeSurfaceHandle surface = _instance->createSurface(&nativeHandle);
+    if (!surface.isValid()) {
         std::cerr << "[Application] Failed to create surface" << std::endl;
-        return nullptr;
+        return pers::NativeSurfaceHandle(nullptr);
     }
     
     std::cout << "[Application] Surface created successfully" << std::endl;

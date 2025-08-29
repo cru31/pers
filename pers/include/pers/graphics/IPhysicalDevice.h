@@ -73,7 +73,7 @@ public:
      * @param surface Surface handle to check
      * @return true if surface is supported
      */
-    virtual bool supportsSurface(NativeSurfaceHandle surface) const = 0;
+    virtual bool supportsSurface(const NativeSurfaceHandle& surface) const = 0;
     
     /**
      * @brief Create a logical device

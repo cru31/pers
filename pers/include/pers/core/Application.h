@@ -3,6 +3,7 @@
 #include <glm/vec2.hpp>
 #include <memory>
 #include <string>
+#include "pers/graphics/GraphicsTypes.h"
 
 class IWindow;
 class IWindowFactory;
@@ -45,7 +46,7 @@ protected:
     std::shared_ptr<pers::IInstance> getInstance() const { return _instance; }
     
     // Helper method for surface creation
-    void* createSurface() const;
+    pers::NativeSurfaceHandle createSurface() const;
     
 private:
     // Initialization methods

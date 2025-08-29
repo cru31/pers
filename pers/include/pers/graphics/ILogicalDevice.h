@@ -58,7 +58,7 @@ public:
      * @return Shared pointer to swap chain or nullptr if failed
      */
     virtual std::shared_ptr<ISwapChain> createSwapChain(
-        NativeSurfaceHandle surface, const SwapChainDesc& desc) = 0;
+        const NativeSurfaceHandle& surface, const SwapChainDesc& desc) = 0;
     
     /**
      * @brief Wait for all GPU operations to complete

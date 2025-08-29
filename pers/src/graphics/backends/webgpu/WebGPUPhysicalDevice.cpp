@@ -109,8 +109,8 @@ std::vector<QueueFamily> WebGPUPhysicalDevice::getQueueFamilies() const {
     return families;
 }
 
-bool WebGPUPhysicalDevice::supportsSurface(void* surface) const {
-    if (!_adapter || !surface) {
+bool WebGPUPhysicalDevice::supportsSurface(const NativeSurfaceHandle& surface) const {
+    if (!_adapter || !surface.isValid()) {
         return false;
     }
     
@@ -139,8 +139,8 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
     return nullptr;
 }
 
-void* WebGPUPhysicalDevice::getNativeHandle() const {
-    return _adapter;
+NativeAdapterHandle WebGPUPhysicalDevice::getNativeAdapterHandle() const {
+    return NativeAdapterHandle::fromBackend(_adapter);
 }
 
 } // namespace pers

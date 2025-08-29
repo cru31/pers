@@ -46,8 +46,8 @@ bool PersTriangleApp::initializeRenderer() {
     }
     
     // Create surface using base class helper and set it on renderer
-    void* surface = createSurface();
-    if (!surface) {
+    pers::NativeSurfaceHandle surface = createSurface();
+    if (!surface.isValid()) {
         std::cerr << "[PersTriangleApp] Failed to create surface" << std::endl;
         return false;
     }

@@ -30,7 +30,7 @@ public:
      * @param surface Surface handle to check
      * @return true if surface is supported
      */
-    bool supportsSurface(void* surface) const override;
+    bool supportsSurface(const NativeSurfaceHandle& surface) const override;
     
     /**
      * @brief Create a logical device
@@ -41,10 +41,10 @@ public:
         const LogicalDeviceDesc& desc) override;
     
     /**
-     * @brief Get native handle
+     * @brief Get native adapter handle
      * @return Native WGPUAdapter handle
      */
-    void* getNativeHandle() const override;
+    NativeAdapterHandle getNativeAdapterHandle() const override;
     
 private:
     WGPUAdapter _adapter = nullptr;

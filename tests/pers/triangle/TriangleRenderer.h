@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <glm/vec2.hpp>
+#include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
     class IGraphicsBackendFactory;
@@ -20,7 +21,7 @@ public:
     std::shared_ptr<pers::IInstance> getInstance() const { return _instance; }
     
     // Set the surface (created by the app)
-    void setSurface(void* surface) { _surface = surface; }
+    void setSurface(const pers::NativeSurfaceHandle& surface) { _surface = surface; }
     
     // Create triangle resources (vertex buffer, shaders, pipeline)
     bool createTriangleResources();
@@ -39,5 +40,5 @@ private:
     
     // Pers graphics resources
     std::shared_ptr<pers::IInstance> _instance;
-    void* _surface = nullptr; // Opaque surface handle
+    pers::NativeSurfaceHandle _surface; // Surface handle
 };
