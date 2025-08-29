@@ -246,6 +246,34 @@
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
         }
       }
+    },
+    {
+      "name": "clion-windows-debug-download",
+      "inherits": "windows-debug-download",
+      "displayName": "CLion Windows Debug (WebGPU Download)",
+      "description": "CLion Windows debug build with pre-built WebGPU",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/debug"
+    },
+    {
+      "name": "clion-windows-release-download",
+      "inherits": "windows-release-download",
+      "displayName": "CLion Windows Release (WebGPU Download)",
+      "description": "CLion Windows release build with pre-built WebGPU",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/release"
+    },
+    {
+      "name": "clion-windows-debug-compile",
+      "inherits": "windows-debug-compile",
+      "displayName": "CLion Windows Debug (WebGPU Compile)",
+      "description": "CLion Windows debug build with WebGPU compiled from source",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/debug"
+    },
+    {
+      "name": "clion-windows-release-compile",
+      "inherits": "windows-release-compile",
+      "displayName": "CLion Windows Release (WebGPU Compile)",
+      "description": "CLion Windows release build with WebGPU compiled from source",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/release"
     }
   ],
   "buildPresets": [

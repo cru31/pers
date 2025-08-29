@@ -1,6 +1,8 @@
 # Build directories
 build/
 **/build/
+build-clion/
+**/build-clion/
 cmake-build-*/
 out/
 # Pattern for debug/release build directories
@@ -83,3 +85,4 @@ backup/
 *.bak
 *~
 *.swp
+WebGPU Instance 이후 작업 구현 지시서.txt
