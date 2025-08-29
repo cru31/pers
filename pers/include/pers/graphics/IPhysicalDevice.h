@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
 
@@ -72,7 +73,7 @@ public:
      * @param surface Surface handle to check
      * @return true if surface is supported
      */
-    virtual bool supportsSurface(void* surface) const = 0;
+    virtual bool supportsSurface(NativeSurfaceHandle surface) const = 0;
     
     /**
      * @brief Create a logical device
@@ -83,10 +84,10 @@ public:
         const LogicalDeviceDesc& desc) = 0;
     
     /**
-     * @brief Get native handle for backend-specific operations
+     * @brief Get native adapter handle for backend-specific operations
      * @return Native adapter handle (WGPUAdapter for WebGPU)
      */
-    virtual void* getNativeHandle() const = 0;
+    virtual NativeAdapterHandle getNativeAdapterHandle() const = 0;
 };
 
 } // namespace pers

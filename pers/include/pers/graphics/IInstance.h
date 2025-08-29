@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
 
@@ -47,9 +48,9 @@ public:
     /**
      * @brief Create a surface from a native window handle
      * @param windowHandle Native window handle (GLFWwindow*, HWND, etc.)
-     * @return Opaque surface handle or nullptr if failed
+     * @return Native surface handle or nullptr if failed
      */
-    virtual void* createSurface(void* windowHandle) = 0;
+    virtual NativeSurfaceHandle createSurface(void* windowHandle) = 0;
 };
 
 } // namespace pers

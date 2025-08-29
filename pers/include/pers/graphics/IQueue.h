@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <cstdint>
+#include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
 
@@ -67,10 +68,10 @@ public:
     virtual void waitIdle() = 0;
     
     /**
-     * @brief Get native handle for backend-specific operations
+     * @brief Get native queue handle for backend-specific operations
      * @return Native queue handle (WGPUQueue for WebGPU)
      */
-    virtual void* getNativeHandle() const = 0;
+    virtual NativeQueueHandle getNativeQueueHandle() const = 0;
 };
 
 } // namespace pers

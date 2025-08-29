@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pers/graphics/GraphicsTypes.h"
+
 namespace pers {
 
 /**
@@ -12,10 +14,10 @@ public:
     virtual ~ICommandBuffer() = default;
     
     /**
-     * @brief Get native handle for backend-specific operations
+     * @brief Get native command buffer handle for backend-specific operations
      * @return Native command buffer handle (WGPUCommandBuffer for WebGPU)
      */
-    virtual void* getNativeHandle() const = 0;
+    virtual NativeCommandBufferHandle getNativeCommandBufferHandle() const = 0;
 };
 
 } // namespace pers

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cstdint>
+#include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
 
@@ -71,10 +72,10 @@ public:
     virtual PresentMode getPresentMode() const = 0;
     
     /**
-     * @brief Get native handle for backend-specific operations
+     * @brief Get native swap chain handle for backend-specific operations
      * @return Native swap chain handle (implementation-specific)
      */
-    virtual void* getNativeHandle() const = 0;
+    virtual NativeSwapChainHandle getNativeSwapChainHandle() const = 0;
 };
 
 } // namespace pers

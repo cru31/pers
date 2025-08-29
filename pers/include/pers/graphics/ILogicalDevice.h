@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cstdint>
+#include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
 
@@ -57,7 +58,7 @@ public:
      * @return Shared pointer to swap chain or nullptr if failed
      */
     virtual std::shared_ptr<ISwapChain> createSwapChain(
-        void* surface, const SwapChainDesc& desc) = 0;
+        NativeSurfaceHandle surface, const SwapChainDesc& desc) = 0;
     
     /**
      * @brief Wait for all GPU operations to complete
@@ -65,10 +66,10 @@ public:
     virtual void waitIdle() = 0;
     
     /**
-     * @brief Get native handle for backend-specific operations
+     * @brief Get native device handle for backend-specific operations
      * @return Native device handle (WGPUDevice for WebGPU)
      */
-    virtual void* getNativeHandle() const = 0;
+    virtual NativeDeviceHandle getNativeDeviceHandle() const = 0;
 };
 
 } // namespace pers
