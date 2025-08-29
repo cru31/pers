@@ -194,8 +194,8 @@ inline BufferUsage operator&(BufferUsage a, BufferUsage b) {
     return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 }
 
-inline BufferUsage& operator|=(BufferUsage& a, BufferUsage b) {
-    return a = a | b;
+inline bool operator!(BufferUsage usage) {
+    return static_cast<uint32_t>(usage) == 0;
 }
 
 inline BufferUsage& operator&=(BufferUsage& a, BufferUsage b) {

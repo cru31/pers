@@ -21,13 +21,13 @@ public:
     ~WebGPULogicalDevice() override;
     
     // Queue operations
-    std::shared_ptr<IQueue> getQueue(uint32_t queueFamilyIndex, uint32_t queueIndex) override;
+    std::shared_ptr<IQueue> getQueue() const override;
     
     // Resource creation factory
-    std::shared_ptr<IResourceFactory> getResourceFactory() override;
+    std::shared_ptr<IResourceFactory> getResourceFactory() const override;
     
     // Command operations
-    std::shared_ptr<ICommandEncoder> createCommandEncoder(const CommandEncoderDesc& desc) override;
+    std::shared_ptr<ICommandEncoder> createCommandEncoder() override;
     
     // Swap chain creation
     std::shared_ptr<ISwapChain> createSwapChain(

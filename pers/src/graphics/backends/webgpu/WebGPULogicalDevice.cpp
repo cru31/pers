@@ -2,7 +2,8 @@
 #include "pers/graphics/backends/webgpu/WebGPUQueue.h"
 #include "pers/utils/NotImplemented.h"
 #include "pers/utils/Logger.h"
-#include <cassert>
+#include <webgpu.h>
+#include <iostream>
 
 namespace pers {
 
@@ -11,16 +12,16 @@ WebGPULogicalDevice::WebGPULogicalDevice(WGPUDevice device, WGPUAdapter adapter)
     
     if (_device) {
         wgpuDeviceAddRef(_device);
-        Logger::info("[WebGPULogicalDevice] Created with device");
+        Logger::Instance().Log(LogLevel::Info, "WebGPULogicalDevice", "Created with device", PERS_SOURCE_LOC);
         
         // Create default queue immediately
         if (!createDefaultQueue()) {
-            Logger::error("[WebGPULogicalDevice] Failed to create default queue");
+            Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", "Failed to create default queue", PERS_SOURCE_LOC);
             // Device is still valid but queue creation failed
             // Caller should check if queue is available
         }
     } else {
-        Logger::error("[WebGPULogicalDevice] Created with null device!");
+        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", "Created with null device!", PERS_SOURCE_LOC);
     }
     
     if (_adapter) {
@@ -51,26 +52,19 @@ bool WebGPULogicalDevice::createDefaultQueue() {
     WGPUQueue queue = wgpuDeviceGetQueue(_device);
     if (queue) {
         _defaultQueue = std::make_shared<WebGPUQueue>(queue);
-        Logger::info("[WebGPULogicalDevice] Default queue created");
+        Logger::Instance().Log(LogLevel::Info, "WebGPULogicalDevice", "Default queue created", PERS_SOURCE_LOC);
         return true;
     } else {
-        Logger::error("[WebGPULogicalDevice] Failed to get default queue");
+        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", "Failed to get default queue", PERS_SOURCE_LOC);
         return false;
     }
 }
 
-std::shared_ptr<IQueue> WebGPULogicalDevice::getQueue(uint32_t queueFamilyIndex, uint32_t queueIndex) {
-    // WebGPU only has one queue
-    if (queueFamilyIndex != 0 || queueIndex != 0) {
-        Logger::error("[WebGPULogicalDevice] Invalid queue indices: family={}, index={}", 
-                     queueFamilyIndex, queueIndex);
-        return nullptr;
-    }
-    
+std::shared_ptr<IQueue> WebGPULogicalDevice::getQueue() const {
     return _defaultQueue;
 }
 
-std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() {
+std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() const {
     NotImplemented::Log(
         "WebGPULogicalDevice::getResourceFactory",
         "Create WebGPUResourceFactory for buffer/texture/shader creation",
@@ -85,8 +79,7 @@ std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() {
     return nullptr;
 }
 
-std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder(
-    const CommandEncoderDesc& desc) {
+std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder() {
     
     NotImplemented::Log(
         "WebGPULogicalDevice::createCommandEncoder",
@@ -95,7 +88,7 @@ std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder(
     );
     
     // TODO: Implementation steps:
-    // 1. Create WGPUCommandEncoderDescriptor from desc
+    // 1. Create WGPUCommandEncoderDescriptor
     // 2. Call wgpuDeviceCreateCommandEncoder
     // 3. Wrap in WebGPUCommandEncoder class
     // 4. Return shared_ptr
@@ -128,14 +121,20 @@ void WebGPULogicalDevice::waitIdle() {
         return;
     }
     
-    // WebGPU doesn't have a direct waitIdle equivalent
-    // We can tick the device to process all pending operations
-    wgpuDeviceTick(_device);
+    // WebGPU doesn't have a direct waitIdle equivalent like Vulkan's vkDeviceWaitIdle
+    // We need to poll the device to process callbacks and wait for queue completion
     
-    // If we have a queue, wait for it to be idle
+    // Process any pending callbacks
+    // Note: wgpuDevicePoll is the standard WebGPU way to process callbacks
+    // but wgpu-native uses a different approach
+    
+    // For wgpu-native, we wait for the queue to complete all work
     if (_defaultQueue) {
         _defaultQueue->waitIdle();
     }
+    
+    // TODO: Investigate if wgpu-native has a device poll mechanism
+    // Standard WebGPU would use: wgpuDevicePoll(_device, true, nullptr);
 }
 
 NativeDeviceHandle WebGPULogicalDevice::getNativeDeviceHandle() const {
