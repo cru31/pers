@@ -1,6 +1,7 @@
 #include "graphics/backends/webgpu/WebGPUInstance.h"
 #include "pers/graphics/backends/IGraphicsBackendFactory.h"
 #include "pers/utils/NotImplemented.h"
+#include "pers/core/platform/NativeHandle.h"
 #include <webgpu.h>
 #include <wgpu.h>  // For wgpu-native specific extensions
 #include <iostream>
@@ -133,13 +134,16 @@ void* WebGPUInstance::createSurface(void* windowHandle) {
         return nullptr;
     }
     
+    // Cast to NativeWindowHandle
+    const NativeWindowHandle* nativeHandle = static_cast<const NativeWindowHandle*>(windowHandle);
+    
     WGPUSurface surface = nullptr;
     
 #ifdef _WIN32
     std::cout << "[WebGPUInstance] Creating Windows surface..." << std::endl;
     
-    // windowHandle should be HWND (native Windows handle)
-    HWND hwnd = static_cast<HWND>(windowHandle);
+    // Get HWND from NativeWindowHandle
+    HWND hwnd = static_cast<HWND>(nativeHandle->hwnd);
     HINSTANCE hinstance = GetModuleHandle(nullptr);
     
     std::cout << "[WebGPUInstance] HWND: " << hwnd << std::endl;
@@ -153,28 +157,63 @@ void* WebGPUInstance::createSurface(void* windowHandle) {
     
     WGPUSurfaceDescriptor surfaceDesc = {};
     surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
-    // Don't set label - it may cause issues on some platforms
     
     surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
     
 #elif defined(__linux__)
-    std::cout << "[WebGPUInstance] Creating Linux/X11 surface..." << std::endl;
-    
-    // windowHandle should be a struct containing display and window
-    // For now, not implemented - app needs to pass proper struct
-    NotImplemented::Log(
-        "WebGPUInstance::createSurface",
-        "Linux X11 surface creation needs proper native handle struct",
-        PERS_SOURCE_LOC
-    );
-    return nullptr;
+    // Check which Linux windowing system we're using
+    if (nativeHandle->type == NativeWindowHandle::X11) {
+        std::cout << "[WebGPUInstance] Creating Linux X11 surface..." << std::endl;
+        
+        Display* display = static_cast<Display*>(nativeHandle->display);
+        Window window = reinterpret_cast<Window>(nativeHandle->window);
+        
+        WGPUSurfaceSourceXlibWindow surfaceSource = {};
+        surfaceSource.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
+        surfaceSource.chain.next = nullptr;
+        surfaceSource.display = display;
+        surfaceSource.window = window;
+        
+        WGPUSurfaceDescriptor surfaceDesc = {};
+        surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
+        
+        const char* labelStr = "Linux X11 Surface";
+        surfaceDesc.label.data = labelStr;
+        surfaceDesc.label.length = strlen(labelStr);
+        
+        surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
+        
+    } else if (nativeHandle->type == NativeWindowHandle::Wayland) {
+        std::cout << "[WebGPUInstance] Creating Linux Wayland surface..." << std::endl;
+        
+        struct wl_display* display = static_cast<struct wl_display*>(nativeHandle->display);
+        struct wl_surface* wlSurface = static_cast<struct wl_surface*>(nativeHandle->window);
+        
+        WGPUSurfaceSourceWaylandSurface surfaceSource = {};
+        surfaceSource.chain.sType = WGPUSType_SurfaceSourceWaylandSurface;
+        surfaceSource.chain.next = nullptr;
+        surfaceSource.display = display;
+        surfaceSource.surface = wlSurface;
+        
+        WGPUSurfaceDescriptor surfaceDesc = {};
+        surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
+        
+        const char* labelStr = "Linux Wayland Surface";
+        surfaceDesc.label.data = labelStr;
+        surfaceDesc.label.length = strlen(labelStr);
+        
+        surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
+        
+    } else {
+        std::cerr << "[WebGPUInstance] Unknown Linux windowing system type: " << nativeHandle->type << std::endl;
+        return nullptr;
+    }
     
 #elif defined(__APPLE__)
     std::cout << "[WebGPUInstance] Creating macOS Metal surface..." << std::endl;
     
-    // windowHandle should be CAMetalLayer* (native macOS Metal layer)
-    // The application is responsible for creating the CAMetalLayer
-    void* metalLayer = windowHandle;
+    // Get CAMetalLayer from NativeWindowHandle
+    void* metalLayer = nativeHandle->metalLayer;
     
     WGPUSurfaceSourceMetalLayer surfaceSource = {};
     surfaceSource.chain.sType = WGPUSType_SurfaceSourceMetalLayer;
@@ -184,7 +223,6 @@ void* WebGPUInstance::createSurface(void* windowHandle) {
     WGPUSurfaceDescriptor surfaceDesc = {};
     surfaceDesc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&surfaceSource);
     
-    // WGPUStringView requires data pointer and length
     const char* labelStr = "macOS Metal Surface";
     surfaceDesc.label.data = labelStr;
     surfaceDesc.label.length = strlen(labelStr);

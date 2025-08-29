@@ -71,10 +71,14 @@ add_custom_command(TARGET webgpu_triangle POST_BUILD
 copy_runtime_dependencies(webgpu_triangle)
 
 # Add to CTest
+# IMPORTANT: This test MUST be run with PERS_TEST_MODE=1 environment variable
+# Otherwise it will run indefinitely as a graphical application
+# The test mode ensures automatic exit after 5 seconds to prevent timeout in CI/test environments
 enable_testing()
 add_test(NAME webgpu_triangle COMMAND webgpu_triangle)
 set_tests_properties(webgpu_triangle PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:webgpu_triangle>"
+    ENVIRONMENT "PERS_TEST_MODE=1"  # REQUIRED: Enables auto-exit after 5 seconds
 )
 
 # Mark as expected to fail in headless CI environments (Linux only)

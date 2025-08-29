@@ -90,33 +90,112 @@ void GLFWWindow::setKeyCallback(KeyCallback callback) {
     _keyCallback = callback;
 }
 
-void* GLFWWindow::getNativeHandle() const {
+pers::NativeWindowHandle GLFWWindow::getNativeHandle() const {
     if (!_window) {
         std::cerr << "[GLFWWindow] No window to get native handle from" << std::endl;
-        return nullptr;
+        return pers::NativeWindowHandle();  // Return empty handle
     }
-    
-    void* nativeHandle = nullptr;
     
 #ifdef _WIN32
     // Windows: Get HWND
-    nativeHandle = glfwGetWin32Window(_window);
-    if (!nativeHandle) {
+    void* hwnd = glfwGetWin32Window(_window);
+    if (!hwnd) {
         std::cerr << "[GLFWWindow] Failed to get Win32 window handle" << std::endl;
+        return pers::NativeWindowHandle();
     }
+    return pers::NativeWindowHandle::Create(hwnd);
+    
 #elif defined(__APPLE__)
     // macOS: Create CAMetalLayer and attach to window
-    nativeHandle = createMetalLayer(_window);
-    if (!nativeHandle) {
+    void* metalLayer = createMetalLayer(_window);
+    if (!metalLayer) {
         std::cerr << "[GLFWWindow] Failed to create Metal layer" << std::endl;
+        return pers::NativeWindowHandle();
     }
+    return pers::NativeWindowHandle::Create(metalLayer);
+    
 #elif defined(__linux__)
-    // Linux: Get X11 window
-    // TODO: Implement Linux native handle extraction
-    std::cerr << "[GLFWWindow] Linux native handle extraction not yet implemented" << std::endl;
+    // Linux: Check which windowing system GLFW is using
+    
+#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+    // GLFW 3.4+ has glfwGetPlatform()
+    int platform = glfwGetPlatform();
+    
+    switch (platform) {
+        case GLFW_PLATFORM_X11: {
+            Display* x11Display = glfwGetX11Display();
+            Window x11Window = glfwGetX11Window(_window);
+            
+            if (!x11Display || !x11Window) {
+                std::cerr << "[GLFWWindow] Failed to get X11 handles" << std::endl;
+                return pers::NativeWindowHandle();
+            }
+            
+            std::cout << "[GLFWWindow] Using X11 backend (via glfwGetPlatform)" << std::endl;
+            return pers::NativeWindowHandle::CreateX11(x11Display, reinterpret_cast<void*>(x11Window));
+        }
+        
+        case GLFW_PLATFORM_WAYLAND: {
+            struct wl_display* wlDisplay = glfwGetWaylandDisplay();
+            struct wl_surface* wlSurface = glfwGetWaylandWindow(_window);
+            
+            if (!wlDisplay || !wlSurface) {
+                std::cerr << "[GLFWWindow] Failed to get Wayland handles" << std::endl;
+                return pers::NativeWindowHandle();
+            }
+            
+            std::cout << "[GLFWWindow] Using Wayland backend (via glfwGetPlatform)" << std::endl;
+            return pers::NativeWindowHandle::CreateWayland(wlDisplay, wlSurface);
+        }
+        
+        default:
+            std::cerr << "[GLFWWindow] Unsupported platform: " << platform << std::endl;
+            return pers::NativeWindowHandle();
+    }
+#else
+    // GLFW 3.3 and older - fallback to checking both
+    Display* x11Display = glfwGetX11Display();
+    struct wl_display* wlDisplay = glfwGetWaylandDisplay();
+    
+    // Check for unexpected situation where both are available
+    if (x11Display && wlDisplay) {
+        std::cerr << "[GLFWWindow] WARNING: Both X11 and Wayland displays detected, defaulting to X11" << std::endl;
+        Window x11Window = glfwGetX11Window(_window);
+        if (!x11Window) {
+            std::cerr << "[GLFWWindow] Failed to get X11 window handle" << std::endl;
+            return pers::NativeWindowHandle();
+        }
+        return pers::NativeWindowHandle::CreateX11(x11Display, reinterpret_cast<void*>(x11Window));
+    }
+    
+    // Normal case: only one is available
+    if (x11Display) {
+        Window x11Window = glfwGetX11Window(_window);
+        if (!x11Window) {
+            std::cerr << "[GLFWWindow] Failed to get X11 window handle" << std::endl;
+            return pers::NativeWindowHandle();
+        }
+        std::cout << "[GLFWWindow] Using X11 backend" << std::endl;
+        return pers::NativeWindowHandle::CreateX11(x11Display, reinterpret_cast<void*>(x11Window));
+    }
+    
+    if (wlDisplay) {
+        struct wl_surface* wlSurface = glfwGetWaylandWindow(_window);
+        if (!wlSurface) {
+            std::cerr << "[GLFWWindow] Failed to get Wayland surface" << std::endl;
+            return pers::NativeWindowHandle();
+        }
+        std::cout << "[GLFWWindow] Using Wayland backend" << std::endl;
+        return pers::NativeWindowHandle::CreateWayland(wlDisplay, wlSurface);
+    }
+    
+    std::cerr << "[GLFWWindow] Could not detect windowing system (neither X11 nor Wayland)" << std::endl;
+    return pers::NativeWindowHandle();
 #endif
     
-    return nativeHandle;
+#else
+    #error "Unsupported platform"
+#endif
 }
 
 // Static callbacks

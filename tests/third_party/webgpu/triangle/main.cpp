@@ -384,11 +384,13 @@ int main() {
     int frameCount = 0;
     const int maxFramesInCI = 300; // Run for 300 frames (about 5 seconds at 60fps) in CI
     const bool isCI = std::getenv("CI") != nullptr;
+    const bool isTestMode = std::getenv("PERS_TEST_MODE") != nullptr;
+    const bool shouldAutoExit = isCI || isTestMode;
     
     while (!glfwWindowShouldClose(window)) {
-        // Auto-exit in CI after rendering enough frames
-        if (isCI && frameCount++ >= maxFramesInCI) {
-            std::cout << "CI mode: Rendered " << frameCount << " frames successfully, exiting..." << std::endl;
+        // Auto-exit in CI or test mode after rendering enough frames
+        if (shouldAutoExit && frameCount++ >= maxFramesInCI) {
+            std::cout << "Auto-exit mode: Rendered " << frameCount << " frames successfully, exiting..." << std::endl;
             break;
         }
         glfwPollEvents();

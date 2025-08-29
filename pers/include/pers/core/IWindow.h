@@ -3,6 +3,7 @@
 #include <glm/vec2.hpp>
 #include <functional>
 #include <memory>
+#include "pers/core/platform/NativeHandle.h"
 
 // Window event callbacks
 using ResizeCallback = std::function<void(int width, int height)>;
@@ -36,5 +37,5 @@ public:
     
     // Platform-specific handle extraction
     // Returns platform-specific window handle for surface creation
-    virtual void* getNativeHandle() const = 0;
+    virtual pers::NativeWindowHandle getNativeHandle() const = 0;
 };

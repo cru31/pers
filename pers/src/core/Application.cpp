@@ -145,14 +145,10 @@ void* Application::createSurface() const {
     }
     
     // Get native handle from window
-    void* nativeHandle = _window->getNativeHandle();
-    if (!nativeHandle) {
-        std::cerr << "[Application] Failed to get native handle from window" << std::endl;
-        return nullptr;
-    }
+    pers::NativeWindowHandle nativeHandle = _window->getNativeHandle();
     
     // Create surface using the instance
-    void* surface = _instance->createSurface(nativeHandle);
+    void* surface = _instance->createSurface(&nativeHandle);
     if (!surface) {
         std::cerr << "[Application] Failed to create surface" << std::endl;
         return nullptr;

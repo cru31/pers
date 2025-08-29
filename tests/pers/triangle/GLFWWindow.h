@@ -24,7 +24,7 @@ public:
     void setResizeCallback(ResizeCallback callback) override;
     void setKeyCallback(KeyCallback callback) override;
     
-    void* getNativeHandle() const override;
+    pers::NativeWindowHandle getNativeHandle() const override;
     
     // GLFW-specific methods
     GLFWwindow* getGLFWWindow() const { return _window; }

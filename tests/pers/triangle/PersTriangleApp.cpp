@@ -8,9 +8,10 @@ PersTriangleApp::PersTriangleApp() {
     // Configure window before initialization
     _windowTitle = "PERS Triangle Demo";
     
-    // Check if running in CI environment
+    // Check if running in CI or test environment
     const char* ciEnv = std::getenv("CI");
-    _isCI = (ciEnv != nullptr);
+    const char* testEnv = std::getenv("PERS_TEST_MODE");
+    _isCI = (ciEnv != nullptr) || (testEnv != nullptr);
 }
 
 PersTriangleApp::~PersTriangleApp() = default;
