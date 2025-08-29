@@ -32,9 +32,9 @@ public:
     /**
      * @brief Create a surface from a native window handle
      * @param windowHandle Native window handle (GLFWwindow*)
-     * @return Opaque surface handle or nullptr if failed
+     * @return Native surface handle or nullptr if failed
      */
-    void* createSurface(void* windowHandle) override;
+    NativeSurfaceHandle createSurface(void* windowHandle) override;
     
 private:
     WGPUInstance _instance = nullptr;

@@ -123,15 +123,15 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
     return nullptr;
 }
 
-void* WebGPUInstance::createSurface(void* windowHandle) {
+NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
     if (!_instance) {
         std::cerr << "[WebGPUInstance] Instance not initialized" << std::endl;
-        return nullptr;
+        return NativeSurfaceHandle(nullptr);
     }
     
     if (!windowHandle) {
         std::cerr << "[WebGPUInstance] Invalid window handle" << std::endl;
-        return nullptr;
+        return NativeSurfaceHandle(nullptr);
     }
     
     // Cast to NativeWindowHandle
@@ -206,7 +206,7 @@ void* WebGPUInstance::createSurface(void* windowHandle) {
         
     } else {
         std::cerr << "[WebGPUInstance] Unknown Linux windowing system type: " << nativeHandle->type << std::endl;
-        return nullptr;
+        return NativeSurfaceHandle(nullptr);
     }
     
 #elif defined(__APPLE__)
@@ -231,16 +231,16 @@ void* WebGPUInstance::createSurface(void* windowHandle) {
     
 #else
     std::cerr << "[WebGPUInstance] Unsupported platform" << std::endl;
-    return nullptr;
+    return NativeSurfaceHandle(nullptr);
 #endif
     
     if (!surface) {
         std::cerr << "[WebGPUInstance] Failed to create surface" << std::endl;
-        return nullptr;
+        return NativeSurfaceHandle(nullptr);
     }
     
     std::cout << "[WebGPUInstance] Surface created successfully" << std::endl;
-    return surface;
+    return NativeSurfaceHandle::fromBackend(surface);
 }
 
 } // namespace pers

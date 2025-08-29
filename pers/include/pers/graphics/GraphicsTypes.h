@@ -1,36 +1,119 @@
 #pragma once
 
+#include <cstddef>
+
 namespace pers {
+
+/**
+ * @brief Handle type enumeration for type safety
+ */
+enum class HandleType {
+    Adapter,
+    Device,
+    Queue,
+    Surface,
+    SwapChain,
+    CommandBuffer,
+    CommandEncoder,
+    RenderPass,
+    TextureView,
+    Buffer,
+    Texture,
+    Sampler,
+    Pipeline,
+    Shader,
+    BindGroup,
+    BindGroupLayout,
+    PipelineLayout
+};
+
+/**
+ * @brief Type-safe handle wrapper
+ * 
+ * Provides compile-time type safety for native handles while maintaining
+ * zero runtime overhead. Each handle type is distinct at compile time,
+ * preventing accidental mixing of different handle types.
+ */
+template<HandleType Type>
+struct TypedHandle {
+private:
+    void* _ptr = nullptr;
+    
+public:
+    // Default constructor - creates null handle
+    TypedHandle() = default;
+    
+    // Explicit constructor from void pointer
+    explicit TypedHandle(void* p) : _ptr(p) {}
+    
+    // Nullptr constructor
+    TypedHandle(std::nullptr_t) : _ptr(nullptr) {}
+    
+    // Copy constructor and assignment
+    TypedHandle(const TypedHandle&) = default;
+    TypedHandle& operator=(const TypedHandle&) = default;
+    
+    // Move constructor and assignment
+    TypedHandle(TypedHandle&&) = default;
+    TypedHandle& operator=(TypedHandle&&) = default;
+    
+    // Comparison operators
+    bool operator==(const TypedHandle& other) const { return _ptr == other._ptr; }
+    bool operator!=(const TypedHandle& other) const { return _ptr != other._ptr; }
+    bool operator==(std::nullptr_t) const { return _ptr == nullptr; }
+    bool operator!=(std::nullptr_t) const { return _ptr != nullptr; }
+    
+    // Check if handle is valid
+    bool isValid() const { return _ptr != nullptr; }
+    explicit operator bool() const { return isValid(); }
+    
+    // Get raw pointer (only for backend implementation use)
+    void* getRaw() const { return _ptr; }
+    
+    // Cast to backend-specific type (only for backend implementation use)
+    template<typename T>
+    T as() const { return static_cast<T>(_ptr); }
+    
+    // Create from backend-specific type
+    template<typename T>
+    static TypedHandle fromBackend(T backend) {
+        return TypedHandle(static_cast<void*>(backend));
+    }
+};
 
 /**
  * @brief Native graphics API handle types
  * 
- * These are opaque handle types that wrap backend-specific objects.
- * Currently implemented as void* but can be changed to strongly-typed handles in the future.
+ * These are strongly-typed handles that wrap backend-specific objects.
+ * Each handle type is distinct at compile time, preventing accidental
+ * type confusion.
  */
 
 // Device and adapter handles
-typedef void* NativeAdapterHandle;      // WGPUAdapter for WebGPU, VkPhysicalDevice for Vulkan
-typedef void* NativeDeviceHandle;       // WGPUDevice for WebGPU, VkDevice for Vulkan
+using NativeAdapterHandle = TypedHandle<HandleType::Adapter>;           // WGPUAdapter for WebGPU
+using NativeDeviceHandle = TypedHandle<HandleType::Device>;             // WGPUDevice for WebGPU
 
 // Command and queue handles  
-typedef void* NativeQueueHandle;        // WGPUQueue for WebGPU, VkQueue for Vulkan
-typedef void* NativeCommandBufferHandle; // WGPUCommandBuffer for WebGPU, VkCommandBuffer for Vulkan
-typedef void* NativeEncoderHandle;      // WGPUCommandEncoder for WebGPU, VkCommandBuffer for Vulkan
-typedef void* NativeRenderPassHandle;   // WGPURenderPassEncoder for WebGPU
+using NativeQueueHandle = TypedHandle<HandleType::Queue>;               // WGPUQueue for WebGPU
+using NativeCommandBufferHandle = TypedHandle<HandleType::CommandBuffer>; // WGPUCommandBuffer for WebGPU
+using NativeEncoderHandle = TypedHandle<HandleType::CommandEncoder>;    // WGPUCommandEncoder for WebGPU
+using NativeRenderPassHandle = TypedHandle<HandleType::RenderPass>;     // WGPURenderPassEncoder for WebGPU
 
 // Resource handles
-typedef void* NativeSwapChainHandle;    // Implementation-specific swap chain handle
-typedef void* NativeTextureViewHandle;  // WGPUTextureView for WebGPU, VkImageView for Vulkan
-typedef void* NativeBufferHandle;       // WGPUBuffer for WebGPU, VkBuffer for Vulkan
-typedef void* NativeTextureHandle;      // WGPUTexture for WebGPU, VkImage for Vulkan
-typedef void* NativeSamplerHandle;      // WGPUSampler for WebGPU, VkSampler for Vulkan
+using NativeSwapChainHandle = TypedHandle<HandleType::SwapChain>;       // Implementation-specific
+using NativeTextureViewHandle = TypedHandle<HandleType::TextureView>;   // WGPUTextureView for WebGPU
+using NativeBufferHandle = TypedHandle<HandleType::Buffer>;             // WGPUBuffer for WebGPU
+using NativeTextureHandle = TypedHandle<HandleType::Texture>;           // WGPUTexture for WebGPU
+using NativeSamplerHandle = TypedHandle<HandleType::Sampler>;           // WGPUSampler for WebGPU
 
 // Pipeline and shader handles
-typedef void* NativePipelineHandle;     // WGPURenderPipeline for WebGPU, VkPipeline for Vulkan
-typedef void* NativeShaderHandle;       // WGPUShaderModule for WebGPU, VkShaderModule for Vulkan
+using NativePipelineHandle = TypedHandle<HandleType::Pipeline>;         // WGPURenderPipeline for WebGPU
+using NativeShaderHandle = TypedHandle<HandleType::Shader>;             // WGPUShaderModule for WebGPU
+using NativeBindGroupHandle = TypedHandle<HandleType::BindGroup>;       // WGPUBindGroup for WebGPU
+using NativeBindGroupLayoutHandle = TypedHandle<HandleType::BindGroupLayout>; // WGPUBindGroupLayout for WebGPU
+using NativePipelineLayoutHandle = TypedHandle<HandleType::PipelineLayout>;   // WGPUPipelineLayout for WebGPU
 
 // Surface handle
-typedef void* NativeSurfaceHandle;      // WGPUSurface for WebGPU, VkSurfaceKHR for Vulkan
+using NativeSurfaceHandle = TypedHandle<HandleType::Surface>;           // WGPUSurface for WebGPU
 
 } // namespace pers
