@@ -26,7 +26,7 @@ pers/
 │   │       └── ICommandRecorder.h
 │   └── src/
 │       └── core/
-│           └── NotImplemented.cpp
+│           └── TodoOrDie.cpp
 ├── samples/
 │   └── 00-basic-setup/         # 빌드 테스트용
 └── tests/
@@ -36,7 +36,7 @@ pers/
 ### 검증
 - [ ] CMake 빌드 성공
 - [ ] 빈 프로그램 실행
-- [ ] NotImplemented 로그 출력
+- [ ] TodoOrDie 로그 출력
 
 ---
 

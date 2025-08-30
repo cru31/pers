@@ -1,6 +1,6 @@
 #include "pers/graphics/backends/webgpu/WebGPULogicalDevice.h"
 #include "pers/graphics/backends/webgpu/WebGPUQueue.h"
-#include "pers/utils/NotImplemented.h"
+#include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include <webgpu.h>
 #include <iostream>
@@ -65,7 +65,7 @@ std::shared_ptr<IQueue> WebGPULogicalDevice::getQueue() const {
 }
 
 std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() const {
-    NotImplemented::Log(
+    TodoOrDie::Log(
         "WebGPULogicalDevice::getResourceFactory",
         "Create WebGPUResourceFactory for buffer/texture/shader creation",
         PERS_SOURCE_LOC
@@ -81,7 +81,7 @@ std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() cons
 
 std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder() {
     
-    NotImplemented::Log(
+    TodoOrDie::Log(
         "WebGPULogicalDevice::createCommandEncoder",
         "Create WebGPUCommandEncoder from device",
         PERS_SOURCE_LOC
@@ -100,7 +100,7 @@ std::shared_ptr<ISwapChain> WebGPULogicalDevice::createSwapChain(
     const NativeSurfaceHandle& surface,
     const SwapChainDesc& desc) {
     
-    NotImplemented::Log(
+    TodoOrDie::Log(
         "WebGPULogicalDevice::createSwapChain",
         "Create WebGPU swap chain for surface presentation",
         PERS_SOURCE_LOC

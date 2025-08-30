@@ -72,7 +72,7 @@ ${project_root}/docs/renderer-core-design/roadmap/IMPLEMENTATION_PLAN.md
 
 ### STEP 4: 도구와 테스트 (참조용)
 
-#### 4.1 NotImplemented 가이드
+#### 4.1 TodoOrDie 가이드
 ```
 ${project_root}/docs/renderer-core-design/roadmap/NOTIMPLEMENTED_GUIDE.md
 - 왜: 점진적 구현을 위한 스텁 시스템
@@ -100,7 +100,7 @@ ${project_root}/docs/renderer-core-design/roadmap/TEST_SPECIFICATIONS.md
 **이 단계의 목표:**
 - 프로젝트 구조 생성
 - CMake 빌드 시스템 구성
-- Logger, NotImplemented 유틸리티 구현
+- Logger, TodoOrDie 유틸리티 구현
 
 **LearnWebGPU 참조:**
 ```
@@ -315,4 +315,4 @@ renderer->EndFrame(cmd);
 - BeginRenderPass(nullptr) = 백버퍼
 - EndRenderPass() 반드시 명시적 호출
 - Raw pointer 금지, shared_ptr 사용
-- NotImplemented로 점진적 구현
+- TodoOrDie로 점진적 구현

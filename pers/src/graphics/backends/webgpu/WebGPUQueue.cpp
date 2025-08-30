@@ -2,7 +2,7 @@
 #include "pers/graphics/ICommandBuffer.h"
 #include "pers/graphics/IBuffer.h"
 #include "pers/graphics/ITexture.h"
-#include "pers/utils/NotImplemented.h"
+#include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include <webgpu.h>
 #include <vector>
@@ -130,7 +130,7 @@ bool WebGPUQueue::writeTexture(std::shared_ptr<ITexture> texture,
         return false;
     }
     
-    NotImplemented::Log(
+    TodoOrDie::Log(
         "WebGPUQueue::writeTexture",
         "Implement texture data upload via queue",
         PERS_SOURCE_LOC

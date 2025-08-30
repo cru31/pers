@@ -28,13 +28,13 @@ pers/
 │   │   │   └── Resources.h
 │   │   └── utils/
 │   │       ├── Logger.h
-│   │       └── NotImplemented.h
+│   │       └── TodoOrDie.h
 │   └── src/
 │       ├── core/
 │       │   └── Types.cpp
 │       └── utils/
 │           ├── Logger.cpp
-│           └── NotImplemented.cpp
+│           └── TodoOrDie.cpp
 ├── validation/
 │   ├── tracer/
 │   │   ├── include/
@@ -90,7 +90,7 @@ endif()
 ### 검증 항목
 - [ ] CMake 빌드 성공
 - [ ] 기본 Logger 동작 확인
-- [ ] NotImplemented 로그 출력 확인
+- [ ] TodoOrDie 로그 출력 확인
 
 ## Phase 1: Core Interfaces & Mock Implementation (Week 1-2)
 

@@ -36,7 +36,7 @@ pers/
 │   │   └── IResourceFactory.h
 │   └── Types.h
 ├── src/
-│   └── NotImplemented.cpp
+│   └── TodoOrDie.cpp
 └── tests/
     └── CMakeLists.txt
 ```
@@ -45,7 +45,7 @@ pers/
 - [ ] CMake 프로젝트 구성
 - [ ] 폴더 구조 생성
 - [ ] 기본 타입 정의 (Types.h)
-- [ ] NotImplemented 헬퍼
+- [ ] TodoOrDie 헬퍼
 
 ---
 

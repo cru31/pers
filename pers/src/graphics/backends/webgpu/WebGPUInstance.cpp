@@ -1,7 +1,7 @@
 #include "pers/graphics/backends/webgpu/WebGPUInstance.h"
 #include "pers/graphics/backends/webgpu/WebGPUPhysicalDevice.h"
 #include "pers/graphics/backends/IGraphicsBackendFactory.h"
-#include "pers/utils/NotImplemented.h"
+#include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include "pers/core/platform/NativeWindowHandle.h"
 #include <webgpu.h>

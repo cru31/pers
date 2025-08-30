@@ -5,7 +5,7 @@
 
 namespace pers {
 
-class NotImplemented {
+class TodoOrDie {
 public:
     static void Log(const std::string& functionName, 
                    const std::string& todoDescription,
