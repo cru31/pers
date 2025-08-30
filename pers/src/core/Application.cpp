@@ -3,7 +3,7 @@
 #include "pers/core/IWindowFactory.h"
 #include "pers/graphics/backends/IGraphicsBackendFactory.h"
 #include "pers/graphics/IInstance.h"
-#include <iostream>
+#include "pers/utils/Logger.h"
 #include <chrono>
 
 Application::Application() = default;
@@ -14,19 +14,19 @@ Application::~Application() {
 
 bool Application::initialize(std::shared_ptr<IWindowFactory> windowFactory, 
                             std::shared_ptr<pers::IGraphicsBackendFactory> graphicsFactory) {
-    std::cout << "=== Application Initialization ===" << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "=== Application Initialization ===", PERS_SOURCE_LOC);
     
     // Store factories
     _windowFactory = windowFactory;
     _graphicsFactory = graphicsFactory;
     
     if (!_windowFactory) {
-        std::cerr << "[Application] Invalid window factory provided" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Invalid window factory provided", PERS_SOURCE_LOC);
         return false;
     }
     
     if (!_graphicsFactory) {
-        std::cerr << "[Application] Invalid graphics factory provided" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Invalid graphics factory provided", PERS_SOURCE_LOC);
         return false;
     }
     
@@ -47,7 +47,7 @@ bool Application::initialize(std::shared_ptr<IWindowFactory> windowFactory,
     
     // Call derived class initialization
     if (!onInitialize()) {
-        std::cerr << "[Application] Derived class initialization failed" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Derived class initialization failed", PERS_SOURCE_LOC);
         return false;
     }
     
@@ -80,21 +80,23 @@ glm::ivec2 Application::getFramebufferSize() const {
 }
 
 bool Application::createWindow() {
-    std::cout << "[Application] Creating window using " << _windowFactory->getFactoryName() << " factory" << std::endl;
+    pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "Application", PERS_SOURCE_LOC,
+        "Creating window using %s factory", _windowFactory->getFactoryName());
     
     _window = _windowFactory->createWindow(_windowWidth, _windowHeight, _windowTitle);
     if (!_window || !_window->isValid()) {
-        std::cerr << "[Application] Failed to create window" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Failed to create window", PERS_SOURCE_LOC);
         return false;
     }
     
-    std::cout << "[Application] Window created: " << _windowWidth << "x" << _windowHeight << std::endl;
+    pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "Application", PERS_SOURCE_LOC,
+        "Window created: %dx%d", _windowWidth, _windowHeight);
     return true;
 }
 
 bool Application::setupWindowCallbacks() {
     if (!_window || !_window->isValid()) {
-        std::cerr << "[Application] Invalid window" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Invalid window", PERS_SOURCE_LOC);
         return false;
     }
     
@@ -111,8 +113,9 @@ bool Application::setupWindowCallbacks() {
 }
 
 bool Application::createInstance() {
-    std::cout << "[Application] Creating graphics instance" << std::endl;
-    std::cout << "[Application] Using backend: " << _graphicsFactory->getBackendName() << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Creating graphics instance", PERS_SOURCE_LOC);
+    pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "Application", PERS_SOURCE_LOC,
+        "Using backend: %s", _graphicsFactory->getBackendName().c_str());
     
     // Create graphics instance
     pers::InstanceDesc instanceDesc;
@@ -125,22 +128,22 @@ bool Application::createInstance() {
     
     _instance = _graphicsFactory->createInstance(instanceDesc);
     if (!_instance) {
-        std::cerr << "[Application] Failed to create instance" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Failed to create instance", PERS_SOURCE_LOC);
         return false;
     }
     
-    std::cout << "[Application] Instance created successfully" << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Instance created successfully", PERS_SOURCE_LOC);
     return true;
 }
 
 pers::NativeSurfaceHandle Application::createSurface() const {
     if (!_instance) {
-        std::cerr << "[Application] Instance not initialized" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Instance not initialized", PERS_SOURCE_LOC);
         return pers::NativeSurfaceHandle(nullptr);
     }
     
     if (!_window) {
-        std::cerr << "[Application] Window not initialized" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Window not initialized", PERS_SOURCE_LOC);
         return pers::NativeSurfaceHandle(nullptr);
     }
     
@@ -150,16 +153,16 @@ pers::NativeSurfaceHandle Application::createSurface() const {
     // Create surface using the instance
     pers::NativeSurfaceHandle surface = _instance->createSurface(&nativeHandle);
     if (!surface.isValid()) {
-        std::cerr << "[Application] Failed to create surface" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Failed to create surface", PERS_SOURCE_LOC);
         return pers::NativeSurfaceHandle(nullptr);
     }
     
-    std::cout << "[Application] Surface created successfully" << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Surface created successfully", PERS_SOURCE_LOC);
     return surface;
 }
 
 void Application::cleanup() {
-    std::cout << "[Application] Starting cleanup" << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Starting cleanup", PERS_SOURCE_LOC);
     
     // Call derived class cleanup first
     onCleanup();
@@ -176,7 +179,7 @@ void Application::cleanup() {
     // Clean up window factory (shared, may still be referenced elsewhere)
     _windowFactory.reset();
     
-    std::cout << "[Application] Cleanup completed" << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Cleanup completed", PERS_SOURCE_LOC);
 }
 
 void Application::handleResize(int width, int height) {

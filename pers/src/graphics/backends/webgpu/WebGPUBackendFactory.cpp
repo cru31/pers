@@ -1,17 +1,17 @@
 #include "pers/graphics/backends/webgpu/WebGPUBackendFactory.h"
 #include "pers/graphics/backends/webgpu/WebGPUInstance.h"
-#include <iostream>
+#include "pers/utils/Logger.h"
 
 namespace pers {
 
 std::shared_ptr<IInstance> WebGPUBackendFactory::createInstance(
     const InstanceDesc& desc) {
     
-    std::cout << "[WebGPUBackendFactory] Creating WebGPU instance..." << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "WebGPUBackendFactory", "Creating WebGPU instance...", PERS_SOURCE_LOC);
     
     auto instance = std::make_shared<WebGPUInstance>();
     if (!instance->initialize(desc)) {
-        std::cerr << "[WebGPUBackendFactory] Failed to initialize WebGPU instance" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "WebGPUBackendFactory", "Failed to initialize WebGPU instance", PERS_SOURCE_LOC);
         return nullptr;
     }
     

@@ -7,6 +7,9 @@
 namespace pers {
     class IGraphicsBackendFactory;
     class IInstance;
+    class IPhysicalDevice;
+    class ILogicalDevice;
+    class IQueue;
 }
 
 class TriangleRenderer {
@@ -21,7 +24,7 @@ public:
     std::shared_ptr<pers::IInstance> getInstance() const { return _instance; }
     
     // Set the surface (created by the app)
-    void setSurface(const pers::NativeSurfaceHandle& surface) { _surface = surface; }
+    void setSurface(const pers::NativeSurfaceHandle& surface);
     
     // Create triangle resources (vertex buffer, shaders, pipeline)
     bool createTriangleResources();
@@ -36,9 +39,17 @@ public:
     void cleanup();
     
 private:
+    // Device initialization helpers
+    bool requestPhysicalDevice();
+    bool createLogicalDevice();
+    
+private:
     glm::ivec2 _windowSize = glm::ivec2(800, 600);
     
     // Pers graphics resources
     std::shared_ptr<pers::IInstance> _instance;
+    std::shared_ptr<pers::IPhysicalDevice> _physicalDevice;
+    std::shared_ptr<pers::ILogicalDevice> _device;
+    std::shared_ptr<pers::IQueue> _queue;
     pers::NativeSurfaceHandle _surface; // Surface handle
 };

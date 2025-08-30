@@ -9,16 +9,28 @@ namespace pers {
 
 /**
  * @brief WebGPU implementation of ILogicalDevice
+ * 
+ * This class manages a WebGPU device and follows RAII principles.
+ * Copy operations are deleted to prevent double-free issues.
+ * Move operations are deleted as this class is meant to be used via shared_ptr.
  */
 class WebGPULogicalDevice : public ILogicalDevice {
 public:
     /**
      * @brief Constructor
-     * @param device WebGPU device handle
-     * @param adapter WebGPU adapter handle (kept for reference)
+     * @param device WebGPU device handle (takes ownership)
+     * @param adapter WebGPU adapter handle (kept for reference, not owned)
      */
     WebGPULogicalDevice(WGPUDevice device, WGPUAdapter adapter);
     ~WebGPULogicalDevice() override;
+    
+    // Delete copy operations to prevent double-free
+    WebGPULogicalDevice(const WebGPULogicalDevice&) = delete;
+    WebGPULogicalDevice& operator=(const WebGPULogicalDevice&) = delete;
+    
+    // Delete move operations - this class should be used via shared_ptr
+    WebGPULogicalDevice(WebGPULogicalDevice&&) = delete;
+    WebGPULogicalDevice& operator=(WebGPULogicalDevice&&) = delete;
     
     // Queue operations
     std::shared_ptr<IQueue> getQueue() const override;

@@ -1,7 +1,7 @@
 #include "PersTriangleApp.h"
 #include "TriangleRenderer.h"
 #include "pers/core/IWindow.h"
-#include <iostream>
+#include "pers/utils/Logger.h"
 #include <cstdlib>
 
 PersTriangleApp::PersTriangleApp() {
@@ -17,7 +17,8 @@ PersTriangleApp::PersTriangleApp() {
 PersTriangleApp::~PersTriangleApp() = default;
 
 bool PersTriangleApp::onInitialize() {
-    std::cout << "=== PERS Triangle Application ===" << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "PersTriangleApp",
+        "=== PERS Triangle Application ===", PERS_SOURCE_LOC);
     
     // Initialize renderer
     if (!initializeRenderer()) {
@@ -41,14 +42,16 @@ bool PersTriangleApp::initializeRenderer() {
     
     // Initialize renderer with the instance we got from base class
     if (!_renderer->initialize(getInstance(), size)) {
-        std::cerr << "[PersTriangleApp] Failed to initialize renderer" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "PersTriangleApp",
+            "Failed to initialize renderer", PERS_SOURCE_LOC);
         return false;
     }
     
     // Create surface using base class helper and set it on renderer
     pers::NativeSurfaceHandle surface = createSurface();
     if (!surface.isValid()) {
-        std::cerr << "[PersTriangleApp] Failed to create surface" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "PersTriangleApp",
+            "Failed to create surface", PERS_SOURCE_LOC);
         return false;
     }
     
@@ -59,7 +62,8 @@ bool PersTriangleApp::initializeRenderer() {
 
 bool PersTriangleApp::createTriangle() {
     if (!_renderer) {
-        std::cerr << "[PersTriangleApp] Renderer not initialized" << std::endl;
+        pers::Logger::Instance().Log(pers::LogLevel::Error, "PersTriangleApp",
+            "Renderer not initialized", PERS_SOURCE_LOC);
         return false;
     }
     
@@ -71,7 +75,8 @@ void PersTriangleApp::onUpdate(float deltaTime) {
     if (_isCI) {
         _ciElapsedTime += deltaTime;
         if (_ciElapsedTime >= CI_MAX_SECONDS) {
-            std::cout << "[PersTriangleApp] CI mode: Exiting after " << CI_MAX_SECONDS << " seconds" << std::endl;
+            pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "PersTriangleApp", PERS_SOURCE_LOC,
+                "CI mode: Exiting after %.1f seconds", CI_MAX_SECONDS);
             getWindow()->setShouldClose(true);
         }
     }
@@ -95,14 +100,16 @@ void PersTriangleApp::onKeyPress(int key, int scancode, int action, int mods) {
     if (action == 1) { // GLFW_PRESS = 1
         switch (key) {
             case 70: // GLFW_KEY_F = 70
-                std::cout << "[PersTriangleApp] F key pressed" << std::endl;
+                pers::Logger::Instance().Log(pers::LogLevel::Debug, "PersTriangleApp",
+                    "F key pressed", PERS_SOURCE_LOC);
                 break;
         }
     }
 }
 
 void PersTriangleApp::onCleanup() {
-    std::cout << "[PersTriangleApp] Cleaning up triangle resources" << std::endl;
+    pers::Logger::Instance().Log(pers::LogLevel::Info, "PersTriangleApp",
+        "Cleaning up triangle resources", PERS_SOURCE_LOC);
     
     // Clean up renderer (must be before instance is destroyed)
     _renderer.reset();
