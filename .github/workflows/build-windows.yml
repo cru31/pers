@@ -81,7 +81,7 @@ jobs:
     - name: Run Tests
       run: |
         cd build
-        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2"
+        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2|pers_triangle"
       shell: pwsh
 
     - name: Upload artifacts on failure

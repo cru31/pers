@@ -98,12 +98,8 @@ set_tests_properties(pers_triangle PROPERTIES
     ENVIRONMENT "PERS_TEST_MODE=1"  # REQUIRED: Enables auto-exit after 5 seconds
 )
 
-# Mark as expected to fail in headless CI environments (Linux only)
-if(DEFINED ENV{CI} AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set_tests_properties(pers_triangle PROPERTIES
-        WILL_FAIL TRUE  # Test is expected to fail in CI without display on Linux
-    )
-endif()
+# Note: This test is excluded from CI runs via --exclude-regex in workflow files
+# because it requires GPU/display for WebGPU surface creation
 
 # Print build information
 message(STATUS "========================================")

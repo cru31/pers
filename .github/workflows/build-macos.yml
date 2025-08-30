@@ -65,7 +65,7 @@ jobs:
       run: |
         cd build
         # Exclude graphical tests that require display
-        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2"
+        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2|pers_triangle"
 
     - name: Upload artifacts on failure
       if: failure()

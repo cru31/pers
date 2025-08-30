@@ -94,7 +94,7 @@ jobs:
         cd build
         # Use xvfb-run for headless testing, exclude graphical tests
         xvfb-run -a ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2" || \
-        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2"
+        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2|pers_triangle"
 
     - name: Restore Rust (if hidden)
       if: matrix.wgpu_method == 'download' && always()
