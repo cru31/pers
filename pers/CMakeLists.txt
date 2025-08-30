@@ -198,13 +198,16 @@ elseif(NOT RUST_AVAILABLE OR FORCE_WGPU_DOWNLOAD)
     
     # Use the version defined at the top
     set(WGPU_URL "https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_VERSION}/wgpu-${WGPU_PLATFORM}-release.zip")
-    
+
     FetchContent_Declare(
-        wgpu_native_download
-        URL ${WGPU_URL}
-        SOURCE_DIR ${WGPU_DOWNLOAD_DIR}
+            wgpu_native_download
+            URL ${WGPU_URL}
+            SOURCE_DIR ${WGPU_DOWNLOAD_DIR}
+            # Fix CMake CMP0135 warning: Use extraction time for downloaded archive timestamps
+            # This ensures proper rebuild detection when URL content changes
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
-    
+
     FetchContent_MakeAvailable(wgpu_native_download)
     
     # Copy downloaded files to the runtime directory
