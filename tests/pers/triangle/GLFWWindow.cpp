@@ -12,7 +12,16 @@
     void* createMetalLayer(GLFWwindow* window);
 #elif defined(__linux__)
     #define GLFW_EXPOSE_NATIVE_X11
+    #define GLFW_EXPOSE_NATIVE_WAYLAND
     #include <GLFW/glfw3native.h>
+    
+    // Check if Wayland functions are available
+    #ifdef GLFW_EXPOSE_NATIVE_WAYLAND
+        // If glfwGetWaylandDisplay is declared, we have Wayland support
+        #define HAS_WAYLAND_SUPPORT 1
+    #else
+        #define HAS_WAYLAND_SUPPORT 0
+    #endif
 #endif
 
 GLFWWindow::GLFWWindow() {
