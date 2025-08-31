@@ -1,0 +1,115 @@
+name: Build - Linux
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+        wgpu_method: [download, compile]
+
+    name: Linux - ${{ matrix.build_type }} - WebGPU ${{ matrix.wgpu_method }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          libx11-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          pkg-config \
+          libltdl-dev \
+          autoconf \
+          automake \
+          libtool
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+
+    - name: Setup Rust (for compile method)
+      if: matrix.wgpu_method == 'compile'
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-unknown-linux-gnu
+
+    - name: Remove Rust (for download method)
+      if: matrix.wgpu_method == 'download'
+      run: |
+        # Temporarily hide Rust to force download method
+        if command -v rustc &> /dev/null; then
+          sudo mv $(which rustc) $(which rustc).bak || true
+          sudo mv $(which cargo) $(which cargo).bak || true
+        fi
+
+    - name: Cache wgpu-native runtime
+      uses: actions/cache@v4
+      with:
+        path: third_party/wgpu-native-runtime
+        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-${{ hashFiles('pers/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
+          ${{ runner.os }}-wgpu-
+
+    - name: Configure CMake
+      run: |
+        cmake --preset linux-$(echo ${{ matrix.build_type }} | tr '[:upper:]' '[:lower:]')
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }} --parallel
+
+    - name: List build artifacts
+      run: |
+        echo "=== Build output directory ==="
+        find build/bin -type f -exec ls -lh {} \; 2>/dev/null || echo "No bin directory"
+        echo ""
+        echo "=== Third-party runtime directory ==="
+        if [ -d "third_party/wgpu-native-runtime" ]; then
+          find third_party/wgpu-native-runtime -type f -exec ls -lh {} \;
+        else
+          echo "Runtime directory not found"
+        fi
+
+    - name: Run Tests
+      run: |
+        cd build
+        # Use xvfb-run for headless testing, exclude graphical tests
+        xvfb-run -a ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2" || \
+        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2|pers_triangle"
+
+    - name: Restore Rust (if hidden)
+      if: matrix.wgpu_method == 'download' && always()
+      run: |
+        if [ -f "$(which rustc).bak" ]; then
+          sudo mv $(which rustc).bak $(which rustc) || true
+          sudo mv $(which cargo).bak $(which cargo) || true
+        fi
+
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-${{ matrix.build_type }}-${{ matrix.wgpu_method }}-logs
+        path: |
+          build/CMakeFiles/CMakeOutput.log
+          build/CMakeFiles/CMakeError.log
+          build/**/*.log

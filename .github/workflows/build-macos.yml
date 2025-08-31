@@ -1,0 +1,78 @@
+name: Build - macOS
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+
+    name: macOS - ${{ matrix.build_type }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        # Skip brew update entirely to avoid tap conflicts
+        # Check if tools are already installed
+        brew list cmake &>/dev/null || brew install cmake || true
+        brew list ninja &>/dev/null || brew install ninja || true
+        brew list pkg-config &>/dev/null || brew install pkg-config || true
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+
+    - name: Cache wgpu-native runtime
+      uses: actions/cache@v4
+      with:
+        path: third_party/wgpu-native-runtime
+        key: ${{ runner.os }}-wgpu-download-${{ hashFiles('pers/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-wgpu-download-
+          ${{ runner.os }}-wgpu-
+
+    - name: Configure CMake
+      run: |
+        cmake --preset macos-$(echo ${{ matrix.build_type }} | tr '[:upper:]' '[:lower:]')
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }} --parallel
+
+    - name: List build artifacts
+      run: |
+        echo "=== Build output directory ==="
+        find build/bin -type f -exec ls -lh {} \; 2>/dev/null || echo "No bin directory"
+        echo ""
+        echo "=== Third-party runtime directory ==="
+        if [ -d "third_party/wgpu-native-runtime" ]; then
+          find third_party/wgpu-native-runtime -type f -exec ls -lh {} \;
+        else
+          echo "Runtime directory not found"
+        fi
+
+    - name: Run Tests
+      run: |
+        cd build
+        # Exclude graphical tests that require display
+        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2|pers_triangle"
+
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-${{ matrix.build_type }}-logs
+        path: |
+          build/CMakeFiles/CMakeOutput.log
+          build/CMakeFiles/CMakeError.log
+          build/**/*.log

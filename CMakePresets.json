@@ -1,0 +1,422 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      },
+      "environment": {
+        "VCPKG_FEATURE_FLAGS": "manifests,versions,binarycaching,registries"
+      }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "generator": "Ninja",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      }
+    },
+    {
+      "name": "macos-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "generator": "Xcode"
+    },
+    {
+      "name": "macos-arm64-base",
+      "hidden": true,
+      "inherits": "macos-base",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "macos-x64-base",
+      "hidden": true,
+      "inherits": "macos-base",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "inherits": "windows-base",
+      "displayName": "Windows Debug",
+      "description": "Windows debug build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "windows-release",
+      "inherits": "windows-base",
+      "displayName": "Windows Release",
+      "description": "Windows release build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "inherits": "linux-base",
+      "displayName": "Linux Debug",
+      "description": "Linux debug build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "linux-release",
+      "inherits": "linux-base",
+      "displayName": "Linux Release",
+      "description": "Linux release build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "macos-debug",
+      "inherits": "macos-arm64-base",
+      "displayName": "macOS Debug (ARM64)",
+      "description": "macOS ARM64 debug build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "macos-release",
+      "inherits": "macos-arm64-base",
+      "displayName": "macOS Release (ARM64)",
+      "description": "macOS ARM64 release build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "macos-x64-debug",
+      "inherits": "macos-x64-base",
+      "displayName": "macOS Debug (x64)",
+      "description": "macOS x64 debug build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "macos-x64-release",
+      "inherits": "macos-x64-base",
+      "displayName": "macOS Release (x64)",
+      "description": "macOS x64 release build with vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
+    },
+    {
+      "name": "local-windows",
+      "inherits": "windows-base",
+      "displayName": "Local Windows Build",
+      "description": "Windows build with local vcpkg installation",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      }
+    },
+    {
+      "name": "windows-debug-download",
+      "inherits": "windows-base",
+      "displayName": "Windows Debug (WebGPU Download)",
+      "description": "Windows debug build with pre-built WebGPU",
+      "binaryDir": "${sourceDir}/build/wgpu-prebuilt/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "FORCE_WGPU_DOWNLOAD": "ON"
+      }
+    },
+    {
+      "name": "windows-release-download",
+      "inherits": "windows-base",
+      "displayName": "Windows Release (WebGPU Download)",
+      "description": "Windows release build with pre-built WebGPU",
+      "binaryDir": "${sourceDir}/build/wgpu-prebuilt/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "FORCE_WGPU_DOWNLOAD": "ON"
+      }
+    },
+    {
+      "name": "windows-debug-compile",
+      "inherits": "windows-base",
+      "displayName": "Windows Debug (WebGPU Compile)",
+      "description": "Windows debug build with WebGPU compiled from source",
+      "binaryDir": "${sourceDir}/build/wgpu-compile/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      }
+    },
+    {
+      "name": "windows-release-compile",
+      "inherits": "windows-base",
+      "displayName": "Windows Release (WebGPU Compile)",
+      "description": "Windows release build with WebGPU compiled from source",
+      "binaryDir": "${sourceDir}/build/wgpu-compile/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        }
+      }
+    },
+    {
+      "name": "clion-windows-debug-download",
+      "inherits": "windows-debug-download",
+      "displayName": "CLion Windows Debug (WebGPU Download)",
+      "description": "CLion Windows debug build with pre-built WebGPU",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/debug"
+    },
+    {
+      "name": "clion-windows-release-download",
+      "inherits": "windows-release-download",
+      "displayName": "CLion Windows Release (WebGPU Download)",
+      "description": "CLion Windows release build with pre-built WebGPU",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/release"
+    },
+    {
+      "name": "clion-windows-debug-compile",
+      "inherits": "windows-debug-compile",
+      "displayName": "CLion Windows Debug (WebGPU Compile)",
+      "description": "CLion Windows debug build with WebGPU compiled from source",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/debug"
+    },
+    {
+      "name": "clion-windows-release-compile",
+      "inherits": "windows-release-compile",
+      "displayName": "CLion Windows Release (WebGPU Compile)",
+      "description": "CLion Windows release build with WebGPU compiled from source",
+      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/release"
+    },
+    {
+      "name": "clion-macos-debug",
+      "inherits": "macos-debug",
+      "displayName": "CLion macOS Debug (ARM64)",
+      "description": "CLion macOS ARM64 debug build with vcpkg",
+      "binaryDir": "${sourceDir}/clion-build/macos-arm64-debug"
+    },
+    {
+      "name": "clion-macos-release",
+      "inherits": "macos-release",
+      "displayName": "CLion macOS Release (ARM64)",
+      "description": "CLion macOS ARM64 release build with vcpkg",
+      "binaryDir": "${sourceDir}/clion-build/macos-arm64-release"
+    },
+    {
+      "name": "clion-macos-x64-debug",
+      "inherits": "macos-x64-debug",
+      "displayName": "CLion macOS Debug (x64)",
+      "description": "CLion macOS x64 debug build with vcpkg",
+      "binaryDir": "${sourceDir}/clion-build/macos-x64-debug"
+    },
+    {
+      "name": "clion-macos-x64-release",
+      "inherits": "macos-x64-release",
+      "displayName": "CLion macOS Release (x64)",
+      "description": "CLion macOS x64 release build with vcpkg",
+      "binaryDir": "${sourceDir}/clion-build/macos-x64-release"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug",
+      "displayName": "Build Windows Debug"
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
+      "displayName": "Build Windows Release"
+    },
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug",
+      "displayName": "Build Linux Debug"
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release",
+      "displayName": "Build Linux Release"
+    },
+    {
+      "name": "macos-debug",
+      "configurePreset": "macos-debug",
+      "displayName": "Build macOS Debug"
+    },
+    {
+      "name": "macos-release",
+      "configurePreset": "macos-release",
+      "displayName": "Build macOS Release"
+    },
+    {
+      "name": "local-windows",
+      "configurePreset": "local-windows",
+      "displayName": "Build Local Windows"
+    },
+    {
+      "name": "clion-macos-debug",
+      "configurePreset": "clion-macos-debug",
+      "displayName": "CLion Build macOS Debug (ARM64)"
+    },
+    {
+      "name": "clion-macos-release",
+      "configurePreset": "clion-macos-release",
+      "displayName": "CLion Build macOS Release (ARM64)"
+    },
+    {
+      "name": "clion-macos-x64-debug",
+      "configurePreset": "clion-macos-x64-debug",
+      "displayName": "CLion Build macOS Debug (x64)"
+    },
+    {
+      "name": "clion-macos-x64-release",
+      "configurePreset": "clion-macos-x64-release",
+      "displayName": "CLion Build macOS Release (x64)"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug",
+      "displayName": "Test Windows Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
+      "displayName": "Test Windows Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug",
+      "displayName": "Test Linux Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release",
+      "displayName": "Test Linux Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "macos-debug",
+      "configurePreset": "macos-debug",
+      "displayName": "Test macOS Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "macos-release",
+      "configurePreset": "macos-release",
+      "displayName": "Test macOS Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "local-windows",
+      "configurePreset": "local-windows",
+      "displayName": "Test Local Windows",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

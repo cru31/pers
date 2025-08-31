@@ -1,0 +1,95 @@
+name: Build - Windows
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+        wgpu_method: [download, compile]
+        exclude:
+          # Skip compiling from source in Debug mode to save CI time
+          - build_type: Debug
+            wgpu_method: compile
+
+    name: Windows - ${{ matrix.build_type }} - WebGPU ${{ matrix.wgpu_method }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+
+    - name: Setup Rust (for compile method)
+      if: matrix.wgpu_method == 'compile'
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-pc-windows-msvc
+
+    - name: Cache wgpu-native runtime
+      uses: actions/cache@v4
+      with:
+        path: third_party/wgpu-native-runtime
+        key: ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-${{ hashFiles('pers/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-wgpu-${{ matrix.wgpu_method }}-
+          ${{ runner.os }}-wgpu-
+
+    - name: Configure CMake (Download WebGPU)
+      if: matrix.wgpu_method == 'download'
+      run: |
+        cmake --preset windows-$(echo ${{ matrix.build_type }} | tr '[:upper:]' '[:lower:]')
+      shell: bash
+
+    - name: Configure CMake (Compile WebGPU)
+      if: matrix.wgpu_method == 'compile'
+      run: |
+        cmake --preset windows-$(echo ${{ matrix.build_type }} | tr '[:upper:]' '[:lower:]')
+      shell: bash
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }} --parallel
+
+    - name: List build artifacts
+      run: |
+        Write-Host "=== Build output directory ==="
+        Get-ChildItem -Path build/bin -Recurse | Format-Table Name, Length, LastWriteTime
+        Write-Host "`n=== Third-party runtime directory ==="
+        if (Test-Path third_party/wgpu-native-runtime) {
+          Get-ChildItem -Path third_party/wgpu-native-runtime -Recurse | Format-Table Name, Length, LastWriteTime
+        } else {
+          Write-Host "Runtime directory not found"
+        }
+      shell: pwsh
+
+    - name: Run Tests
+      run: |
+        cd build
+        ctest -C ${{ matrix.build_type }} --output-on-failure --exclude-regex "webgpu_triangle|webgpu_triangle2|pers_triangle"
+      shell: pwsh
+
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-${{ matrix.build_type }}-${{ matrix.wgpu_method }}-logs
+        path: |
+          build/CMakeFiles/CMakeOutput.log
+          build/CMakeFiles/CMakeError.log
+          build/**/*.log

@@ -1,0 +1,283 @@
+@startuml class-hierarchy
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #888
+title Pers Graphics Engine V2 - Class Hierarchy
+
+' Core System
+package "Core System" #E8F4F8 {
+    together {
+        interface IInstance {
+            + EnumeratePhysicalDevices()
+            + RequestPhysicalDevice()
+            + CreateSurface()
+        }
+
+        interface IPhysicalDevice {
+            + CreateLogicalDevice()
+            + GetProperties()
+            + GetLimits()
+        }
+
+        interface ILogicalDevice {
+            + GetQueue()
+            + GetResourceFactory()
+            + CreateCommandEncoder()
+            + CreateSwapChain()
+        }
+
+        interface IQueue {
+            + submit()
+            + writeBuffer()
+            + writeTexture()
+            + waitIdle()
+        }
+    }
+    
+    IInstance --> IPhysicalDevice : creates
+    IPhysicalDevice --> ILogicalDevice : creates
+    ILogicalDevice --> IQueue : provides
+}
+
+' Resource Factory
+package "Resource Factory" #E8FFE8 {
+    interface IResourceFactory {
+        + CreateVertexBuffer()
+        + CreateIndexBuffer()
+        + CreateUniformBuffer()
+        + CreateStorageBuffer()
+        + CreateTexture2D()
+        + CreateTexture3D()
+        + CreateTextureCube()
+        + CreateGraphicsPipeline()
+        + CreateComputePipeline()
+        + CreateBindGroup()
+    }
+    
+     ILogicalDevice --> IResourceFactory : provides
+}
+
+' Buffer Hierarchy
+package "Buffer Types" #FFE8E8 {
+    interface IBuffer {
+        + GetSize()
+        + Map()
+        + Unmap()
+    }
+    
+    interface IVertexBuffer {
+        + GetVertexCount()
+        + GetStride()
+        + GetLayout()
+    }
+    
+    interface IIndexBuffer {
+        + GetIndexCount()
+        + GetFormat()
+    }
+    
+    interface IUniformBuffer {
+        + Update()
+        + IsDynamic()
+        + GetAlignment()
+    }
+    
+    interface IStorageBuffer {
+        + IsReadOnly()
+        + Flush()
+    }
+    
+    interface IIndirectBuffer {
+        + GetDrawCount()
+        + GetCommandType()
+    }
+    
+    IBuffer <|-- IVertexBuffer
+    IBuffer <|-- IIndexBuffer
+    IBuffer <|-- IUniformBuffer
+    IBuffer <|-- IStorageBuffer
+    IBuffer <|-- IIndirectBuffer
+}
+
+' Texture Hierarchy
+package "Texture Types" #E8E8FF {
+    interface ITexture {
+        + GetFormat()
+        + GetUsage()
+        + GetMipLevelCount()
+    }
+    
+    interface ITexture2D {
+        + GetWidth()
+        + GetHeight()
+        + Update()
+    }
+    
+    interface ITexture3D {
+        + GetWidth()
+        + GetHeight()
+        + GetDepth()
+        + Update()
+    }
+    
+    interface ITextureCube {
+        + GetSize()
+        + UpdateFace()
+    }
+    
+    interface ITextureArray {
+        + GetWidth()
+        + GetHeight()
+        + GetArrayLayers()
+        + UpdateLayer()
+    }
+    
+    interface IRenderTexture {
+        + HasDepthStencil()
+        + GetColorTexture()
+        + Clear()
+    }
+    
+    ITexture <|-- ITexture2D
+    ITexture <|-- ITexture3D
+    ITexture <|-- ITextureCube
+    ITexture <|-- ITextureArray
+    ITexture2D <|-- IRenderTexture
+}
+
+' Pipeline Hierarchy
+package "Pipeline Types" #FFFFE8 {
+    interface IPipeline {
+        + GetLayout()
+        + GetStatistics()
+    }
+    
+    interface IGraphicsPipeline {
+        + GetPrimitiveTopology()
+        + GetRasterizationState()
+        + GetDepthStencilState()
+        + GetBlendState()
+    }
+    
+    interface IComputePipeline {
+        + GetWorkgroupSize()
+    }
+    
+    IPipeline <|-- IGraphicsPipeline
+    IPipeline <|-- IComputePipeline
+}
+
+' Command System
+package "Command System" #E8FFE8 {
+    interface ICommandEncoder {
+        + beginRenderPass()
+        + beginComputePass()
+        + cmdCopyBufferToBuffer()
+        + cmdCopyBufferToTexture()
+        + finish()
+    }
+
+    interface IRenderPassEncoder {
+        + cmdSetGraphicsPipeline()
+        + cmdSetVertexBuffer()
+        + cmdSetIndexBuffer()
+        + cmdDraw()
+        + cmdDrawIndexed()
+        + end()
+    }
+
+    interface IComputePassEncoder {
+        + cmdSetComputePipeline()
+        + cmdSetStorageBuffer()
+        + cmdDispatch()
+        + end()
+    }
+
+    interface ICommandBuffer {
+        + GetState()
+    }
+
+    ICommandEncoder --> IRenderPassEncoder : creates
+    ICommandEncoder --> IComputePassEncoder : creates
+    ICommandEncoder --> ICommandBuffer : produces
+}
+
+' WebGPU Implementation
+package "WebGPU Backend" #FFE8E8 {
+    class WebGPULogicalDevice {
+        - wgpuDevice : WGPUDevice
+        - wgpuQueue : WGPUQueue
+    }
+
+    class WebGPUResourceFactory {
+        - device : WebGPULogicalDevice*
+        - bufferCache : map
+        - textureCache : map
+    }
+
+    class WebGPUVertexBuffer {
+        - buffer : WGPUBuffer
+        - size : size_t
+        - stride : size_t
+    }
+
+    class WebGPUIndexBuffer {
+        - buffer : WGPUBuffer
+        - count : size_t
+        - format : IndexFormat
+    }
+
+    class WebGPUTexture2D {
+        - texture : WGPUTexture
+        - view : WGPUTextureView
+        - width : uint32_t
+        - height : uint32_t
+    }
+
+    class WebGPURenderPassEncoder {
+        - encoder : WGPURenderPassEncoder
+        - isActive : bool
+    }
+
+    WebGPULogicalDevice ..|> ILogicalDevice
+    WebGPUResourceFactory ..|> IResourceFactory
+    WebGPUVertexBuffer ..|> IVertexBuffer
+    WebGPUIndexBuffer ..|> IIndexBuffer
+    WebGPUTexture2D ..|> ITexture2D
+    WebGPURenderPassEncoder ..|> IRenderPassEncoder
+}
+
+' Relationships
+IResourceFactory --> IBuffer : creates
+IResourceFactory --> ITexture : creates
+IResourceFactory --> IPipeline : creates
+
+ILogicalDevice --> ICommandEncoder : creates
+
+IInstance -[hidden]right->IPhysicalDevice
+IPhysicalDevice -[hidden]right->ILogicalDevice
+ILogicalDevice -[hidden]right->IQueue
+
+ITexture -[hidden]right->ITexture2D
+ITexture2D -[hidden]left->IRenderTexture
+ILogicalDevice-[hidden]right->IResourceFactory
+
+
+ICommandEncoder -[hidden]right->IRenderPassEncoder
+IRenderPassEncoder -[hidden]down->IComputePassEncoder
+
+note right of IResourceFactory
+    **Separation of Concerns**
+    Device: Device management
+    ResourceFactory: All resource creation
+    Each Buffer/Texture: Type-specific features
+end note
+
+note top of WebGPUVertexBuffer
+    **Backend Implementation**
+    Interfaces separated by type
+    Internal uses unified WebGPU buffer
+end note
+CLASS_HIERARCHY.puml
+@enduml

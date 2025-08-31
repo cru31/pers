@@ -1,0 +1,41 @@
+{
+  "name": "pers-graphics-engine",
+  "version": "0.1.0",
+  "description": "Modern C++ Graphics Engine with WebGPU",
+  "dependencies": [
+    "glm",
+    "assimp",
+    "sdl3"
+  ],
+  "features": {
+    "tests": {
+      "description": "Build tests with GLFW support",
+      "dependencies": [
+        {
+          "name": "glfw3",
+          "features": ["wayland"],
+          "platform": "linux"
+        },
+        {
+          "name": "glfw3",
+          "platform": "!linux"
+        }
+      ]
+    },
+    "samples": {
+      "description": "Build samples with GLFW support",
+      "dependencies": [
+        {
+          "name": "glfw3",
+          "features": ["wayland"],
+          "platform": "linux"
+        },
+        {
+          "name": "glfw3",
+          "platform": "!linux"
+        }
+      ]
+    }
+  },
+  "builtin-baseline": "6ecbbbdf31cba47aafa7cf6189b1e73e10ac61f8"
+}

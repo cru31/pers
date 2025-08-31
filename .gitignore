@@ -1,0 +1,82 @@
+# Build directories
+build/
+**/build/
+clion-build/
+**/clion-build/
+cmake-build-*/
+out/
+# Pattern for debug/release build directories
+build-*-debug/
+build-*-release/
+**/build-*-debug/
+**/build-*-release/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sdf
+*.opensdf
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Third-party libraries
+# vcpkg local installation
+vcpkg_installed/
+**/vcpkg_installed/
+
+# Manual third-party sources (if any)
+third_party.backup/*/
+!third_party.backup/README.md
+
+# wgpu-native runtime directory (contains downloaded/built binaries)
+third_party.backup/wgpu-native-runtime/
+
+# wgpu-native build artifacts (if building from source)
+third_party.backup/wgpu-native-build/
+third_party.backup/wgpu-native-src/
+
+# But don't ignore test programs that test third-party libraries
+!tests/third_party/
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.pdb
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+
+# Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+
+# Visual Studio
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.ilk
+*.exp
+
+# Logs
+*.log
+
+# Backup files and directories
+backup/
+*.bak
+*~
+*.swp
