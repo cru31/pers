@@ -10,6 +10,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Force UTF-8 encoding on MSVC
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # Define WebGPU version
 set(WGPU_VERSION "v25.0.2.1" CACHE STRING "wgpu-native version to use")
 message(STATUS "Using wgpu-native version: ${WGPU_VERSION}")

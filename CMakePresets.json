@@ -17,7 +17,8 @@
         }
       },
       "environment": {
-        "VCPKG_FEATURE_FLAGS": "manifests,versions,binarycaching,registries"
+        "VCPKG_FEATURE_FLAGS": "manifests,versions,binarycaching,registries",
+        "VSLANG": "1033"
       }
     },
     {
