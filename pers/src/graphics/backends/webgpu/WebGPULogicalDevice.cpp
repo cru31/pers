@@ -2,6 +2,7 @@
 #include "pers/graphics/backends/webgpu/WebGPUQueue.h"
 #include "pers/graphics/backends/webgpu/WebGPUSwapChain.h"
 #include "pers/graphics/backends/webgpu/WebGPUCommandEncoder.h"
+#include "pers/graphics/backends/webgpu/WebGPUResourceFactory.h"
 #include "pers/graphics/SwapChainDescBuilder.h"
 #include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
@@ -68,18 +69,15 @@ std::shared_ptr<IQueue> WebGPULogicalDevice::getQueue() const {
 }
 
 std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() const {
-    TodoOrDie::Log(
-        "WebGPULogicalDevice::getResourceFactory",
-        "Create WebGPUResourceFactory for buffer/texture/shader creation",
-        PERS_SOURCE_LOC
-    );
+    if (!_device) {
+        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice",
+            "Cannot create resource factory without device", PERS_SOURCE_LOC);
+        return nullptr;
+    }
     
-    // TODO: Implementation steps:
-    // 1. Create WebGPUResourceFactory class
-    // 2. Pass _device to factory
-    // 3. Return shared_ptr to factory instance
-    
-    return nullptr;
+    // Create resource factory on demand
+    // Note: In a real implementation, we might want to cache this
+    return std::make_shared<webgpu::WebGPUResourceFactory>(_device);
 }
 
 std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder() {

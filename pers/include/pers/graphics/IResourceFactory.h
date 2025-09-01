@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include "pers/graphics/GraphicsTypes.h"
+#include "pers/graphics/IShaderModule.h"
 
 namespace pers {
 
@@ -13,7 +14,6 @@ class IBuffer;
 class ITexture;
 class ITextureView;
 class ISampler;
-class IShaderModule;
 class IRenderPipeline;
 class IComputePipeline;
 class IBindGroupLayout;
@@ -75,15 +75,7 @@ struct SamplerDesc {
     std::string label;
 };
 
-/**
- * @brief Shader module descriptor
- */
-struct ShaderModuleDesc {
-    std::vector<uint8_t> code;  // SPIR-V or WGSL code
-    ShaderStage stage = ShaderStage::Vertex;
-    std::string entryPoint = "main";
-    std::string label;
-};
+// ShaderModuleDesc is defined in IShaderModule.h
 
 /**
  * @brief Resource factory interface for creating GPU resources
