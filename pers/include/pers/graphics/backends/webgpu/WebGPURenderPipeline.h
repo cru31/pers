@@ -1,15 +1,15 @@
 #pragma once
 
 #include "pers/graphics/IRenderPipeline.h"
-#include <memory>
 #include <webgpu/webgpu.h>
+#include <string>
 
 namespace pers {
 namespace webgpu {
 
 class WebGPURenderPipeline final : public IRenderPipeline {
 public:
-    WebGPURenderPipeline(const RenderPipelineDesc& desc, void* device);
+    WebGPURenderPipeline(const RenderPipelineDesc& desc, WGPUDevice device);
     ~WebGPURenderPipeline() override;
     
     // IRenderPipeline interface
@@ -17,11 +17,11 @@ public:
     bool isValid() const override;
     
     // WebGPU specific - internal use only
-    void* getNativeHandle() const;
+    WGPURenderPipeline getNativeHandle() const;
     
 private:
-    class Impl;
-    std::unique_ptr<Impl> _impl;
+    std::string _debugName;
+    WGPURenderPipeline _pipeline = nullptr;
 };
 
 } // namespace webgpu

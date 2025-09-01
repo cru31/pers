@@ -9,7 +9,7 @@ namespace webgpu {
 
 class WebGPUResourceFactory final : public IResourceFactory {
 public:
-    explicit WebGPUResourceFactory(void* device);
+    explicit WebGPUResourceFactory(WGPUDevice device);
     ~WebGPUResourceFactory() override;
     
     // IResourceFactory interface
@@ -20,14 +20,10 @@ public:
         const TextureViewDesc& desc) override;
     std::shared_ptr<ISampler> createSampler(const SamplerDesc& desc) override;
     std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc) override;
-    NativeResourceFactoryHandle getNativeFactoryHandle() const override;
-    
-    // Helper for creating render pipelines (not in interface but useful)
-    std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc);
+    std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) override;
     
 private:
-    class Impl;
-    std::unique_ptr<Impl> _impl;
+    WGPUDevice _device = nullptr;
 };
 
 } // namespace webgpu

@@ -5,12 +5,14 @@
 #include <vector>
 #include <cstdint>
 #include "pers/graphics/GraphicsTypes.h"
+#include "pers/graphics/GraphicsFormats.h"
 #include "pers/graphics/IShaderModule.h"
+#include "pers/graphics/IBuffer.h"  // Include for BufferDesc
+#include "pers/graphics/IRenderPipeline.h"  // Include for RenderPipelineDesc
 
 namespace pers {
 
 // Forward declarations
-class IBuffer;
 class ITexture;
 class ITextureView;
 class ISampler;
@@ -19,16 +21,6 @@ class IComputePipeline;
 class IBindGroupLayout;
 class IBindGroup;
 class IPipelineLayout;
-
-/**
- * @brief Buffer descriptor for creation
- */
-struct BufferDesc {
-    uint64_t size = 0;
-    BufferUsage usage = BufferUsage::None;
-    bool mappedAtCreation = false;
-    std::string label;
-};
 
 /**
  * @brief Texture descriptor for creation
@@ -126,8 +118,9 @@ public:
     virtual std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc) = 0;
     
     /**
-     * @brief Get native factory handle for backend-specific operations
-     * @return Native factory handle (implementation-specific)
+     * @brief Create a render pipeline
+     * @param desc Render pipeline descriptor
+     * @return Shared pointer to render pipeline or nullptr if failed
      */
     virtual std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) = 0;
 };
