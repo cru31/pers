@@ -41,7 +41,11 @@ jobs:
           libltdl-dev \
           autoconf \
           automake \
-          libtool
+          libtool \
+          libwayland-dev \
+          libxkbcommon-dev \
+          wayland-protocols \
+          extra-cmake-modules
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
