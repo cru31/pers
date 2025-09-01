@@ -135,15 +135,13 @@ bool WebGPUQueue::writeTexture(const std::shared_ptr<ITexture>& texture,
     
     TodoOrDie::Log(
         "WebGPUQueue::writeTexture",
-        "Implement texture data upload via queue",
+        "Implement texture data upload via queue. Steps: "
+        "1. Get native texture handle from ITexture, "
+        "2. Set up WGPUImageCopyTexture descriptor, "
+        "3. Set up WGPUTextureDataLayout, "
+        "4. Call wgpuQueueWriteTexture",
         PERS_SOURCE_LOC
     );
-    
-    // TODO: Implementation steps:
-    // 1. Get native texture handle from ITexture
-    // 2. Set up WGPUImageCopyTexture descriptor
-    // 3. Set up WGPUTextureDataLayout
-    // 4. Call wgpuQueueWriteTexture
     
     return false;
 }

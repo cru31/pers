@@ -160,8 +160,9 @@ void WebGPULogicalDevice::waitIdle() {
         _defaultQueue->waitIdle();
     }
     
-    // TODO: Investigate if wgpu-native has a device poll mechanism
-    // Standard WebGPU would use: wgpuDevicePoll(_device, true, nullptr);
+    TodoOrDie::Log("WebGPULogicalDevice::waitIdle", 
+                   "Investigate if wgpu-native has a device poll mechanism. Standard WebGPU would use: wgpuDevicePoll(_device, true, nullptr)", 
+                   PERS_SOURCE_LOC);
 }
 
 NativeDeviceHandle WebGPULogicalDevice::getNativeDeviceHandle() const {

@@ -38,9 +38,8 @@ void WebGPURenderPassEncoder::setPipeline(const std::shared_ptr<IRenderPipeline>
     }
     
     TodoOrDie::Log("WebGPURenderPassEncoder::setPipeline", 
-                   "Implement pipeline setting", PERS_SOURCE_LOC);
-    
-    // TODO: Cast pipeline to WebGPURenderPipeline and call wgpuRenderPassEncoderSetPipeline
+                   "Cast pipeline to WebGPURenderPipeline and call wgpuRenderPassEncoderSetPipeline", 
+                   PERS_SOURCE_LOC);
 }
 
 void WebGPURenderPassEncoder::setBindGroup(uint32_t index, const std::shared_ptr<IBindGroup>& bindGroup) {
@@ -57,9 +56,8 @@ void WebGPURenderPassEncoder::setBindGroup(uint32_t index, const std::shared_ptr
     }
     
     TodoOrDie::Log("WebGPURenderPassEncoder::setBindGroup", 
-                   "Implement bind group setting", PERS_SOURCE_LOC);
-    
-    // TODO: Cast bindGroup to WebGPUBindGroup and call wgpuRenderPassEncoderSetBindGroup
+                   "Cast bindGroup to WebGPUBindGroup and call wgpuRenderPassEncoderSetBindGroup", 
+                   PERS_SOURCE_LOC);
 }
 
 void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, const std::shared_ptr<IBuffer>& buffer, 
@@ -77,9 +75,8 @@ void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, const std::shared_p
     }
     
     TodoOrDie::Log("WebGPURenderPassEncoder::setVertexBuffer", 
-                   "Implement vertex buffer setting", PERS_SOURCE_LOC);
-    
-    // TODO: Cast buffer to WebGPUBuffer and call wgpuRenderPassEncoderSetVertexBuffer
+                   "Cast buffer to WebGPUBuffer and call wgpuRenderPassEncoderSetVertexBuffer", 
+                   PERS_SOURCE_LOC);
 }
 
 void WebGPURenderPassEncoder::setIndexBuffer(const std::shared_ptr<IBuffer>& buffer, 
@@ -98,9 +95,8 @@ void WebGPURenderPassEncoder::setIndexBuffer(const std::shared_ptr<IBuffer>& buf
     }
     
     TodoOrDie::Log("WebGPURenderPassEncoder::setIndexBuffer", 
-                   "Implement index buffer setting", PERS_SOURCE_LOC);
-    
-    // TODO: Cast buffer to WebGPUBuffer and call wgpuRenderPassEncoderSetIndexBuffer
+                   "Cast buffer to WebGPUBuffer and call wgpuRenderPassEncoderSetIndexBuffer", 
+                   PERS_SOURCE_LOC);
 }
 
 void WebGPURenderPassEncoder::draw(uint32_t vertexCount, uint32_t instanceCount,
