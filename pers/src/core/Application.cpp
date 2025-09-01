@@ -12,8 +12,8 @@ Application::~Application() {
     cleanup();
 }
 
-bool Application::initialize(std::shared_ptr<IWindowFactory> windowFactory, 
-                            std::shared_ptr<pers::IGraphicsBackendFactory> graphicsFactory) {
+bool Application::initialize(const std::shared_ptr<IWindowFactory>& windowFactory, 
+                            const std::shared_ptr<pers::IGraphicsBackendFactory>& graphicsFactory) {
     pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "=== Application Initialization ===", PERS_SOURCE_LOC);
     
     // Store factories

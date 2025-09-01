@@ -21,10 +21,10 @@ public:
     
     // IQueue interface implementation
     bool submit(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) override;
-    bool submit(std::shared_ptr<ICommandBuffer> commandBuffer) override;
+    bool submit(const std::shared_ptr<ICommandBuffer>& commandBuffer) override;
     bool submitBatch(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) override;
     bool writeBuffer(const BufferWriteDesc& desc) override;
-    bool writeTexture(std::shared_ptr<ITexture> texture, 
+    bool writeTexture(const std::shared_ptr<ITexture>& texture, 
                      const void* data, 
                      uint64_t dataSize,
                      uint32_t mipLevel = 0) override;

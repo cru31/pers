@@ -23,8 +23,8 @@ public:
     virtual ~Application();
     
     // Initialize application with factories
-    bool initialize(std::shared_ptr<IWindowFactory> windowFactory, 
-                   std::shared_ptr<pers::IGraphicsBackendFactory> graphicsFactory);
+    bool initialize(const std::shared_ptr<IWindowFactory>& windowFactory, 
+                   const std::shared_ptr<pers::IGraphicsBackendFactory>& graphicsFactory);
     
     // Main run loop
     void run();

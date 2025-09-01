@@ -108,7 +108,7 @@ public:
      * @return Shared pointer to texture view or nullptr if failed
      */
     virtual std::shared_ptr<ITextureView> createTextureView(
-        std::shared_ptr<ITexture> texture,
+        const std::shared_ptr<ITexture>& texture,
         const TextureViewDesc& desc) = 0;
     
     /**
@@ -129,7 +129,7 @@ public:
      * @brief Get native factory handle for backend-specific operations
      * @return Native factory handle (implementation-specific)
      */
-    virtual NativeResourceFactoryHandle getNativeFactoryHandle() const = 0;
+    virtual std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) = 0;
 };
 
 } // namespace pers

@@ -44,7 +44,7 @@ public:
      * @param commandBuffer Command buffer to submit
      * @return true if submission succeeded
      */
-    virtual bool submit(std::shared_ptr<ICommandBuffer> commandBuffer) = 0;
+    virtual bool submit(const std::shared_ptr<ICommandBuffer>& commandBuffer) = 0;
     
     /**
      * @brief Submit multiple command buffers as a batch
@@ -68,7 +68,7 @@ public:
      * @param mipLevel Target mip level
      * @return true if write succeeded
      */
-    virtual bool writeTexture(std::shared_ptr<ITexture> texture, 
+    virtual bool writeTexture(const std::shared_ptr<ITexture>& texture, 
                              const void* data, 
                              uint64_t dataSize,
                              uint32_t mipLevel = 0) = 0;

@@ -76,7 +76,7 @@ class Logger {
 public:
     static Logger& Instance();
     
-    void AddOutput(std::shared_ptr<ILogOutput> output);
+    void AddOutput(const std::shared_ptr<ILogOutput>& output);
     void RemoveAllOutputs();
     
     void SetMinLevel(LogLevel level);

@@ -19,11 +19,11 @@ public:
     ~WebGPURenderPassEncoder() override;
     
     // IRenderPassEncoder interface implementation
-    void setPipeline(std::shared_ptr<IPipeline> pipeline) override;
-    void setBindGroup(uint32_t index, std::shared_ptr<IBindGroup> bindGroup) override;
-    void setVertexBuffer(uint32_t slot, std::shared_ptr<IBuffer> buffer, 
+    void setPipeline(const std::shared_ptr<IRenderPipeline>& pipeline) override;
+    void setBindGroup(uint32_t index, const std::shared_ptr<IBindGroup>& bindGroup) override;
+    void setVertexBuffer(uint32_t slot, const std::shared_ptr<IBuffer>& buffer, 
                         uint64_t offset = 0, uint64_t size = 0) override;
-    void setIndexBuffer(std::shared_ptr<IBuffer> buffer, 
+    void setIndexBuffer(const std::shared_ptr<IBuffer>& buffer, 
                        IndexFormat indexFormat,
                        uint64_t offset = 0, uint64_t size = 0) override;
     void draw(uint32_t vertexCount, uint32_t instanceCount = 1,

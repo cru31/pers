@@ -149,7 +149,7 @@ public:
         }
     }
     
-    void AddOutput(std::shared_ptr<ILogOutput> output) {
+    void AddOutput(const std::shared_ptr<ILogOutput>& output) {
         std::lock_guard<std::mutex> lock(mutex);
         outputs.push_back(output);
     }
@@ -237,7 +237,7 @@ Logger& Logger::Instance() {
     return instance;
 }
 
-void Logger::AddOutput(std::shared_ptr<ILogOutput> output) {
+void Logger::AddOutput(const std::shared_ptr<ILogOutput>& output) {
     impl->AddOutput(output);
 }
 

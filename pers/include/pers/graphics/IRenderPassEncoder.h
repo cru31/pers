@@ -8,7 +8,7 @@
 namespace pers {
 
 // Forward declarations
-class IPipeline;
+class IRenderPipeline;
 class IBindGroup;
 class IBuffer;
 
@@ -24,16 +24,16 @@ public:
     
     /**
      * @brief Set the render pipeline
-     * @param pipeline Pipeline to use for drawing
+     * @param pipeline Render pipeline to use for drawing (compute pipelines not allowed)
      */
-    virtual void setPipeline(std::shared_ptr<IPipeline> pipeline) = 0;
+    virtual void setPipeline(const std::shared_ptr<IRenderPipeline>& pipeline) = 0;
     
     /**
      * @brief Set a bind group
      * @param index Bind group index
      * @param bindGroup Bind group to set
      */
-    virtual void setBindGroup(uint32_t index, std::shared_ptr<IBindGroup> bindGroup) = 0;
+    virtual void setBindGroup(uint32_t index, const std::shared_ptr<IBindGroup>& bindGroup) = 0;
     
     /**
      * @brief Set vertex buffer
@@ -42,7 +42,7 @@ public:
      * @param offset Offset in buffer
      * @param size Size of data to use
      */
-    virtual void setVertexBuffer(uint32_t slot, std::shared_ptr<IBuffer> buffer, 
+    virtual void setVertexBuffer(uint32_t slot, const std::shared_ptr<IBuffer>& buffer, 
                                  uint64_t offset = 0, uint64_t size = 0) = 0;
     
     /**
@@ -52,7 +52,7 @@ public:
      * @param offset Offset in buffer
      * @param size Size of data to use
      */
-    virtual void setIndexBuffer(std::shared_ptr<IBuffer> buffer, 
+    virtual void setIndexBuffer(const std::shared_ptr<IBuffer>& buffer, 
                                IndexFormat indexFormat,
                                uint64_t offset = 0, uint64_t size = 0) = 0;
     

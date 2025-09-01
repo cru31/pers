@@ -31,7 +31,7 @@ WebGPUQueue::~WebGPUQueue() {
     }
 }
 
-bool WebGPUQueue::submit(std::shared_ptr<ICommandBuffer> commandBuffer) {
+bool WebGPUQueue::submit(const std::shared_ptr<ICommandBuffer>& commandBuffer) {
     if (!_queue) {
         Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Cannot submit: queue is null", PERS_SOURCE_LOC);
         return false;
@@ -124,7 +124,7 @@ bool WebGPUQueue::writeBuffer(const BufferWriteDesc& desc) {
     return true;
 }
 
-bool WebGPUQueue::writeTexture(std::shared_ptr<ITexture> texture, 
+bool WebGPUQueue::writeTexture(const std::shared_ptr<ITexture>& texture, 
                                const void* data, 
                                uint64_t dataSize,
                                uint32_t mipLevel) {

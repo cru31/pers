@@ -24,7 +24,7 @@ WebGPURenderPassEncoder::~WebGPURenderPassEncoder() {
     }
 }
 
-void WebGPURenderPassEncoder::setPipeline(std::shared_ptr<IPipeline> pipeline) {
+void WebGPURenderPassEncoder::setPipeline(const std::shared_ptr<IRenderPipeline>& pipeline) {
     if (!_encoder) {
         Logger::Instance().Log(LogLevel::Error, "WebGPURenderPassEncoder", 
                               "Cannot set pipeline with null encoder", PERS_SOURCE_LOC);
@@ -43,7 +43,7 @@ void WebGPURenderPassEncoder::setPipeline(std::shared_ptr<IPipeline> pipeline) {
     // TODO: Cast pipeline to WebGPURenderPipeline and call wgpuRenderPassEncoderSetPipeline
 }
 
-void WebGPURenderPassEncoder::setBindGroup(uint32_t index, std::shared_ptr<IBindGroup> bindGroup) {
+void WebGPURenderPassEncoder::setBindGroup(uint32_t index, const std::shared_ptr<IBindGroup>& bindGroup) {
     if (!_encoder) {
         Logger::Instance().Log(LogLevel::Error, "WebGPURenderPassEncoder", 
                               "Cannot set bind group with null encoder", PERS_SOURCE_LOC);
@@ -62,7 +62,7 @@ void WebGPURenderPassEncoder::setBindGroup(uint32_t index, std::shared_ptr<IBind
     // TODO: Cast bindGroup to WebGPUBindGroup and call wgpuRenderPassEncoderSetBindGroup
 }
 
-void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, std::shared_ptr<IBuffer> buffer, 
+void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, const std::shared_ptr<IBuffer>& buffer, 
                                              uint64_t offset, uint64_t size) {
     if (!_encoder) {
         Logger::Instance().Log(LogLevel::Error, "WebGPURenderPassEncoder", 
@@ -82,7 +82,7 @@ void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, std::shared_ptr<IBu
     // TODO: Cast buffer to WebGPUBuffer and call wgpuRenderPassEncoderSetVertexBuffer
 }
 
-void WebGPURenderPassEncoder::setIndexBuffer(std::shared_ptr<IBuffer> buffer, 
+void WebGPURenderPassEncoder::setIndexBuffer(const std::shared_ptr<IBuffer>& buffer, 
                                             IndexFormat indexFormat,
                                             uint64_t offset, uint64_t size) {
     if (!_encoder) {
