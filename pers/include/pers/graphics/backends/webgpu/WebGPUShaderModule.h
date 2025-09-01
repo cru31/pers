@@ -2,6 +2,7 @@
 
 #include "pers/graphics/IShaderModule.h"
 #include <memory>
+#include <webgpu/webgpu.h>
 
 namespace pers {
 namespace webgpu {

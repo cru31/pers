@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pers/graphics/ITextureView.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 
 namespace pers {
 

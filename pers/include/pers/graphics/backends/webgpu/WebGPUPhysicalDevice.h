@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pers/graphics/IPhysicalDevice.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 #include <optional>
 #include <mutex>
 

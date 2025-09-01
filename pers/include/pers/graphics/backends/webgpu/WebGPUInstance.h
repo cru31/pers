@@ -2,7 +2,7 @@
 
 #include "pers/graphics/IInstance.h"
 #include "pers/graphics/backends/IGraphicsBackendFactory.h"  // For InstanceDesc
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 
 namespace pers {
 

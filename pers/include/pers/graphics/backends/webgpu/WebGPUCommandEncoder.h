@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pers/graphics/ICommandEncoder.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 #include <memory>
 
 namespace pers {

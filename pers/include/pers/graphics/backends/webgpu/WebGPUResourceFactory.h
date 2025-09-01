@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pers/graphics/IResourceFactory.h"
+#include <webgpu/webgpu.h>
 #include <memory>
 
 namespace pers {

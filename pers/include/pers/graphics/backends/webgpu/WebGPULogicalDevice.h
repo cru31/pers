@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pers/graphics/ILogicalDevice.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 #include <memory>
 #include <vector>
 

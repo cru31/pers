@@ -2,7 +2,7 @@
 #include "pers/graphics/backends/webgpu/WebGPULogicalDevice.h"
 #include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 #include <vector>
 #include <thread>
 #include <chrono>

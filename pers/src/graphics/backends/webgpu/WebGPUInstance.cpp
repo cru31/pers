@@ -4,8 +4,8 @@
 #include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include "pers/core/platform/NativeWindowHandle.h"
-#include <webgpu.h>
-#include <wgpu.h>  // For wgpu-native specific extensions
+#include <webgpu/webgpu.h>
+#include <webgpu/wgpu.h>  // For wgpu-native specific extensions
 #include <cstring>  // For strlen
 #include <chrono>
 #include <thread>

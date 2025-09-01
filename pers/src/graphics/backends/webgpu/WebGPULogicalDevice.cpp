@@ -6,7 +6,7 @@
 #include "pers/graphics/SwapChainDescBuilder.h"
 #include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 #include <iostream>
 
 namespace pers {

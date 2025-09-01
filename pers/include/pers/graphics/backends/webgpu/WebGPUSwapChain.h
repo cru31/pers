@@ -2,7 +2,7 @@
 
 #include "pers/graphics/ISwapChain.h"
 #include "pers/graphics/SwapChainDescBuilder.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 #include <memory>
 
 namespace pers {

@@ -2,6 +2,7 @@
 
 #include "pers/graphics/IBuffer.h"
 #include <memory>
+#include <webgpu/webgpu.h>
 
 namespace pers {
 namespace webgpu {

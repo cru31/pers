@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pers/graphics/IQueue.h"
-#include <webgpu.h>
+#include <webgpu/webgpu.h>
 #include <memory>
 #include <vector>
 

@@ -2,6 +2,7 @@
 
 #include "pers/graphics/IRenderPipeline.h"
 #include <memory>
+#include <webgpu/webgpu.h>
 
 namespace pers {
 namespace webgpu {
