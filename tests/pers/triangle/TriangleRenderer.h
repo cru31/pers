@@ -10,6 +10,9 @@ namespace pers {
     class IPhysicalDevice;
     class ILogicalDevice;
     class IQueue;
+    class ISwapChain;
+    class IBuffer;
+    class IRenderPipeline;
 }
 
 class TriangleRenderer {
@@ -42,6 +45,7 @@ private:
     // Device initialization helpers
     bool requestPhysicalDevice();
     bool createLogicalDevice();
+    bool createSwapChain();
     
 private:
     glm::ivec2 _windowSize = glm::ivec2(800, 600);
@@ -52,4 +56,9 @@ private:
     std::shared_ptr<pers::ILogicalDevice> _device;
     std::shared_ptr<pers::IQueue> _queue;
     pers::NativeSurfaceHandle _surface; // Surface handle
+    
+    // Rendering resources
+    std::shared_ptr<pers::ISwapChain> _swapChain;
+    std::shared_ptr<pers::IBuffer> _vertexBuffer;
+    std::shared_ptr<pers::IRenderPipeline> _renderPipeline;
 };

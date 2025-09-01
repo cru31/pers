@@ -6,6 +6,7 @@ clion-build/
 cmake-build-*/
 out/
 # Pattern for debug/release build directories
+build-clion/
 build-*-debug/
 build-*-release/
 **/build-*-debug/
