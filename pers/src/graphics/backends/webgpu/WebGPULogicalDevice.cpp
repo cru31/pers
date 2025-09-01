@@ -75,9 +75,14 @@ std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() cons
         return nullptr;
     }
     
-    // Create resource factory on demand
-    // Note: In a real implementation, we might want to cache this
-    return std::make_shared<webgpu::WebGPUResourceFactory>(_device);
+    // Create and cache resource factory on first access
+    if (!_resourceFactory) {
+        _resourceFactory = std::make_shared<webgpu::WebGPUResourceFactory>(_device);
+        Logger::Instance().Log(LogLevel::Debug, "WebGPULogicalDevice",
+            "Created and cached resource factory", PERS_SOURCE_LOC);
+    }
+    
+    return _resourceFactory;
 }
 
 std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder() {

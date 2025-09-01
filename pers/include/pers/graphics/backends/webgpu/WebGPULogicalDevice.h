@@ -57,6 +57,7 @@ private:
     WGPUDevice _device = nullptr;
     WGPUAdapter _adapter = nullptr;  // Keep reference for queries
     std::shared_ptr<IQueue> _defaultQueue;  // WebGPU has single queue
+    mutable std::shared_ptr<IResourceFactory> _resourceFactory;  // Cached factory
     
     bool createDefaultQueue();
 };

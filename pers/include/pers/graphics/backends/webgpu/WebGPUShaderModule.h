@@ -1,8 +1,8 @@
 #pragma once
 
 #include "pers/graphics/IShaderModule.h"
-#include <memory>
 #include <webgpu/webgpu.h>
+#include <string>
 
 namespace pers {
 namespace webgpu {
@@ -19,12 +19,15 @@ public:
     bool isValid() const override;
     
     // WebGPU specific - internal use only
-    void* getNativeHandle() const;
-    void createShaderModule(void* device);
+    WGPUShaderModule getNativeHandle() const;
+    void createShaderModule(WGPUDevice device);
     
 private:
-    class Impl;
-    std::unique_ptr<Impl> _impl;
+    ShaderStage _stage;
+    std::string _entryPoint;
+    std::string _debugName;
+    std::string _code;  // Store code until device is available
+    WGPUShaderModule _shaderModule = nullptr;
 };
 
 } // namespace webgpu

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pers/graphics/IBuffer.h"
-#include <memory>
 #include <webgpu/webgpu.h>
 
 namespace pers {
@@ -9,7 +8,7 @@ namespace webgpu {
 
 class WebGPUBuffer final : public IBuffer {
 public:
-    WebGPUBuffer(const BufferDesc& desc, void* device);
+    WebGPUBuffer(const BufferDesc& desc, WGPUDevice device);
     ~WebGPUBuffer() override;
     
     // IBuffer interface
@@ -20,11 +19,14 @@ public:
     NativeBufferHandle getNativeBufferHandle() const override;
     
     // WebGPU specific - internal use only
-    void* getNativeHandle() const;
+    WGPUBuffer getNativeHandle() const;
     
 private:
-    class Impl;
-    std::unique_ptr<Impl> _impl;
+    uint64_t _size;
+    BufferUsage _usage;
+    std::string _debugName;
+    WGPUBuffer _buffer = nullptr;
+    void* _mappedData = nullptr;
 };
 
 } // namespace webgpu
