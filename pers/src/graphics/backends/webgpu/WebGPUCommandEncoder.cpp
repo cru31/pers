@@ -36,69 +36,143 @@ std::shared_ptr<IRenderPassEncoder> WebGPUCommandEncoder::beginRenderPass(const 
     
     // Create render pass descriptor
     WGPURenderPassDescriptor renderPassDesc = {};
-    renderPassDesc.label = WGPUStringView{.data = "Render Pass", .length = 11};
+    if (!desc.label.empty()) {
+        renderPassDesc.label = WGPUStringView{.data = desc.label.c_str(), .length = desc.label.length()};
+    } else {
+        renderPassDesc.label = WGPUStringView{.data = "Render Pass", .length = 11};
+    }
     
-    // Setup color attachment
-    WGPURenderPassColorAttachment colorAttachment = {};
-    if (desc.colorAttachment) {
-        auto webgpuTextureView = std::dynamic_pointer_cast<WebGPUTextureView>(desc.colorAttachment);
+    // Setup color attachments
+    std::vector<WGPURenderPassColorAttachment> colorAttachments;
+    for (const auto& attachment : desc.colorAttachments) {
+        if (!attachment.view) {
+            Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
+                                  "Color attachment has null view", PERS_SOURCE_LOC);
+            return nullptr;
+        }
+        
+        auto webgpuTextureView = std::dynamic_pointer_cast<WebGPUTextureView>(attachment.view);
         if (!webgpuTextureView) {
             Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
                                   "Invalid color attachment type", PERS_SOURCE_LOC);
             return nullptr;
         }
         
-        colorAttachment.view = webgpuTextureView->getNativeTextureViewHandle().as<WGPUTextureView>();
-        colorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+        WGPURenderPassColorAttachment wgpuAttachment = {};
+        wgpuAttachment.view = webgpuTextureView->getNativeTextureViewHandle().as<WGPUTextureView>();
+        wgpuAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
         
-        // Setup clear value if needed
-        if (desc.clearColor) {
-            colorAttachment.loadOp = WGPULoadOp_Clear;
-            colorAttachment.clearValue = WGPUColor{
-                desc.clearColorValue[0],
-                desc.clearColorValue[1], 
-                desc.clearColorValue[2],
-                desc.clearColorValue[3]
-            };
-        } else {
-            colorAttachment.loadOp = WGPULoadOp_Load;
+        // Convert LoadOp
+        switch (attachment.loadOp) {
+            case LoadOp::Clear:
+                wgpuAttachment.loadOp = WGPULoadOp_Clear;
+                wgpuAttachment.clearValue = WGPUColor{
+                    attachment.clearColor.r,
+                    attachment.clearColor.g,
+                    attachment.clearColor.b,
+                    attachment.clearColor.a
+                };
+                break;
+            case LoadOp::Load:
+                wgpuAttachment.loadOp = WGPULoadOp_Load;
+                break;
+            case LoadOp::Undefined:
+            default:
+                wgpuAttachment.loadOp = WGPULoadOp_Undefined;
+                break;
         }
         
-        colorAttachment.storeOp = WGPUStoreOp_Store;
+        // Convert StoreOp
+        switch (attachment.storeOp) {
+            case StoreOp::Store:
+                wgpuAttachment.storeOp = WGPUStoreOp_Store;
+                break;
+            case StoreOp::Discard:
+                wgpuAttachment.storeOp = WGPUStoreOp_Discard;
+                break;
+            default:
+                wgpuAttachment.storeOp = WGPUStoreOp_Store;
+                break;
+        }
+        
+        colorAttachments.push_back(wgpuAttachment);
     }
     
-    renderPassDesc.colorAttachmentCount = desc.colorAttachment ? 1 : 0;
-    renderPassDesc.colorAttachments = desc.colorAttachment ? &colorAttachment : nullptr;
+    renderPassDesc.colorAttachmentCount = colorAttachments.size();
+    renderPassDesc.colorAttachments = colorAttachments.empty() ? nullptr : colorAttachments.data();
     
     // Setup depth stencil attachment if provided
-    WGPURenderPassDepthStencilAttachment depthStencilAttachment = {};
-    if (desc.depthStencilAttachment) {
-        auto webgpuTextureView = std::dynamic_pointer_cast<WebGPUTextureView>(desc.depthStencilAttachment);
+    WGPURenderPassDepthStencilAttachment wgpuDepthStencilAttachment = {};
+    if (desc.depthStencilAttachment && desc.depthStencilAttachment->view) {
+        auto webgpuTextureView = std::dynamic_pointer_cast<WebGPUTextureView>(desc.depthStencilAttachment->view);
         if (!webgpuTextureView) {
             Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
                                   "Invalid depth stencil attachment type", PERS_SOURCE_LOC);
             return nullptr;
         }
         
-        depthStencilAttachment.view = webgpuTextureView->getNativeTextureViewHandle().as<WGPUTextureView>();
+        wgpuDepthStencilAttachment.view = webgpuTextureView->getNativeTextureViewHandle().as<WGPUTextureView>();
         
-        // Setup depth clear
-        if (desc.clearDepth) {
-            depthStencilAttachment.depthLoadOp = WGPULoadOp_Clear;
-            depthStencilAttachment.depthClearValue = desc.clearDepthValue;
-        } else {
-            depthStencilAttachment.depthLoadOp = WGPULoadOp_Load;
+        // Convert depth LoadOp
+        switch (desc.depthStencilAttachment->depthLoadOp) {
+            case LoadOp::Clear:
+                wgpuDepthStencilAttachment.depthLoadOp = WGPULoadOp_Clear;
+                wgpuDepthStencilAttachment.depthClearValue = desc.depthStencilAttachment->depthClearValue;
+                break;
+            case LoadOp::Load:
+                wgpuDepthStencilAttachment.depthLoadOp = WGPULoadOp_Load;
+                break;
+            case LoadOp::Undefined:
+            default:
+                wgpuDepthStencilAttachment.depthLoadOp = WGPULoadOp_Undefined;
+                break;
         }
-        depthStencilAttachment.depthStoreOp = WGPUStoreOp_Store;
         
-        // For now, we don't handle stencil
-        depthStencilAttachment.stencilLoadOp = WGPULoadOp_Undefined;
-        depthStencilAttachment.stencilStoreOp = WGPUStoreOp_Undefined;
-        depthStencilAttachment.stencilClearValue = 0;
-        depthStencilAttachment.stencilReadOnly = false;
-        depthStencilAttachment.depthReadOnly = false;
+        // Convert depth StoreOp
+        switch (desc.depthStencilAttachment->depthStoreOp) {
+            case StoreOp::Store:
+                wgpuDepthStencilAttachment.depthStoreOp = WGPUStoreOp_Store;
+                break;
+            case StoreOp::Discard:
+                wgpuDepthStencilAttachment.depthStoreOp = WGPUStoreOp_Discard;
+                break;
+            default:
+                wgpuDepthStencilAttachment.depthStoreOp = WGPUStoreOp_Store;
+                break;
+        }
         
-        renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
+        // Convert stencil LoadOp
+        switch (desc.depthStencilAttachment->stencilLoadOp) {
+            case LoadOp::Clear:
+                wgpuDepthStencilAttachment.stencilLoadOp = WGPULoadOp_Clear;
+                wgpuDepthStencilAttachment.stencilClearValue = desc.depthStencilAttachment->stencilClearValue;
+                break;
+            case LoadOp::Load:
+                wgpuDepthStencilAttachment.stencilLoadOp = WGPULoadOp_Load;
+                break;
+            case LoadOp::Undefined:
+            default:
+                wgpuDepthStencilAttachment.stencilLoadOp = WGPULoadOp_Undefined;
+                break;
+        }
+        
+        // Convert stencil StoreOp
+        switch (desc.depthStencilAttachment->stencilStoreOp) {
+            case StoreOp::Store:
+                wgpuDepthStencilAttachment.stencilStoreOp = WGPUStoreOp_Store;
+                break;
+            case StoreOp::Discard:
+                wgpuDepthStencilAttachment.stencilStoreOp = WGPUStoreOp_Discard;
+                break;
+            default:
+                wgpuDepthStencilAttachment.stencilStoreOp = WGPUStoreOp_Store;
+                break;
+        }
+        
+        wgpuDepthStencilAttachment.depthReadOnly = desc.depthStencilAttachment->depthReadOnly;
+        wgpuDepthStencilAttachment.stencilReadOnly = desc.depthStencilAttachment->stencilReadOnly;
+        
+        renderPassDesc.depthStencilAttachment = &wgpuDepthStencilAttachment;
     } else {
         renderPassDesc.depthStencilAttachment = nullptr;
     }
