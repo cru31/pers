@@ -4,79 +4,61 @@
 
 namespace pers {
 
-class SwapChainDescBuilder::Impl {
-public:
-    uint32_t width = 0;
-    uint32_t height = 0;
-    
-    TextureFormat preferredFormat = TextureFormat::BGRA8Unorm;
-    std::vector<TextureFormat> formatFallbacks;
-    
-    PresentMode preferredPresentMode = PresentMode::Fifo;
-    std::vector<PresentMode> presentModeFallbacks;
-    
-    CompositeAlphaMode preferredAlphaMode = CompositeAlphaMode::Opaque;
-    std::vector<CompositeAlphaMode> alphaModeFallbacks;
-    
-    std::string debugName;
-    
-    template<typename T>
-    std::optional<T> selectFromCapabilities(const T& preferred,
-                                           const std::vector<T>& fallbacks,
-                                           const std::vector<T>& available) const {
-        // First try preferred
-        if (std::find(available.begin(), available.end(), preferred) != available.end()) {
-            return preferred;
-        }
-        
-        // Then try fallbacks in order
-        for (const auto& fallback : fallbacks) {
-            if (std::find(available.begin(), available.end(), fallback) != available.end()) {
-                return fallback;
-            }
-        }
-        
-        // No match found
-        return std::nullopt;
-    }
-};
-
-SwapChainDescBuilder::SwapChainDescBuilder() 
-    : _impl(std::make_unique<Impl>()) {
+SwapChainDescBuilder::SwapChainDescBuilder() {
 }
 
 SwapChainDescBuilder::~SwapChainDescBuilder() = default;
 
 SwapChainDescBuilder& SwapChainDescBuilder::withDimensions(uint32_t width, uint32_t height) {
-    _impl->width = width;
-    _impl->height = height;
+    _width = width;
+    _height = height;
     return *this;
 }
 
 SwapChainDescBuilder& SwapChainDescBuilder::withFormat(TextureFormat format,
                                                        const std::vector<TextureFormat>& fallbacks) {
-    _impl->preferredFormat = format;
-    _impl->formatFallbacks = fallbacks;
+    _preferredFormat = format;
+    _formatFallbacks = fallbacks;
     return *this;
 }
 
 SwapChainDescBuilder& SwapChainDescBuilder::withPresentMode(PresentMode mode,
                                                             const std::vector<PresentMode>& fallbacks) {
-    _impl->preferredPresentMode = mode;
-    _impl->presentModeFallbacks = fallbacks;
+    _preferredPresentMode = mode;
+    _presentModeFallbacks = fallbacks;
     return *this;
 }
 
 SwapChainDescBuilder& SwapChainDescBuilder::withAlphaMode(CompositeAlphaMode mode,
                                                           const std::vector<CompositeAlphaMode>& fallbacks) {
-    _impl->preferredAlphaMode = mode;
-    _impl->alphaModeFallbacks = fallbacks;
+    _preferredAlphaMode = mode;
+    _alphaModeFallbacks = fallbacks;
     return *this;
 }
 
 SwapChainDescBuilder& SwapChainDescBuilder::withDebugName(const std::string& name) {
-    _impl->debugName = name;
+    _debugName = name;
     return *this;
+}
+
+template<typename T>
+static std::optional<T> selectFromCapabilities(const T& preferred,
+                                              const std::vector<T>& fallbacks,
+                                              const std::vector<T>& available) {
+    // First try preferred
+    if (std::find(available.begin(), available.end(), preferred) != available.end()) {
+        return preferred;
+    }
+    
+    // Then try fallbacks in order
+    for (const auto& fallback : fallbacks) {
+        if (std::find(available.begin(), available.end(), fallback) != available.end()) {
+            return fallback;
+        }
+    }
+    
+    // No match found
+    return std::nullopt;
 }
 
 SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabilities& capabilities) const {
@@ -88,21 +70,21 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     result.availableAlphaModes = capabilities.alphaModes;
     
     // Validate dimensions
-    if (_impl->width == 0 || _impl->height == 0) {
+    if (_width == 0 || _height == 0) {
         result.failureReason = "Invalid dimensions: width and height must be non-zero";
         return result;
     }
     
-    if (_impl->width < capabilities.minWidth || _impl->width > capabilities.maxWidth ||
-        _impl->height < capabilities.minHeight || _impl->height > capabilities.maxHeight) {
+    if (_width < capabilities.minWidth || _width > capabilities.maxWidth ||
+        _height < capabilities.minHeight || _height > capabilities.maxHeight) {
         result.failureReason = "Dimensions out of supported range";
         return result;
     }
     
     // Negotiate format
-    auto selectedFormat = _impl->selectFromCapabilities(
-        _impl->preferredFormat, 
-        _impl->formatFallbacks,
+    auto selectedFormat = selectFromCapabilities(
+        _preferredFormat, 
+        _formatFallbacks,
         capabilities.formats
     );
     
@@ -110,7 +92,6 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
         result.formatSupported = false;
         result.failureReason = "No supported texture format found";
         
-        // Log detailed information for debugging
         Logger::Instance().Log(LogLevel::Warning, "SwapChainDescBuilder",
                               "SwapChain format negotiation failed - Preferred format not available, no fallback formats matched",
                               PERS_SOURCE_LOC);
@@ -122,9 +103,9 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     result.negotiatedFormat = selectedFormat.value();
     
     // Negotiate present mode
-    auto selectedPresentMode = _impl->selectFromCapabilities(
-        _impl->preferredPresentMode,
-        _impl->presentModeFallbacks,
+    auto selectedPresentMode = selectFromCapabilities(
+        _preferredPresentMode,
+        _presentModeFallbacks,
         capabilities.presentModes
     );
     
@@ -143,9 +124,9 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     result.negotiatedPresentMode = selectedPresentMode.value();
     
     // Negotiate alpha mode
-    auto selectedAlphaMode = _impl->selectFromCapabilities(
-        _impl->preferredAlphaMode,
-        _impl->alphaModeFallbacks,
+    auto selectedAlphaMode = selectFromCapabilities(
+        _preferredAlphaMode,
+        _alphaModeFallbacks,
         capabilities.alphaModes
     );
     
@@ -184,22 +165,34 @@ SwapChainDesc SwapChainDescBuilder::build(const SwapChainNegotiationResult& nego
         return desc;
     }
     
-    desc.width = _impl->width;
-    desc.height = _impl->height;
+    desc.width = _width;
+    desc.height = _height;
     desc.format = negotiationResult.negotiatedFormat;
     desc.presentMode = negotiationResult.negotiatedPresentMode;
     desc.alphaMode = negotiationResult.negotiatedAlphaMode;
-    desc.debugName = _impl->debugName;
+    desc.debugName = _debugName;
     
     return desc;
 }
 
 uint32_t SwapChainDescBuilder::getWidth() const {
-    return _impl->width;
+    return _width;
 }
 
 uint32_t SwapChainDescBuilder::getHeight() const {
-    return _impl->height;
+    return _height;
+}
+
+SwapChainDesc SwapChainDescBuilder::build() const {
+    SwapChainDesc desc;
+    desc.width = _width;
+    desc.height = _height;
+    desc.format = _preferredFormat;
+    desc.presentMode = _preferredPresentMode;
+    desc.alphaMode = _preferredAlphaMode;
+    desc.usage = _usage;
+    desc.debugName = _debugName;
+    return desc;
 }
 
 } // namespace pers

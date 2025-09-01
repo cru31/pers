@@ -116,9 +116,29 @@ public:
      */
     uint32_t getHeight() const;
     
+    // Legacy interface for compatibility
+    SwapChainDescBuilder& setSize(uint32_t width, uint32_t height) { return withDimensions(width, height); }
+    SwapChainDescBuilder& setFormat(TextureFormat format) { return withFormat(format); }
+    SwapChainDescBuilder& setPresentMode(PresentMode mode) { return withPresentMode(mode); }
+    SwapChainDescBuilder& setUsage(TextureUsage usage) { _usage = usage; return *this; }
+    SwapChainDescBuilder& setDebugName(const std::string& name) { return withDebugName(name); }
+    SwapChainDesc build() const;  // Simple build without negotiation
+    
 private:
-    class Impl;
-    std::unique_ptr<Impl> _impl;
+    uint32_t _width = 0;
+    uint32_t _height = 0;
+    
+    TextureFormat _preferredFormat = TextureFormat::BGRA8Unorm;
+    std::vector<TextureFormat> _formatFallbacks;
+    
+    PresentMode _preferredPresentMode = PresentMode::Fifo;
+    std::vector<PresentMode> _presentModeFallbacks;
+    
+    CompositeAlphaMode _preferredAlphaMode = CompositeAlphaMode::Opaque;
+    std::vector<CompositeAlphaMode> _alphaModeFallbacks;
+    
+    std::string _debugName;
+    TextureUsage _usage = TextureUsage::RenderAttachment;
 };
 
 } // namespace pers
