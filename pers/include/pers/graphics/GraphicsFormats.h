@@ -5,6 +5,21 @@
 namespace pers {
 
 /**
+ * @brief Comparison functions for depth/stencil tests
+ */
+enum class CompareFunction : uint32_t {
+    Undefined = 0,
+    Never,
+    Less,
+    Equal,
+    LessEqual,
+    Greater,
+    NotEqual,
+    GreaterEqual,
+    Always
+};
+
+/**
  * @brief Texture format enumeration
  * Common texture formats supported across major graphics APIs
  * 

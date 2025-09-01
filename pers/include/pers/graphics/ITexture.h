@@ -7,17 +7,7 @@
 
 namespace pers {
 
-/**
- * @brief Texture usage flags
- */
-enum class TextureUsage : uint32_t {
-    None = 0,
-    CopySrc = 1 << 0,
-    CopyDst = 1 << 1,
-    TextureBinding = 1 << 2,
-    StorageBinding = 1 << 3,
-    RenderAttachment = 1 << 4
-};
+// TextureUsage and TextureDimension are defined in GraphicsTypes.h
 
 inline TextureUsage operator|(TextureUsage a, TextureUsage b) {
     return static_cast<TextureUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
@@ -32,19 +22,10 @@ inline bool operator!(TextureUsage usage) {
 }
 
 /**
- * @brief Texture dimension
- */
-enum class TextureDimension {
-    Texture1D,
-    Texture2D,
-    Texture3D
-};
-
-/**
  * @brief Texture descriptor
  */
 struct TextureDesc {
-    TextureDimension dimension = TextureDimension::Texture2D;
+    TextureDimension dimension = TextureDimension::D2;
     uint32_t width = 1;
     uint32_t height = 1;
     uint32_t depthOrArrayLayers = 1;

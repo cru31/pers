@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cstdint>
+#include <string>
 #include "pers/graphics/GraphicsTypes.h"
 #include "pers/graphics/GraphicsFormats.h"
 
@@ -14,6 +15,7 @@ struct BufferDesc {
     uint64_t size = 0;
     BufferUsage usage = BufferUsage::None;
     bool mappedAtCreation = false;
+    std::string debugName;  // Optional debug name
 };
 
 /**

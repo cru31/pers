@@ -44,6 +44,7 @@ struct SwapChainDesc {
     TextureFormat format = TextureFormat::BGRA8Unorm;
     PresentMode presentMode = PresentMode::Fifo;
     CompositeAlphaMode alphaMode = CompositeAlphaMode::Opaque;
+    TextureUsage usage = TextureUsage::RenderAttachment;
     
     // Optional
     std::string debugName;

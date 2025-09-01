@@ -1,8 +1,89 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 namespace pers {
+
+/**
+ * @brief Texture dimension enumeration
+ */
+enum class TextureDimension {
+    D1,
+    D2,
+    D3
+};
+
+/**
+ * @brief Texture view dimension enumeration
+ */
+enum class TextureViewDimension {
+    D1,
+    D2,
+    D2Array,
+    Cube,
+    CubeArray,
+    D3
+};
+
+/**
+ * @brief Texture usage flags
+ */
+enum class TextureUsage : uint32_t {
+    None = 0,
+    CopySrc = 1 << 0,
+    CopyDst = 1 << 1,
+    TextureBinding = 1 << 2,
+    StorageBinding = 1 << 3,
+    RenderAttachment = 1 << 4
+};
+
+/**
+ * @brief Filter mode for texture sampling
+ */
+enum class FilterMode {
+    Nearest,
+    Linear
+};
+
+/**
+ * @brief Address mode for texture sampling
+ */
+enum class AddressMode {
+    Repeat,
+    MirrorRepeat,
+    ClampToEdge,
+    ClampToBorder
+};
+
+/**
+ * @brief Load operation for render pass attachments
+ */
+enum class LoadOp {
+    Clear,
+    Load,
+    Undefined
+};
+
+/**
+ * @brief Store operation for render pass attachments  
+ */
+enum class StoreOp {
+    Store,
+    Discard
+};
+
+/**
+ * @brief Color write mask flags
+ */
+enum class ColorWriteMask : uint32_t {
+    None = 0,
+    Red = 1 << 0,
+    Green = 1 << 1,
+    Blue = 1 << 2,
+    Alpha = 1 << 3,
+    All = Red | Green | Blue | Alpha
+};
 
 /**
  * @brief Handle type enumeration for type safety
