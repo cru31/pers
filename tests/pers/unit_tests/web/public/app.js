@@ -280,14 +280,269 @@ function filterResults() {
     displayResults();
 }
 
+// Create full logs view
+function createFullLogsView() {
+    const container = document.getElementById('full-logs-container');
+    container.innerHTML = '';
+    
+    // Collect all logs with their test IDs
+    const allLogs = [];
+    allResults.forEach(result => {
+        if (result.log_messages && result.log_messages.length > 0) {
+            result.log_messages.forEach(log => {
+                allLogs.push({
+                    testId: result.id,
+                    testType: result.test_type,
+                    category: result.category,
+                    passed: result.passed,
+                    log: log,
+                    result: result
+                });
+            });
+        }
+    });
+    
+    if (allLogs.length === 0) {
+        container.innerHTML = '<div class="no-logs">No logs captured</div>';
+        return;
+    }
+    
+    // Track which test details are expanded
+    const expandedTests = new Set();
+    
+    // Display all logs
+    allLogs.forEach((entry, index) => {
+        const logWrapper = document.createElement('div');
+        logWrapper.className = 'log-wrapper';
+        
+        // Create log entry
+        const logDiv = document.createElement('div');
+        logDiv.className = 'log-entry';
+        logDiv.dataset.index = index;
+        logDiv.dataset.testId = entry.testId;
+        
+        // Determine log level and apply class
+        let logClass = '';
+        if (entry.log.includes('[TRACE]')) logClass = 'log-trace';
+        else if (entry.log.includes('[DEBUG]')) logClass = 'log-debug';
+        else if (entry.log.includes('[INFO]')) logClass = 'log-info';
+        else if (entry.log.includes('[TODO_SOMEDAY]')) logClass = 'log-todo-someday';
+        else if (entry.log.includes('[WARNING]')) logClass = 'log-warning';
+        else if (entry.log.includes('[TODO_OR_DIE]')) logClass = 'log-todo-or-die';
+        else if (entry.log.includes('[ERROR]')) logClass = 'log-error';
+        else if (entry.log.includes('[CRITICAL]')) logClass = 'log-critical';
+        
+        logDiv.className += ' ' + logClass;
+        logDiv.innerHTML = `<span class="test-id-badge">${entry.testId}</span>${escapeHtml(entry.log)}`;
+        
+        // Create test details container (hidden by default)
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'log-test-details-inline';
+        detailsDiv.style.display = 'none';
+        detailsDiv.dataset.testId = entry.testId;
+        
+        // Generate test details content
+        const status = entry.passed ? '<span style="color: #48bb78">PASSED</span>' : '<span style="color: #f56565">FAILED</span>';
+        let inputHtml = '';
+        if (entry.result.input) {
+            const params = parseInput(entry.result.input);
+            inputHtml = '<div class="inline-params">';
+            for (const [key, value] of Object.entries(params)) {
+                inputHtml += `<span class="param-inline"><strong>${key}:</strong> ${value}</span>`;
+            }
+            inputHtml += '</div>';
+        }
+        
+        detailsDiv.innerHTML = `
+            <div class="test-detail-inline">
+                <div class="detail-row-inline">
+                    <span class="detail-label">Test:</span> ${entry.testType}
+                </div>
+                <div class="detail-row-inline">
+                    <span class="detail-label">Category:</span> ${entry.category || 'N/A'}
+                </div>
+                <div class="detail-row-inline">
+                    <span class="detail-label">Status:</span> ${status}
+                </div>
+                <div class="detail-row-inline">
+                    <span class="detail-label">Input:</span> ${inputHtml || 'No parameters'}
+                </div>
+                <div class="detail-row-inline">
+                    <span class="detail-label">Expected:</span> <code>${entry.result.expected_result || 'N/A'}</code>
+                </div>
+                <div class="detail-row-inline">
+                    <span class="detail-label">Actual:</span> <code>${entry.result.actual_result || 'N/A'}</code>
+                </div>
+                ${entry.result.failure_reason ? `
+                    <div class="detail-row-inline">
+                        <span class="detail-label">Failure:</span> <code>${entry.result.failure_reason}</code>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        // Add click handler to log entry
+        logDiv.addEventListener('click', () => {
+            const testId = entry.testId;
+            
+            // Hide all other test details
+            document.querySelectorAll('.log-test-details-inline').forEach(d => {
+                if (d.dataset.testId !== testId) {
+                    d.style.display = 'none';
+                }
+            });
+            
+            // Remove selected class from all other logs
+            document.querySelectorAll('.log-entry').forEach(l => {
+                if (l.dataset.testId !== testId) {
+                    l.classList.remove('selected');
+                }
+            });
+            
+            // Toggle this test's details
+            if (detailsDiv.style.display === 'none') {
+                detailsDiv.style.display = 'block';
+                logDiv.classList.add('selected');
+            } else {
+                detailsDiv.style.display = 'none';
+                logDiv.classList.remove('selected');
+            }
+        });
+        
+        logWrapper.appendChild(logDiv);
+        logWrapper.appendChild(detailsDiv);
+        container.appendChild(logWrapper);
+    });
+}
+
+// Show test case modal
+function showTestModal(testResult) {
+    const modal = document.getElementById('test-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalTitle.textContent = `Test ${testResult.id}: ${testResult.test_type}`;
+    
+    // Parse input parameters
+    let inputHtml = '';
+    if (testResult.input) {
+        const params = parseInput(testResult.input);
+        inputHtml = '<div class="input-params">';
+        for (const [key, value] of Object.entries(params)) {
+            inputHtml += `<div class="param-item"><strong>${key}:</strong> ${value}</div>`;
+        }
+        inputHtml += '</div>';
+    }
+    
+    modalBody.innerHTML = `
+        <div class="test-detail">
+            <h3>Category</h3>
+            <p>${testResult.category || 'N/A'}</p>
+        </div>
+        
+        <div class="test-detail">
+            <h3>Status</h3>
+            <p>${testResult.passed ? '<span style="color: #48bb78">PASSED</span>' : '<span style="color: #f56565">FAILED</span>'}</p>
+        </div>
+        
+        <div class="test-detail">
+            <h3>Input Parameters</h3>
+            ${inputHtml || '<p>No input parameters</p>'}
+        </div>
+        
+        <div class="test-detail">
+            <h3>Expected Result</h3>
+            <pre>${testResult.expected_result || 'N/A'}</pre>
+        </div>
+        
+        <div class="test-detail">
+            <h3>Actual Result</h3>
+            <pre>${testResult.actual_result || 'N/A'}</pre>
+        </div>
+        
+        ${testResult.failure_reason ? `
+            <div class="test-detail">
+                <h3>Failure Reason</h3>
+                <pre>${testResult.failure_reason}</pre>
+            </div>
+        ` : ''}
+        
+        <div class="test-detail">
+            <h3>Execution Time</h3>
+            <p>${testResult.execution_time_ms ? testResult.execution_time_ms.toFixed(2) + ' ms' : 'N/A'}</p>
+        </div>
+    `;
+    
+    modal.classList.add('show');
+}
+
+// Escape HTML for security
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Filter logs
+function filterLogs() {
+    const searchTerm = document.getElementById('log-search').value.toLowerCase();
+    const levelFilter = document.getElementById('log-level-filter').value;
+    
+    const logEntries = document.querySelectorAll('.log-entry');
+    logEntries.forEach(entry => {
+        const text = entry.textContent.toLowerCase();
+        const matchesSearch = !searchTerm || text.includes(searchTerm);
+        const matchesLevel = !levelFilter || text.includes('[' + levelFilter + ']');
+        
+        entry.style.display = matchesSearch && matchesLevel ? 'block' : 'none';
+    });
+}
+
 // Set up event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    loadResults();
+    loadResults().then(() => {
+        // Create full logs view after data is loaded
+        createFullLogsView();
+    });
     
     // Set up filters
     document.getElementById('search').addEventListener('input', filterResults);
     document.getElementById('category-filter').addEventListener('change', filterResults);
     document.getElementById('status-filter').addEventListener('change', filterResults);
+    
+    // Set up log filters
+    document.getElementById('log-search').addEventListener('input', filterLogs);
+    document.getElementById('log-level-filter').addEventListener('change', filterLogs);
+    
+    // Tab switching
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all tabs and contents
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            button.classList.add('active');
+            const tabName = button.dataset.tab;
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Refresh logs view when switching to it
+            if (tabName === 'logs') {
+                createFullLogsView();
+            }
+        });
+    });
+    
+    // Modal close handlers
+    document.querySelector('.close-modal').addEventListener('click', () => {
+        document.getElementById('test-modal').classList.remove('show');
+    });
+    
+    document.getElementById('test-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'test-modal') {
+            document.getElementById('test-modal').classList.remove('show');
+        }
+    });
     
     // Auto-refresh disabled to prevent closing expanded rows
     // setInterval(loadResults, 5000);

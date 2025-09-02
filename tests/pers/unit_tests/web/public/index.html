@@ -36,36 +36,78 @@
             </div>
         </div>
 
-        <div class="filters">
-            <input type="text" id="search" placeholder="Search tests...">
-            <select id="category-filter">
-                <option value="">All Categories</option>
-            </select>
-            <select id="status-filter">
-                <option value="">All Status</option>
-                <option value="passed">Passed</option>
-                <option value="failed">Failed</option>
-                <option value="skipped">Skipped</option>
-            </select>
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="results">Test Results</button>
+            <button class="tab-button" data-tab="logs">Full Logs</button>
         </div>
 
-        <div class="table-container">
-            <table id="results-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Category</th>
-                        <th>Test Type</th>
-                        <th>Status</th>
-                        <th>Time (ms)</th>
-                        <th>Expected</th>
-                        <th>Actual</th>
-                    </tr>
-                </thead>
-                <tbody id="results-body">
-                    <!-- Results will be populated here -->
-                </tbody>
-            </table>
+        <!-- Test Results Tab Content -->
+        <div id="results-tab" class="tab-content active">
+            <div class="filters">
+                <input type="text" id="search" placeholder="Search tests...">
+                <select id="category-filter">
+                    <option value="">All Categories</option>
+                </select>
+                <select id="status-filter">
+                    <option value="">All Status</option>
+                    <option value="passed">Passed</option>
+                    <option value="failed">Failed</option>
+                    <option value="skipped">Skipped</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Category</th>
+                            <th>Test Type</th>
+                            <th>Status</th>
+                            <th>Time (ms)</th>
+                            <th>Expected</th>
+                            <th>Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                        <!-- Results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Full Logs Tab Content -->
+        <div id="logs-tab" class="tab-content">
+            <div class="logs-header">
+                <input type="text" id="log-search" placeholder="Search logs...">
+                <select id="log-level-filter">
+                    <option value="">All Levels</option>
+                    <option value="TRACE">Trace</option>
+                    <option value="DEBUG">Debug</option>
+                    <option value="INFO">Info</option>
+                    <option value="TODO_SOMEDAY">Todo Someday</option>
+                    <option value="WARNING">Warning</option>
+                    <option value="TODO_OR_DIE">Todo or Die</option>
+                    <option value="ERROR">Error</option>
+                    <option value="CRITICAL">Critical</option>
+                </select>
+                <div class="log-info">Click any log to see test case details</div>
+            </div>
+            <div id="full-logs-container" class="full-logs-container">
+                <!-- Full logs will be populated here -->
+            </div>
+        </div>
+
+        <!-- Test Case Modal -->
+        <div id="test-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2 id="modal-title">Test Case Details</h2>
+                <div id="modal-body">
+                    <!-- Test case details will be populated here -->
+                </div>
+            </div>
         </div>
 
         <div id="loading">Loading test results...</div>
