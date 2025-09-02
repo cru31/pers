@@ -45,6 +45,23 @@ function updateSummary(metadata) {
     document.getElementById('total-tests').textContent = metadata.total_tests || 0;
     document.getElementById('passed-tests').textContent = metadata.passed || 0;
     document.getElementById('failed-tests').textContent = metadata.failed || 0;
+    
+    // Update N/A count if element exists, or create it
+    let naElement = document.getElementById('na-tests');
+    if (!naElement) {
+        // Will be created in HTML update
+    } else {
+        naElement.textContent = metadata.not_applicable || 0;
+    }
+    
+    // Update Not Yet Implemented count if element exists
+    let nyiElement = document.getElementById('nyi-tests');
+    if (!nyiElement) {
+        // Will be created in HTML update
+    } else {
+        nyiElement.textContent = metadata.not_yet_implemented || 0;
+    }
+    
     document.getElementById('pass-rate').textContent = 
         metadata.pass_rate ? `${metadata.pass_rate.toFixed(1)}%` : '0%';
     document.getElementById('total-time').textContent = 
@@ -87,8 +104,12 @@ function displayResults() {
         let status = 'passed';
         let statusText = 'PASS';
         if (result.actual_result && result.actual_result.includes('N/A')) {
-            status = 'skipped';
+            status = 'na';
             statusText = 'N/A';
+        } else if (result.log_messages && result.log_messages.some(log => 
+                   log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'))) {
+            status = 'nyi';
+            statusText = 'NYI';
         } else if (!result.passed) {
             status = 'failed';
             statusText = 'FAIL';
@@ -204,16 +225,30 @@ function truncate(str, length) {
     return str.substring(0, length) + '...';
 }
 
-// Format log messages with color coding
+// Format log messages with color coding and clickable paths
 function formatLogMessages(logs) {
     if (!logs || logs.length === 0) return '<div class="no-logs">No logs captured</div>';
     
     return logs.map(log => {
-        // Escape HTML to prevent XSS
-        const escapedLog = log.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // First, parse the source location for creating links
+        // Format: "[LEVEL] Category: Message (function @ path:line)"
+        const sourceMatch = log.match(/\(([^@]+)\s*@\s*(.+):(\d+)\)$/);
+        let processedLog = log;
+        
+        if (sourceMatch) {
+            const functionName = sourceMatch[1];
+            const filePath = sourceMatch[2];
+            const lineNumber = sourceMatch[3];
+            
+            // Create clickable link for the source location
+            const linkHtml = `(<a href="#" class="source-path-link" data-path="${filePath}" data-line="${lineNumber}" style="color: #667eea; text-decoration: none;">${functionName} @ ${filePath}:${lineNumber}</a>)`;
+            
+            // Replace the source location with the link
+            processedLog = log.replace(/\([^)]+\)$/, linkHtml);
+        }
         
         // Parse log level and apply colored span
-        const levelMatch = log.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/);
+        const levelMatch = processedLog.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/);
         if (levelMatch) {
             const level = levelMatch[1];
             const levelClassMap = {
@@ -229,13 +264,13 @@ function formatLogMessages(logs) {
             const logClass = levelClassMap[level] || '';
             
             // Replace the log level with a colored span
-            const coloredLog = escapedLog.replace(
+            const coloredLog = processedLog.replace(
                 /^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/,
                 `<span class="log-level-inline ${logClass}">[${level}]</span>`
             );
             return `<div class="log-line">${coloredLog}</div>`;
         } else {
-            return `<div class="log-line">${escapedLog}</div>`;
+            return `<div class="log-line">${processedLog}</div>`;
         }
     }).join('');
 }

@@ -23,6 +23,8 @@ bool TestResultWriter::writeToJson(const std::string& filePath) {
     metadata.AddMember("passed", summary.passed, allocator);
     metadata.AddMember("failed", summary.failed, allocator);
     metadata.AddMember("skipped", summary.skipped, allocator);
+    metadata.AddMember("not_applicable", summary.notApplicable, allocator);
+    metadata.AddMember("not_yet_implemented", summary.notYetImplemented, allocator);
     metadata.AddMember("pass_rate", summary.passRate, allocator);
     metadata.AddMember("total_time_ms", summary.totalTimeMs, allocator);
     
@@ -103,6 +105,8 @@ bool TestResultWriter::writeToMarkdown(const std::string& filePath) {
     file << "- **Total Tests**: " << summary.totalTests << "\n";
     file << "- **Passed**: " << summary.passed << "\n";
     file << "- **Failed**: " << summary.failed << "\n";
+    file << "- **N/A (Not Test Targets)**: " << summary.notApplicable << "\n";
+    file << "- **Not Yet Implemented**: " << summary.notYetImplemented << "\n";
     file << "- **Skipped**: " << summary.skipped << "\n";
     file << "- **Pass Rate**: " << std::fixed << std::setprecision(1) << summary.passRate << "%\n";
     file << "- **Total Time**: " << std::fixed << std::setprecision(2) << summary.totalTimeMs << "ms\n\n";
@@ -166,6 +170,11 @@ TestResultWriter::Summary TestResultWriter::getSummary() const {
     for (const auto& result : _results) {
         if (result.passed) {
             summary.passed++;
+        } else if (result.actualResult.find("N/A") != std::string::npos) {
+            summary.notApplicable++;
+        } else if (hasTodoOrDieInLogs(result.logMessages)) {
+            // Test failed because of TodoOrDie - not yet implemented
+            summary.notYetImplemented++;
         } else if (result.failureReason.find("SKIP") != std::string::npos || 
                    result.actualResult == "SKIPPED") {
             summary.skipped++;
@@ -207,6 +216,17 @@ std::string TestResultWriter::formatCallstack(const std::vector<std::string>& ca
     }
     
     return result;
+}
+
+bool TestResultWriter::hasTodoOrDieInLogs(const std::vector<std::string>& logMessages) const {
+    for (const auto& log : logMessages) {
+        // Check if the log contains [TODO_OR_DIE] level marker
+        if (log.find("[TODO_OR_DIE]") != std::string::npos ||
+            log.find("[TODO_OR_DIE ]") != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace pers::tests::json

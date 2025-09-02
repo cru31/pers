@@ -51,6 +51,8 @@ public:
         int passed = 0;
         int failed = 0;
         int skipped = 0;
+        int notApplicable = 0;      // N/A tests (not test targets)
+        int notYetImplemented = 0;   // Tests marked as not yet implemented
         double totalTimeMs = 0.0;
         double passRate = 0.0;
     };
@@ -65,6 +67,9 @@ private:
     
     // Helper to format callstack for display
     std::string formatCallstack(const std::vector<std::string>& callstack) const;
+    
+    // Helper to check if logs contain TodoOrDie
+    bool hasTodoOrDieInLogs(const std::vector<std::string>& logMessages) const;
 };
 
 } // namespace pers::tests::json

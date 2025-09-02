@@ -85,6 +85,31 @@ header h1 {
     border-color: #f56565;
 }
 
+.card.na {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 193, 7, 0.1));
+    border-color: #FFC107;
+}
+
+.card.nyi {
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.2), rgba(156, 39, 176, 0.1));
+    border-color: #9C27B0;
+}
+
+.card.clickable {
+    cursor: pointer;
+    position: relative;
+}
+
+.card.clickable:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.card.clickable.active {
+    box-shadow: 0 0 0 3px currentColor inset;
+    transform: scale(0.98);
+}
+
 .filters {
     display: flex;
     gap: 15px;
@@ -184,6 +209,18 @@ td {
     background: rgba(237, 137, 54, 0.2);
     color: #ed8936;
     border: 1px solid #ed8936;
+}
+
+.status-na {
+    background: rgba(255, 193, 7, 0.2);
+    color: #FFC107;
+    border: 1px solid #FFC107;
+}
+
+.status-nyi {
+    background: rgba(156, 39, 176, 0.2);
+    color: #9C27B0;
+    border: 1px solid #9C27B0;
 }
 
 .detail-row {

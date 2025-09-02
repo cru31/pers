@@ -18,13 +18,21 @@
                 <h3>Total Tests</h3>
                 <div class="card-value" id="total-tests">-</div>
             </div>
-            <div class="card passed">
+            <div class="card passed clickable" data-filter="passed">
                 <h3>Passed</h3>
                 <div class="card-value" id="passed-tests">-</div>
             </div>
-            <div class="card failed">
+            <div class="card failed clickable" data-filter="failed">
                 <h3>Failed</h3>
                 <div class="card-value" id="failed-tests">-</div>
+            </div>
+            <div class="card na clickable" data-filter="na">
+                <h3>N/A</h3>
+                <div class="card-value" id="na-tests">-</div>
+            </div>
+            <div class="card nyi clickable" data-filter="nyi">
+                <h3>Not Yet Impl</h3>
+                <div class="card-value" id="nyi-tests">-</div>
             </div>
             <div class="card">
                 <h3>Pass Rate</h3>
@@ -53,6 +61,8 @@
                     <option value="">All Status</option>
                     <option value="passed">Passed</option>
                     <option value="failed">Failed</option>
+                    <option value="na">N/A (Not Test Target)</option>
+                    <option value="nyi">Not Yet Implemented</option>
                     <option value="skipped">Skipped</option>
                 </select>
                 <div class="file-upload-section">
