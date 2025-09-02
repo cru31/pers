@@ -100,26 +100,37 @@ function displayResults() {
         row.dataset.index = index;
         row.onclick = () => toggleDetails(index);
         
-        // Determine status
-        let status = 'passed';
-        let statusText = 'PASS';
+        // Determine status - can have multiple badges
+        let badges = [];
+        
+        // Check N/A first (highest priority)
         if (result.actual_result && result.actual_result.includes('N/A')) {
-            status = 'na';
-            statusText = 'N/A';
-        } else if (result.log_messages && result.log_messages.some(log => 
-                   log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'))) {
-            status = 'nyi';
-            statusText = 'NYI';
-        } else if (!result.passed) {
-            status = 'failed';
-            statusText = 'FAIL';
+            badges.push({ status: 'na', text: 'N/A' });
+        } else {
+            // Check pass/fail status
+            if (result.passed) {
+                badges.push({ status: 'passed', text: 'PASS' });
+            } else {
+                badges.push({ status: 'failed', text: 'FAIL' });
+            }
         }
+        
+        // Check NYI independently (can coexist with pass/fail/na)
+        if (result.log_messages && result.log_messages.some(log => 
+                   log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'))) {
+            badges.push({ status: 'nyi', text: 'NYI' });
+        }
+        
+        // Create badge HTML
+        const badgeHtml = badges.map(badge => 
+            `<span class="status-badge status-${badge.status}">${badge.text}</span>`
+        ).join(' ');
         
         row.innerHTML = `
             <td><strong>${result.id}</strong></td>
             <td>${result.category || '-'}</td>
             <td>${result.test_type || '-'}</td>
-            <td><span class="status-badge status-${status}">${statusText}</span></td>
+            <td>${badgeHtml}</td>
             <td>${result.execution_time_ms ? result.execution_time_ms.toFixed(2) : '-'}</td>
             <td>${truncate(result.expected_result, 30)}</td>
             <td>${truncate(result.actual_result, 30)}</td>
@@ -305,13 +316,24 @@ function filterResults() {
         
         // Status filter
         if (statusFilter) {
-            const isSkipped = result.actual_result && result.actual_result.includes('N/A');
-            const isPassed = result.passed && !isSkipped;
-            const isFailed = !result.passed && !isSkipped;
+            // Check if test has the selected status
+            let hasSelectedStatus = false;
             
-            if (statusFilter === 'passed' && !isPassed) return false;
-            if (statusFilter === 'failed' && !isFailed) return false;
-            if (statusFilter === 'skipped' && !isSkipped) return false;
+            if (statusFilter === 'na') {
+                hasSelectedStatus = result.actual_result && result.actual_result.includes('N/A');
+            } else if (statusFilter === 'nyi') {
+                hasSelectedStatus = result.log_messages && result.log_messages.some(log => 
+                                   log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'));
+            } else if (statusFilter === 'passed') {
+                hasSelectedStatus = result.passed && (!result.actual_result || !result.actual_result.includes('N/A'));
+            } else if (statusFilter === 'failed') {
+                hasSelectedStatus = !result.passed && (!result.actual_result || !result.actual_result.includes('N/A'));
+            }
+            
+            // Return true if the test has the selected status
+            if (!hasSelectedStatus) {
+                return false;
+            }
         }
         
         return true;
@@ -663,6 +685,45 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('search').addEventListener('input', filterResults);
     document.getElementById('category-filter').addEventListener('change', filterResults);
     document.getElementById('status-filter').addEventListener('change', filterResults);
+    
+    // Set up clickable status cards
+    document.querySelectorAll('.card.clickable').forEach(card => {
+        card.addEventListener('click', () => {
+            const filterValue = card.dataset.filter;
+            
+            // Remove active class from all cards
+            document.querySelectorAll('.card.clickable').forEach(c => c.classList.remove('active'));
+            
+            // If clicking the same card, clear filter
+            const statusFilter = document.getElementById('status-filter');
+            if (statusFilter.value === filterValue) {
+                statusFilter.value = '';
+                card.classList.remove('active');
+            } else {
+                // Set filter and add active class
+                statusFilter.value = filterValue;
+                card.classList.add('active');
+            }
+            
+            // Trigger filter
+            filterResults();
+        });
+    });
+    
+    // Sync status filter dropdown with clickable cards
+    document.getElementById('status-filter').addEventListener('change', () => {
+        const filterValue = document.getElementById('status-filter').value;
+        
+        // Remove active class from all cards
+        document.querySelectorAll('.card.clickable').forEach(card => {
+            card.classList.remove('active');
+            
+            // Add active class to matching card
+            if (card.dataset.filter === filterValue) {
+                card.classList.add('active');
+            }
+        });
+    });
     
     // Set up log filters
     document.getElementById('log-search').addEventListener('input', filterLogs);

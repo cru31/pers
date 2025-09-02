@@ -168,13 +168,16 @@ TestResultWriter::Summary TestResultWriter::getSummary() const {
     summary.totalTests = static_cast<int>(_results.size());
     
     for (const auto& result : _results) {
+        // Check for TodoOrDie independently (can be in any test state)
+        if (hasTodoOrDieInLogs(result.logMessages)) {
+            summary.notYetImplemented++;
+        }
+        
+        // Then categorize by test result
         if (result.passed) {
             summary.passed++;
         } else if (result.actualResult.find("N/A") != std::string::npos) {
             summary.notApplicable++;
-        } else if (hasTodoOrDieInLogs(result.logMessages)) {
-            // Test failed because of TodoOrDie - not yet implemented
-            summary.notYetImplemented++;
         } else if (result.failureReason.find("SKIP") != std::string::npos || 
                    result.actualResult == "SKIPPED") {
             summary.skipped++;
