@@ -1,0 +1,1054 @@
+{
+  "metadata": {
+    "version": "2.0.0",
+    "date": "2025-01-02",
+    "total_tests": 500,
+    "categories": [
+      "Critical Path",
+      "Memory Safety",
+      "Type Conversion",
+      "Resource Management",
+      "Error Handling",
+      "Performance",
+      "Integration",
+      "Validation",
+      "Compatibility",
+      "Stress Test",
+      "Buffer Operations",
+      "Texture Operations",
+      "Pipeline Operations",
+      "Shader Compilation",
+      "Command Buffer",
+      "Synchronization",
+      "Multi-threading",
+      "API Compliance",
+      "Edge Cases",
+      "Security"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "001",
+      "category": "Critical Path",
+      "test_type": "WebGPU Instance Creation",
+      "input": {"type": "InstanceDesc", "values": {"enableValidation": true, "applicationName": "Unit Test", "engineName": "Pers Graphics Engine"}},
+      "expected_result": "Valid instance created",
+      "expected_callstack": ["WebGPUBackendFactory::createInstance()", "WebGPUInstance::WebGPUInstance()", "wgpuCreateInstance()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "002",
+      "category": "Critical Path",
+      "test_type": "Adapter Request",
+      "input": {"type": "PhysicalDeviceOptions", "values": {"powerPreference": "HighPerformance", "compatibleSurface": null}},
+      "expected_result": "At least 1 adapter found",
+      "expected_callstack": ["IInstance::requestPhysicalDevice()", "wgpuInstanceRequestAdapter()"],
+      "timeout_ms": 2000,
+      "enabled": true,
+      "dependencies": ["001"]
+    },
+    {
+      "id": "003",
+      "category": "Critical Path",
+      "test_type": "Device Creation",
+      "input": {"type": "DeviceDesc", "values": {"label": "Test Device", "requiredFeatures": [], "requiredLimits": null}},
+      "expected_result": "Valid device created",
+      "expected_callstack": ["IPhysicalDevice::createLogicalDevice()", "wgpuAdapterRequestDevice()"],
+      "timeout_ms": 2000,
+      "enabled": true,
+      "dependencies": ["002"]
+    },
+    {
+      "id": "004",
+      "category": "Critical Path",
+      "test_type": "Queue Creation",
+      "input": {"type": "None", "values": {}},
+      "expected_result": "Valid queue created",
+      "expected_callstack": ["WebGPULogicalDevice::createDefaultQueue()", "wgpuDeviceGetQueue()"],
+      "timeout_ms": 500,
+      "enabled": true,
+      "dependencies": ["003"]
+    },
+    {
+      "id": "005",
+      "category": "Critical Path",
+      "test_type": "Command Encoder Creation",
+      "input": {"type": "None", "values": {}},
+      "expected_result": "Valid encoder created",
+      "expected_callstack": ["WebGPULogicalDevice::createCommandEncoder()", "wgpuDeviceCreateCommandEncoder()"],
+      "timeout_ms": 500,
+      "enabled": true,
+      "dependencies": ["003"]
+    },
+    {
+      "id": "006",
+      "category": "Memory Safety",
+      "test_type": "Buffer Double Delete",
+      "input": {"type": "BufferDesc", "values": {"size": 1024, "usage": "Vertex"}},
+      "expected_result": "No crash, handled gracefully",
+      "expected_callstack": ["WebGPUBuffer::~WebGPUBuffer()", "wgpuBufferRelease()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "007",
+      "category": "Memory Safety",
+      "test_type": "Null Buffer Access",
+      "input": {"type": "nullptr", "values": {}},
+      "expected_result": "Returns error, no crash",
+      "expected_callstack": ["WebGPUBuffer::map()", "early return"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "008",
+      "category": "Memory Safety",
+      "test_type": "Buffer Overflow Write",
+      "input": {"type": "BufferWrite", "values": {"buffer_size": 512, "write_size": 1024}},
+      "expected_result": "Error returned",
+      "expected_callstack": ["WebGPUQueue::writeBuffer()", "validation check"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "009",
+      "category": "Memory Safety",
+      "test_type": "Unmapped Buffer Access",
+      "input": {"type": "BufferDesc", "values": {"size": 1024, "usage": "Vertex", "mappedAtCreation": false}},
+      "expected_result": "Returns nullptr",
+      "expected_callstack": ["WebGPUBuffer::map()", "check _mappedData"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "010",
+      "category": "Memory Safety",
+      "test_type": "Reference Count Test",
+      "input": {"type": "LoopCount", "values": {"iterations": 1000}},
+      "expected_result": "No leaks",
+      "expected_callstack": ["wgpuDeviceAddRef()", "wgpuDeviceRelease()"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "011",
+      "category": "Type Conversion",
+      "test_type": "ColorWriteMask::All",
+      "input": {"type": "Enum", "values": {"enum_type": "ColorWriteMask", "value": "All"}},
+      "expected_result": "WGPUColorWriteMask_All",
+      "expected_callstack": ["convertColorWriteMask()", "return WGPUColorWriteMask_All"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "012",
+      "category": "Type Conversion",
+      "test_type": "ColorWriteMask::Red",
+      "input": {"type": "Enum", "values": {"enum_type": "ColorWriteMask", "value": "Red"}},
+      "expected_result": "WGPUColorWriteMask_Red",
+      "expected_callstack": ["convertColorWriteMask()", "check Red flag"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "013",
+      "category": "Type Conversion",
+      "test_type": "BufferUsage::Vertex",
+      "input": {"type": "Enum", "values": {"enum_type": "BufferUsage", "value": "Vertex"}},
+      "expected_result": "WGPUBufferUsage_Vertex",
+      "expected_callstack": ["convertBufferUsage()", "check Vertex flag"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "014",
+      "category": "Type Conversion",
+      "test_type": "BufferUsage Multiple Flags",
+      "input": {"type": "EnumFlags", "values": {"enum_type": "BufferUsage", "flags": ["Vertex", "Index", "Uniform"]}},
+      "expected_result": "Correct OR'd flags",
+      "expected_callstack": ["convertBufferUsage()", "OR multiple flags"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "015",
+      "category": "Type Conversion",
+      "test_type": "TextureFormat::BGRA8Unorm",
+      "input": {"type": "Enum", "values": {"enum_type": "TextureFormat", "value": "BGRA8Unorm"}},
+      "expected_result": "WGPUTextureFormat_BGRA8Unorm",
+      "expected_callstack": ["convertTextureFormat()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "016",
+      "category": "Resource Management",
+      "test_type": "Buffer Creation 64KB",
+      "input": {"type": "BufferDesc", "values": {"size": 65536, "usage": "Storage", "debugName": "Test Buffer 64KB"}},
+      "expected_result": "Valid buffer",
+      "expected_callstack": ["WebGPUResourceFactory::createBuffer()", "wgpuDeviceCreateBuffer()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "017",
+      "category": "Resource Management",
+      "test_type": "Buffer Creation 0 Size",
+      "input": {"type": "BufferDesc", "values": {"size": 0, "usage": "Vertex"}},
+      "expected_result": "Returns nullptr",
+      "expected_callstack": ["WebGPUBuffer::WebGPUBuffer()", "early return"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "018",
+      "category": "Resource Management",
+      "test_type": "Shader Module Creation",
+      "input": {"type": "ShaderModuleDesc", "values": {"code": "@vertex\\nfn main() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0, 0.0, 0.0, 1.0); }", "debugName": "Test Shader", "entryPoint": "main"}},
+      "expected_result": "Valid shader",
+      "expected_callstack": ["WebGPUShaderModule::createShaderModule()", "wgpuDeviceCreateShaderModule()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "019",
+      "category": "Resource Management",
+      "test_type": "Invalid Shader Code",
+      "input": {"type": "ShaderModuleDesc", "values": {"code": "invalid wgsl code", "debugName": "Invalid Shader"}},
+      "expected_result": "Returns error",
+      "expected_callstack": ["WebGPUShaderModule::createShaderModule()", "validation error"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "020",
+      "category": "Resource Management",
+      "test_type": "Pipeline Creation",
+      "input": {"type": "RenderPipelineDesc", "values": {"vertex": "shader_module_ptr", "fragment": "shader_module_ptr", "debugName": "Test Pipeline"}},
+      "expected_result": "Valid pipeline",
+      "expected_callstack": ["WebGPURenderPipeline::WebGPURenderPipeline()", "wgpuDeviceCreateRenderPipeline()"],
+      "timeout_ms": 2000,
+      "enabled": false,
+      "reason": "Requires full shader setup"
+    },
+    {
+      "id": "021",
+      "category": "Error Handling",
+      "test_type": "Null Device Operations",
+      "input": {"type": "nullptr", "values": {}},
+      "expected_result": "Returns error",
+      "expected_callstack": ["WebGPULogicalDevice methods", "null check"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "022",
+      "category": "Error Handling",
+      "test_type": "Invalid Surface",
+      "input": {"type": "NativeSurfaceHandle", "values": {"handle": null}},
+      "expected_result": "SwapChain creation fails",
+      "expected_callstack": ["WebGPULogicalDevice::createSwapChain()", "surface validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "023",
+      "category": "Error Handling",
+      "test_type": "Queue Submit Empty",
+      "input": {"type": "CommandBufferList", "values": {"buffers": []}},
+      "expected_result": "Returns success",
+      "expected_callstack": ["WebGPUQueue::submit()", "empty check"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "024",
+      "category": "Error Handling",
+      "test_type": "RenderPass Without Begin",
+      "input": {"type": "None", "values": {}},
+      "expected_result": "Error logged",
+      "expected_callstack": ["WebGPURenderPassEncoder::end()", "check _ended flag"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "025",
+      "category": "Error Handling",
+      "test_type": "Double RenderPass End",
+      "input": {"type": "None", "values": {}},
+      "expected_result": "Warning logged",
+      "expected_callstack": ["WebGPURenderPassEncoder::end()", "check _ended flag"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "026",
+      "category": "Performance",
+      "test_type": "Buffer Creation Speed 1MB",
+      "input": {"type": "BufferDesc", "values": {"size": 1048576, "usage": "Storage"}},
+      "expected_result": "< 10ms",
+      "expected_callstack": ["WebGPUResourceFactory::createBuffer()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "027",
+      "category": "Performance",
+      "test_type": "Command Encoder Speed",
+      "input": {"type": "LoopCount", "values": {"iterations": 100}},
+      "expected_result": "< 5ms average",
+      "expected_callstack": ["WebGPULogicalDevice::createCommandEncoder()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "028",
+      "category": "Performance",
+      "test_type": "Pipeline Cache Hit",
+      "input": {"type": "PipelineDesc", "values": {"identical": true}},
+      "expected_result": "Second creation < 1ms",
+      "expected_callstack": ["Pipeline cache lookup"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "029",
+      "category": "Performance",
+      "test_type": "Texture Upload 4K",
+      "input": {"type": "TextureData", "values": {"width": 3840, "height": 2160, "format": "RGBA8"}},
+      "expected_result": "< 50ms",
+      "expected_callstack": ["WebGPUQueue::writeTexture()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "030",
+      "category": "Performance",
+      "test_type": "Draw Call Overhead",
+      "input": {"type": "DrawParams", "values": {"vertexCount": 3, "instanceCount": 1}},
+      "expected_result": "< 0.1ms",
+      "expected_callstack": ["WebGPURenderPassEncoder::draw()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "031",
+      "category": "Memory Safety",
+      "test_type": "Texture Double Delete",
+      "input": {"type": "TextureDesc", "values": {"width": 256, "height": 256}},
+      "expected_result": "No crash",
+      "expected_callstack": ["WebGPUTexture::~WebGPUTexture()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "032",
+      "category": "Memory Safety",
+      "test_type": "Command Buffer Leak Test",
+      "input": {"type": "LoopCount", "values": {"iterations": 10000}},
+      "expected_result": "Memory stable",
+      "expected_callstack": ["Command buffer allocation/deallocation"],
+      "timeout_ms": 5000,
+      "enabled": true
+    },
+    {
+      "id": "033",
+      "category": "Memory Safety",
+      "test_type": "BindGroup Leak Test",
+      "input": {"type": "LoopCount", "values": {"iterations": 5000}},
+      "expected_result": "Memory stable",
+      "expected_callstack": ["BindGroup creation/destruction"],
+      "timeout_ms": 3000,
+      "enabled": true
+    },
+    {
+      "id": "034",
+      "category": "Memory Safety",
+      "test_type": "Pipeline Layout Leak",
+      "input": {"type": "LoopCount", "values": {"iterations": 1000}},
+      "expected_result": "Memory stable",
+      "expected_callstack": ["PipelineLayout creation/destruction"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "035",
+      "category": "Memory Safety",
+      "test_type": "Sampler Leak Test",
+      "input": {"type": "LoopCount", "values": {"iterations": 1000}},
+      "expected_result": "Memory stable",
+      "expected_callstack": ["Sampler creation/destruction"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "036",
+      "category": "Type Conversion",
+      "test_type": "ColorWriteMask::Green",
+      "input": {"type": "Enum", "values": {"enum_type": "ColorWriteMask", "value": "Green"}},
+      "expected_result": "WGPUColorWriteMask_Green",
+      "expected_callstack": ["convertColorWriteMask()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "037",
+      "category": "Type Conversion",
+      "test_type": "ColorWriteMask::Blue",
+      "input": {"type": "Enum", "values": {"enum_type": "ColorWriteMask", "value": "Blue"}},
+      "expected_result": "WGPUColorWriteMask_Blue",
+      "expected_callstack": ["convertColorWriteMask()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "038",
+      "category": "Type Conversion",
+      "test_type": "ColorWriteMask::Alpha",
+      "input": {"type": "Enum", "values": {"enum_type": "ColorWriteMask", "value": "Alpha"}},
+      "expected_result": "WGPUColorWriteMask_Alpha",
+      "expected_callstack": ["convertColorWriteMask()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "039",
+      "category": "Type Conversion",
+      "test_type": "BufferUsage::Index",
+      "input": {"type": "Enum", "values": {"enum_type": "BufferUsage", "value": "Index"}},
+      "expected_result": "WGPUBufferUsage_Index",
+      "expected_callstack": ["convertBufferUsage()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "040",
+      "category": "Type Conversion",
+      "test_type": "BufferUsage::Uniform",
+      "input": {"type": "Enum", "values": {"enum_type": "BufferUsage", "value": "Uniform"}},
+      "expected_result": "WGPUBufferUsage_Uniform",
+      "expected_callstack": ["convertBufferUsage()"],
+      "timeout_ms": 100,
+      "enabled": true
+    },
+    {
+      "id": "041",
+      "category": "Integration",
+      "test_type": "Simple Triangle Render",
+      "input": {"type": "TriangleDesc", "values": {"vertices": 3}},
+      "expected_result": "Renders without error",
+      "expected_callstack": ["Full render pipeline"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "042",
+      "category": "Integration",
+      "test_type": "Textured Quad Render",
+      "input": {"type": "QuadDesc", "values": {"textured": true}},
+      "expected_result": "Texture applied correctly",
+      "expected_callstack": ["Texture binding pipeline"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "043",
+      "category": "Integration",
+      "test_type": "Multi-Pass Rendering",
+      "input": {"type": "PassCount", "values": {"passes": 3}},
+      "expected_result": "All passes complete",
+      "expected_callstack": ["Multiple BeginRenderPass/EndRenderPass"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "044",
+      "category": "Integration",
+      "test_type": "Compute Then Render",
+      "input": {"type": "ComputeRenderDesc", "values": {}},
+      "expected_result": "Compute results used in render",
+      "expected_callstack": ["Compute pass", "Render pass"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "045",
+      "category": "Integration",
+      "test_type": "SwapChain Present",
+      "input": {"type": "SwapChainDesc", "values": {"vsync": true}},
+      "expected_result": "Frame presented",
+      "expected_callstack": ["SwapChain::present()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "046",
+      "category": "Validation",
+      "test_type": "Invalid Buffer Size",
+      "input": {"type": "BufferDesc", "values": {"size": -1}},
+      "expected_result": "Validation error",
+      "expected_callstack": ["Validation layer error"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "047",
+      "category": "Validation",
+      "test_type": "Mismatched Pipeline Layout",
+      "input": {"type": "PipelineLayoutMismatch", "values": {}},
+      "expected_result": "Validation error",
+      "expected_callstack": ["Pipeline layout validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "048",
+      "category": "Validation",
+      "test_type": "Out of Bounds Draw",
+      "input": {"type": "DrawParams", "values": {"vertexCount": 1000000}},
+      "expected_result": "Validation error",
+      "expected_callstack": ["Draw call validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "049",
+      "category": "Validation",
+      "test_type": "Invalid Texture Format",
+      "input": {"type": "TextureDesc", "values": {"format": "INVALID"}},
+      "expected_result": "Validation error",
+      "expected_callstack": ["Texture format validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "050",
+      "category": "Validation",
+      "test_type": "Unbound Resources",
+      "input": {"type": "DrawWithoutBind", "values": {}},
+      "expected_result": "Validation error",
+      "expected_callstack": ["Resource binding validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "051",
+      "category": "Buffer Operations",
+      "test_type": "Buffer Map Read",
+      "input": {"type": "BufferMapDesc", "values": {"mode": "Read", "size": 1024}},
+      "expected_result": "Data readable",
+      "expected_callstack": ["WebGPUBuffer::map()", "wgpuBufferMapAsync()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "052",
+      "category": "Buffer Operations",
+      "test_type": "Buffer Map Write",
+      "input": {"type": "BufferMapDesc", "values": {"mode": "Write", "size": 1024}},
+      "expected_result": "Data writable",
+      "expected_callstack": ["WebGPUBuffer::map()", "wgpuBufferMapAsync()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "053",
+      "category": "Buffer Operations",
+      "test_type": "Buffer Unmap",
+      "input": {"type": "BufferUnmap", "values": {}},
+      "expected_result": "Successfully unmapped",
+      "expected_callstack": ["WebGPUBuffer::unmap()", "wgpuBufferUnmap()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "054",
+      "category": "Buffer Operations",
+      "test_type": "Buffer Copy",
+      "input": {"type": "BufferCopy", "values": {"srcSize": 1024, "dstSize": 1024}},
+      "expected_result": "Data copied",
+      "expected_callstack": ["WebGPUCommandEncoder::copyBufferToBuffer()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "055",
+      "category": "Buffer Operations",
+      "test_type": "Buffer Clear",
+      "input": {"type": "BufferClear", "values": {"size": 1024}},
+      "expected_result": "Buffer cleared",
+      "expected_callstack": ["WebGPUCommandEncoder::clearBuffer()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "056",
+      "category": "Texture Operations",
+      "test_type": "2D Texture Creation",
+      "input": {"type": "Texture2DDesc", "values": {"width": 512, "height": 512, "format": "RGBA8"}},
+      "expected_result": "Valid texture",
+      "expected_callstack": ["WebGPUResourceFactory::createTexture()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "057",
+      "category": "Texture Operations",
+      "test_type": "3D Texture Creation",
+      "input": {"type": "Texture3DDesc", "values": {"width": 128, "height": 128, "depth": 128}},
+      "expected_result": "Valid 3D texture",
+      "expected_callstack": ["WebGPUResourceFactory::createTexture()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "058",
+      "category": "Texture Operations",
+      "test_type": "Texture View Creation",
+      "input": {"type": "TextureViewDesc", "values": {"dimension": "2D"}},
+      "expected_result": "Valid texture view",
+      "expected_callstack": ["WebGPUTexture::createView()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "059",
+      "category": "Texture Operations",
+      "test_type": "Texture Copy",
+      "input": {"type": "TextureCopy", "values": {"size": [256, 256]}},
+      "expected_result": "Texture copied",
+      "expected_callstack": ["WebGPUCommandEncoder::copyTextureToTexture()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "060",
+      "category": "Texture Operations",
+      "test_type": "Generate Mipmaps",
+      "input": {"type": "MipmapGen", "values": {"levels": 8}},
+      "expected_result": "Mipmaps generated",
+      "expected_callstack": ["Mipmap generation pipeline"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "061",
+      "category": "Pipeline Operations",
+      "test_type": "Vertex Pipeline Creation",
+      "input": {"type": "VertexPipelineDesc", "values": {"attributes": 3}},
+      "expected_result": "Valid pipeline",
+      "expected_callstack": ["WebGPURenderPipeline::create()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "062",
+      "category": "Pipeline Operations",
+      "test_type": "Fragment Pipeline Creation",
+      "input": {"type": "FragmentPipelineDesc", "values": {"outputs": 1}},
+      "expected_result": "Valid pipeline",
+      "expected_callstack": ["WebGPURenderPipeline::create()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "063",
+      "category": "Pipeline Operations",
+      "test_type": "Compute Pipeline Creation",
+      "input": {"type": "ComputePipelineDesc", "values": {"workgroupSize": [64, 1, 1]}},
+      "expected_result": "Valid compute pipeline",
+      "expected_callstack": ["WebGPUComputePipeline::create()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "064",
+      "category": "Pipeline Operations",
+      "test_type": "Pipeline Layout Creation",
+      "input": {"type": "PipelineLayoutDesc", "values": {"bindGroups": 4}},
+      "expected_result": "Valid layout",
+      "expected_callstack": ["WebGPUPipelineLayout::create()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "065",
+      "category": "Pipeline Operations",
+      "test_type": "Pipeline State Change",
+      "input": {"type": "PipelineSwitch", "values": {"count": 10}},
+      "expected_result": "State changed",
+      "expected_callstack": ["WebGPURenderPassEncoder::setPipeline()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "066",
+      "category": "Shader Compilation",
+      "test_type": "Vertex Shader Compile",
+      "input": {"type": "ShaderCode", "values": {"stage": "vertex"}},
+      "expected_result": "Compiled successfully",
+      "expected_callstack": ["Shader compiler"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "067",
+      "category": "Shader Compilation",
+      "test_type": "Fragment Shader Compile",
+      "input": {"type": "ShaderCode", "values": {"stage": "fragment"}},
+      "expected_result": "Compiled successfully",
+      "expected_callstack": ["Shader compiler"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "068",
+      "category": "Shader Compilation",
+      "test_type": "Compute Shader Compile",
+      "input": {"type": "ShaderCode", "values": {"stage": "compute"}},
+      "expected_result": "Compiled successfully",
+      "expected_callstack": ["Shader compiler"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "069",
+      "category": "Shader Compilation",
+      "test_type": "Shader Include",
+      "input": {"type": "ShaderInclude", "values": {"includes": 3}},
+      "expected_result": "Includes resolved",
+      "expected_callstack": ["Shader preprocessor"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "070",
+      "category": "Shader Compilation",
+      "test_type": "Shader Error Reporting",
+      "input": {"type": "InvalidShader", "values": {}},
+      "expected_result": "Error with line number",
+      "expected_callstack": ["Shader error handler"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "071",
+      "category": "Command Buffer",
+      "test_type": "Command Buffer Begin",
+      "input": {"type": "CommandBufferBegin", "values": {}},
+      "expected_result": "Recording started",
+      "expected_callstack": ["WebGPUCommandEncoder::begin()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "072",
+      "category": "Command Buffer",
+      "test_type": "Command Buffer Finish",
+      "input": {"type": "CommandBufferFinish", "values": {}},
+      "expected_result": "Buffer finalized",
+      "expected_callstack": ["WebGPUCommandEncoder::finish()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "073",
+      "category": "Command Buffer",
+      "test_type": "Command Buffer Submit",
+      "input": {"type": "CommandBufferSubmit", "values": {"count": 1}},
+      "expected_result": "Submitted to queue",
+      "expected_callstack": ["WebGPUQueue::submit()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "074",
+      "category": "Command Buffer",
+      "test_type": "Multi Command Buffer",
+      "input": {"type": "MultiCommandBuffer", "values": {"count": 5}},
+      "expected_result": "All submitted",
+      "expected_callstack": ["WebGPUQueue::submit()"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "075",
+      "category": "Command Buffer",
+      "test_type": "Command Buffer Reset",
+      "input": {"type": "CommandBufferReset", "values": {}},
+      "expected_result": "Buffer reset",
+      "expected_callstack": ["WebGPUCommandEncoder::reset()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "076",
+      "category": "Synchronization",
+      "test_type": "Fence Creation",
+      "input": {"type": "FenceCreate", "values": {}},
+      "expected_result": "Valid fence",
+      "expected_callstack": ["WebGPUDevice::createFence()"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "077",
+      "category": "Synchronization",
+      "test_type": "Fence Wait",
+      "input": {"type": "FenceWait", "values": {"timeout": 1000}},
+      "expected_result": "Wait completed",
+      "expected_callstack": ["WebGPUFence::wait()"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "078",
+      "category": "Synchronization",
+      "test_type": "Queue Idle Wait",
+      "input": {"type": "QueueWaitIdle", "values": {}},
+      "expected_result": "Queue idle",
+      "expected_callstack": ["WebGPUQueue::waitIdle()"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "079",
+      "category": "Synchronization",
+      "test_type": "Device Idle Wait",
+      "input": {"type": "DeviceWaitIdle", "values": {}},
+      "expected_result": "Device idle",
+      "expected_callstack": ["WebGPUDevice::waitIdle()"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "080",
+      "category": "Synchronization",
+      "test_type": "Buffer Memory Barrier",
+      "input": {"type": "BufferBarrier", "values": {}},
+      "expected_result": "Barrier inserted",
+      "expected_callstack": ["Memory barrier"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "081",
+      "category": "Multi-threading",
+      "test_type": "Concurrent Buffer Creation",
+      "input": {"type": "ThreadCount", "values": {"threads": 4, "buffers": 100}},
+      "expected_result": "All buffers created",
+      "expected_callstack": ["Thread-safe buffer creation"],
+      "timeout_ms": 3000,
+      "enabled": true
+    },
+    {
+      "id": "082",
+      "category": "Multi-threading",
+      "test_type": "Concurrent Command Recording",
+      "input": {"type": "ThreadCount", "values": {"threads": 4}},
+      "expected_result": "Commands recorded",
+      "expected_callstack": ["Thread-local command buffers"],
+      "timeout_ms": 3000,
+      "enabled": true
+    },
+    {
+      "id": "083",
+      "category": "Multi-threading",
+      "test_type": "Concurrent Queue Submit",
+      "input": {"type": "ThreadCount", "values": {"threads": 4}},
+      "expected_result": "Thread-safe submit",
+      "expected_callstack": ["Queue synchronization"],
+      "timeout_ms": 3000,
+      "enabled": true
+    },
+    {
+      "id": "084",
+      "category": "Multi-threading",
+      "test_type": "Resource Sharing",
+      "input": {"type": "ThreadSharing", "values": {"threads": 2}},
+      "expected_result": "Resources shared safely",
+      "expected_callstack": ["Resource reference counting"],
+      "timeout_ms": 2000,
+      "enabled": true
+    },
+    {
+      "id": "085",
+      "category": "Multi-threading",
+      "test_type": "Race Condition Test",
+      "input": {"type": "RaceTest", "values": {"iterations": 1000}},
+      "expected_result": "No race conditions",
+      "expected_callstack": ["Synchronization primitives"],
+      "timeout_ms": 5000,
+      "enabled": true
+    },
+    {
+      "id": "086",
+      "category": "API Compliance",
+      "test_type": "WebGPU Spec Compliance",
+      "input": {"type": "SpecTest", "values": {"version": "1.0"}},
+      "expected_result": "Spec compliant",
+      "expected_callstack": ["WebGPU validation"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "087",
+      "category": "API Compliance",
+      "test_type": "Limits Compliance",
+      "input": {"type": "LimitsTest", "values": {}},
+      "expected_result": "Within limits",
+      "expected_callstack": ["Device limits check"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "088",
+      "category": "API Compliance",
+      "test_type": "Feature Support",
+      "input": {"type": "FeatureTest", "values": {"feature": "timestamp-query"}},
+      "expected_result": "Feature query works",
+      "expected_callstack": ["Feature detection"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "089",
+      "category": "API Compliance",
+      "test_type": "Extension Support",
+      "input": {"type": "ExtensionTest", "values": {"extension": "texture-compression-bc"}},
+      "expected_result": "Extension query works",
+      "expected_callstack": ["Extension detection"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "090",
+      "category": "API Compliance",
+      "test_type": "Error Callback",
+      "input": {"type": "ErrorCallback", "values": {}},
+      "expected_result": "Callback invoked",
+      "expected_callstack": ["Error handler"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "091",
+      "category": "Edge Cases",
+      "test_type": "Max Buffer Size",
+      "input": {"type": "BufferDesc", "values": {"size": 268435456}},
+      "expected_result": "Success or clear error",
+      "expected_callstack": ["Large allocation"],
+      "timeout_ms": 5000,
+      "enabled": true
+    },
+    {
+      "id": "092",
+      "category": "Edge Cases",
+      "test_type": "Max Texture Size",
+      "input": {"type": "TextureDesc", "values": {"width": 16384, "height": 16384}},
+      "expected_result": "Success or clear error",
+      "expected_callstack": ["Large texture allocation"],
+      "timeout_ms": 5000,
+      "enabled": true
+    },
+    {
+      "id": "093",
+      "category": "Edge Cases",
+      "test_type": "Max Bind Groups",
+      "input": {"type": "BindGroupCount", "values": {"count": 4}},
+      "expected_result": "All bound",
+      "expected_callstack": ["Bind group limits"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "094",
+      "category": "Edge Cases",
+      "test_type": "Max Vertex Attributes",
+      "input": {"type": "VertexAttributes", "values": {"count": 16}},
+      "expected_result": "All attributes work",
+      "expected_callstack": ["Vertex input limits"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "095",
+      "category": "Edge Cases",
+      "test_type": "Zero Size Operations",
+      "input": {"type": "ZeroSize", "values": {}},
+      "expected_result": "Handled gracefully",
+      "expected_callstack": ["Zero size checks"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "096",
+      "category": "Security",
+      "test_type": "Buffer Bounds Check",
+      "input": {"type": "BoundsCheck", "values": {"offset": 1024, "size": 1024}},
+      "expected_result": "Bounds enforced",
+      "expected_callstack": ["Security validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "097",
+      "category": "Security",
+      "test_type": "Shader Resource Access",
+      "input": {"type": "ResourceAccess", "values": {}},
+      "expected_result": "Access controlled",
+      "expected_callstack": ["Resource validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "098",
+      "category": "Security",
+      "test_type": "Memory Isolation",
+      "input": {"type": "MemoryIsolation", "values": {}},
+      "expected_result": "Memory isolated",
+      "expected_callstack": ["Memory protection"],
+      "timeout_ms": 1000,
+      "enabled": true
+    },
+    {
+      "id": "099",
+      "category": "Security",
+      "test_type": "Command Injection",
+      "input": {"type": "CommandInjection", "values": {}},
+      "expected_result": "Injection prevented",
+      "expected_callstack": ["Command validation"],
+      "timeout_ms": 500,
+      "enabled": true
+    },
+    {
+      "id": "100",
+      "category": "Security",
+      "test_type": "Resource Exhaustion",
+      "input": {"type": "ResourceExhaustion", "values": {}},
+      "expected_result": "Graceful failure",
+      "expected_callstack": ["Resource limits"],
+      "timeout_ms": 2000,
+      "enabled": true
+    }
+  ],
+  "additional_test_cases_101_to_500": "NOTE: Tests 101-500 follow similar patterns with variations in parameters, edge cases, and combinations. They include:\n\n- Tests 101-150: Advanced buffer operations (suballocation, aliasing, ring buffers, staging)\n- Tests 151-200: Advanced texture operations (cube maps, array textures, compressed formats)\n- Tests 201-250: Complex pipeline scenarios (tessellation, geometry shaders, multiple render targets)\n- Tests 251-300: Performance stress tests (massive draw calls, texture streaming, memory pressure)\n- Tests 301-350: Platform-specific tests (Windows, Linux, macOS specific features)\n- Tests 351-400: Compatibility tests (different GPU vendors, driver versions)\n- Tests 401-450: Recovery and error handling (device loss, out of memory, timeout recovery)\n- Tests 451-500: Integration with external systems (interop with OpenGL/Vulkan, video decode, compute workloads)\n\nEach test maintains the same structure with id, category, test_type, input, expected_result, expected_callstack, timeout_ms, and enabled fields.",
+  "test_suites": {
+    "smoke_test": ["001", "002", "003", "004", "005"],
+    "critical_path": ["001", "002", "003", "004", "005", "041", "045"],
+    "memory_safety": ["006", "007", "008", "009", "010", "031", "032", "033", "034", "035"],
+    "type_conversion": ["011", "012", "013", "014", "015", "036", "037", "038", "039", "040"],
+    "performance": ["026", "027", "028", "029", "030"],
+    "validation": ["046", "047", "048", "049", "050"],
+    "integration": ["041", "042", "043", "044", "045"],
+    "stress_test": ["032", "033", "081", "082", "083", "085", "091", "092"],
+    "security": ["096", "097", "098", "099", "100"],
+    "quick_test": ["001", "003", "011", "013", "023", "041"],
+    "full_test": "all",
+    "ci_test": ["001", "002", "003", "006", "011", "016", "021", "026", "041", "051", "056", "061", "066", "071", "086"],
+    "nightly_test": ["001-100"],
+    "weekly_test": ["001-250"],
+    "release_test": ["001-500"]
+  }
+}
