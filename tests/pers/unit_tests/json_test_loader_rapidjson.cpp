@@ -292,8 +292,134 @@ bool JsonTestLoader::executeTest(const JsonTestCase& testCase, std::string& actu
                 return false;
             }
         }
+        else if (testCase.testType == "Queue Creation") {
+            // Actually test queue creation
+            auto factory = std::make_shared<WebGPUBackendFactory>();
+            auto instance = factory->createInstance({});
+            if (!instance) {
+                actualResult = "Failed to create instance";
+                failureReason = "Instance required for queue test";
+                return false;
+            }
+            
+            auto physicalDevice = instance->requestPhysicalDevice({});
+            if (!physicalDevice) {
+                actualResult = "Failed to get physical device";
+                failureReason = "Physical device required for queue test";
+                return false;
+            }
+            
+            auto device = physicalDevice->createLogicalDevice({});
+            if (!device) {
+                actualResult = "Failed to create device";
+                failureReason = "Device required for queue test";
+                return false;
+            }
+            
+            // Test the actual queue creation
+            auto queue = device->getQueue();
+            if (queue) {
+                actualResult = "Valid queue created";
+                return testCase.expectedResult == actualResult;
+            } else {
+                actualResult = "Queue is nullptr";
+                failureReason = "getQueue() returned nullptr";
+                return false;
+            }
+        }
+        else if (testCase.testType == "Command Encoder Creation") {
+            // Actually test command encoder creation
+            auto factory = std::make_shared<WebGPUBackendFactory>();
+            auto instance = factory->createInstance({});
+            auto physicalDevice = instance->requestPhysicalDevice({});
+            auto device = physicalDevice->createLogicalDevice({});
+            
+            if (!device) {
+                actualResult = "Failed to create device";
+                failureReason = "Device required for command encoder test";
+                return false;
+            }
+            
+            // Test command encoder creation
+            auto commandEncoder = device->createCommandEncoder();
+            if (commandEncoder) {
+                actualResult = "Valid encoder created";
+                return testCase.expectedResult == actualResult;
+            } else {
+                actualResult = "Command encoder is nullptr";
+                failureReason = "createCommandEncoder() returned nullptr";
+                return false;
+            }
+        }
+        else if (testCase.testType.find("Buffer") != std::string::npos) {
+            // Buffer related tests
+            auto factory = std::make_shared<WebGPUBackendFactory>();
+            auto instance = factory->createInstance({});
+            auto physicalDevice = instance->requestPhysicalDevice({});
+            auto device = physicalDevice->createLogicalDevice({});
+            
+            if (!device) {
+                actualResult = "Failed to create device";
+                failureReason = "Device required for buffer test";
+                return false;
+            }
+            
+            auto resourceFactory = device->getResourceFactory();
+            if (!resourceFactory) {
+                actualResult = "No resource factory";
+                failureReason = "getResourceFactory() returned nullptr";
+                return false;
+            }
+            
+            if (testCase.testType == "Buffer Creation 64KB") {
+                BufferDesc desc;
+                desc.size = 65536;
+                desc.usage = BufferUsage::Storage;
+                desc.debugName = "Test Buffer 64KB";
+                
+                auto buffer = resourceFactory->createBuffer(desc);
+                if (buffer) {
+                    actualResult = "Valid buffer";
+                    return testCase.expectedResult == actualResult;
+                } else {
+                    actualResult = "Buffer is nullptr";
+                    failureReason = "createBuffer() returned nullptr";
+                    return false;
+                }
+            }
+            else if (testCase.testType == "Buffer Creation 0 Size") {
+                BufferDesc desc;
+                desc.size = 0;
+                desc.usage = BufferUsage::Vertex;
+                
+                auto buffer = resourceFactory->createBuffer(desc);
+                if (!buffer) {
+                    actualResult = "Returns nullptr";
+                    return testCase.expectedResult == actualResult;
+                } else {
+                    actualResult = "Buffer created with 0 size";
+                    failureReason = "Should have returned nullptr for 0 size";
+                    return false;
+                }
+            }
+            else {
+                // Other buffer tests not yet implemented
+                actualResult = "Not implemented";
+                failureReason = "Buffer test not yet implemented: " + testCase.testType;
+                return false;
+            }
+        }
+        else if (testCase.testType.find("ColorWriteMask") != std::string::npos ||
+                 testCase.testType.find("BufferUsage") != std::string::npos ||
+                 testCase.testType.find("TextureFormat") != std::string::npos) {
+            // Type conversion tests - these need the actual conversion functions to be tested
+            // For now, we can't test these properly without exposing the conversion functions
+            actualResult = "Not implemented";
+            failureReason = "Type conversion test requires exposing conversion functions: " + testCase.testType;
+            return false;
+        }
         else {
-            // Test type not implemented
+            // Other test types not implemented
             actualResult = "Not implemented";
             failureReason = "Test type not yet implemented: " + testCase.testType;
             return false;
