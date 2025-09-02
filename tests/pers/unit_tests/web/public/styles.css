@@ -90,6 +90,7 @@ header h1 {
     gap: 15px;
     margin-bottom: 20px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .filters input,
@@ -250,39 +251,85 @@ td {
     color: #e0e0e0;
 }
 
-/* Log level colors */
-.log-trace {
-    color: #808080;
+/* Log level colors - applied to log-level-badge spans */
+.log-level-badge.log-trace {
+    color: #808080;  /* Gray */
 }
 
-.log-debug {
-    color: #9ca3af;
+.log-level-badge.log-debug {
+    color: #00bfa5;  /* Teal/Cyan */
 }
 
-.log-info {
-    color: #60a5fa;
+.log-level-badge.log-info {
+    color: #2196f3;  /* Bright Blue */
 }
 
-.log-todo-someday {
-    color: #fbbf24;
+.log-level-badge.log-todo-someday {
+    color: #ffeb3b;  /* Bright Yellow */
 }
 
-.log-warning {
-    color: #fb923c;
+.log-level-badge.log-warning {
+    color: #ff9800;  /* Orange */
 }
 
-.log-todo-or-die {
-    color: #f87171;
+.log-level-badge.log-todo-or-die {
+    color: #ff5722;  /* Deep Orange */
 }
 
-.log-error {
-    color: #ef4444;
-    font-weight: bold;
+.log-level-badge.log-error {
+    color: #f44336;  /* Bright Red */
 }
 
-.log-critical {
-    color: #dc2626;
-    font-weight: bold;
+.log-level-badge.log-critical {
+    color: #e91e63;  /* Pink/Magenta */
+    text-decoration: underline;
+}
+
+/* Same colors for inline log levels in Test Results tab */
+.log-level-inline.log-trace {
+    color: #808080;  /* Gray */
+    font-weight: 600;
+}
+
+.log-level-inline.log-debug {
+    color: #00bfa5;  /* Teal/Cyan */
+    font-weight: 600;
+}
+
+.log-level-inline.log-info {
+    color: #2196f3;  /* Bright Blue */
+    font-weight: 600;
+}
+
+.log-level-inline.log-todo-someday {
+    color: #ffeb3b;  /* Bright Yellow */
+    font-weight: 600;
+}
+
+.log-level-inline.log-warning {
+    color: #ff9800;  /* Orange */
+    font-weight: 600;
+}
+
+.log-level-inline.log-todo-or-die {
+    color: #ff5722;  /* Deep Orange */
+    font-weight: 600;
+}
+
+.log-level-inline.log-error {
+    color: #f44336;  /* Bright Red */
+    font-weight: 700;
+}
+
+.log-level-inline.log-critical {
+    color: #e91e63;  /* Pink/Magenta */
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.log-line {
+    padding: 2px 0;
+    line-height: 1.5;
 }
 
 #loading {
@@ -386,9 +433,6 @@ td {
 
 .log-info {
     padding: 8px 16px;
-    background: rgba(102, 126, 234, 0.2);
-    border: 1px solid #667eea;
-    border-radius: 8px;
     color: #aaa;
     font-size: 13px;
 }
@@ -518,6 +562,45 @@ td {
     font-size: 11px;
     font-weight: bold;
     color: #fff;
+}
+
+.log-level-badge {
+    display: inline-block;
+    min-width: 110px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    margin-right: 8px;
+    font-weight: 600;
+}
+
+.log-category {
+    color: #a0a0a0;
+    font-weight: 500;
+}
+
+.log-message {
+    color: #e0e0e0;
+}
+
+.log-source-info {
+    background: rgba(102, 126, 234, 0.1);
+    border-left: 3px solid #667eea;
+    border-radius: 0;
+    padding: 10px 20px;
+    margin: 0 0 5px 30px;
+    animation: slideDown 0.2s ease-out;
+}
+
+.source-detail {
+    font-size: 12px;
+    color: #b0b0b0;
+    font-family: 'Courier New', monospace;
+}
+
+.source-label {
+    color: #667eea;
+    font-weight: 600;
+    margin-right: 10px;
 }
 
 .log-test-details-inline {
@@ -684,4 +767,52 @@ td {
     margin: 0;
     font-size: 13px;
     line-height: 1.5;
+}
+
+/* File Upload Section */
+.file-upload-section {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-left: auto;
+}
+
+.load-json-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.load-json-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.loaded-file-name {
+    font-size: 13px;
+    color: #667eea;
+    font-weight: 500;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Clickable source paths */
+.source-path-link {
+    color: #667eea;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.source-path-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
 }

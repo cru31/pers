@@ -52,7 +52,7 @@ void JsonTestExecutor::setupLogCapture() {
             ss << "[" << levelStr << "] ";
             ss << "[" << category << "] ";
             ss << message;
-            ss << " (" << source.file << ":" << source.line << ")";
+            ss << " (" << source.function << " @ " << source.file << ":" << source.line << ")";
             _capturedLogs.push_back(ss.str());
             skipLogging = true; // Don't print immediately
         }
@@ -300,7 +300,7 @@ JsonTestExecutor::TestExecutionResult JsonTestExecutor::executeTestWithTimeout(c
                 ss << category << ": ";
             }
             ss << message;
-            ss << " (" << source.file << ":" << source.line << ")";
+            ss << " (" << source.function << " @ " << source.file << ":" << source.line << ")";
             
             testLogs.push_back(ss.str());
             

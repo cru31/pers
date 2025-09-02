@@ -212,25 +212,30 @@ function formatLogMessages(logs) {
         // Escape HTML to prevent XSS
         const escapedLog = log.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         
-        // Apply CSS class based on log level
-        if (log.includes('[TRACE]')) {
-            return `<div class="log-trace">${escapedLog}</div>`;
-        } else if (log.includes('[DEBUG]')) {
-            return `<div class="log-debug">${escapedLog}</div>`;
-        } else if (log.includes('[INFO]')) {
-            return `<div class="log-info">${escapedLog}</div>`;
-        } else if (log.includes('[TODO_SOMEDAY]')) {
-            return `<div class="log-todo-someday">${escapedLog}</div>`;
-        } else if (log.includes('[WARNING]')) {
-            return `<div class="log-warning">${escapedLog}</div>`;
-        } else if (log.includes('[TODO_OR_DIE]')) {
-            return `<div class="log-todo-or-die">${escapedLog}</div>`;
-        } else if (log.includes('[ERROR]')) {
-            return `<div class="log-error">${escapedLog}</div>`;
-        } else if (log.includes('[CRITICAL]')) {
-            return `<div class="log-critical">${escapedLog}</div>`;
+        // Parse log level and apply colored span
+        const levelMatch = log.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/);
+        if (levelMatch) {
+            const level = levelMatch[1];
+            const levelClassMap = {
+                'TRACE': 'log-trace',
+                'DEBUG': 'log-debug',
+                'INFO': 'log-info',
+                'TODO_SOMEDAY': 'log-todo-someday',
+                'WARNING': 'log-warning',
+                'TODO_OR_DIE': 'log-todo-or-die',
+                'ERROR': 'log-error',
+                'CRITICAL': 'log-critical'
+            };
+            const logClass = levelClassMap[level] || '';
+            
+            // Replace the log level with a colored span
+            const coloredLog = escapedLog.replace(
+                /^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/,
+                `<span class="log-level-inline ${logClass}">[${level}]</span>`
+            );
+            return `<div class="log-line">${coloredLog}</div>`;
         } else {
-            return `<div>${escapedLog}</div>`;
+            return `<div class="log-line">${escapedLog}</div>`;
         }
     }).join('');
 }
@@ -321,19 +326,101 @@ function createFullLogsView() {
         logDiv.dataset.index = index;
         logDiv.dataset.testId = entry.testId;
         
-        // Determine log level and apply class
+        // Parse log components
+        let logLevel = '';
+        let logCategory = '';
+        let logMessage = '';
+        let logFile = '';
+        let logLine = '';
+        let logFunction = '';
         let logClass = '';
-        if (entry.log.includes('[TRACE]')) logClass = 'log-trace';
-        else if (entry.log.includes('[DEBUG]')) logClass = 'log-debug';
-        else if (entry.log.includes('[INFO]')) logClass = 'log-info';
-        else if (entry.log.includes('[TODO_SOMEDAY]')) logClass = 'log-todo-someday';
-        else if (entry.log.includes('[WARNING]')) logClass = 'log-warning';
-        else if (entry.log.includes('[TODO_OR_DIE]')) logClass = 'log-todo-or-die';
-        else if (entry.log.includes('[ERROR]')) logClass = 'log-error';
-        else if (entry.log.includes('[CRITICAL]')) logClass = 'log-critical';
         
-        logDiv.className += ' ' + logClass;
-        logDiv.innerHTML = `<span class="test-id-badge">${entry.testId}</span>${escapeHtml(entry.log)}`;
+        // Extract log level
+        const levelMatch = entry.log.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]\s*/);
+        if (levelMatch) {
+            logLevel = levelMatch[1];
+            logDiv.dataset.logLevel = logLevel; // Store for filtering
+            
+            // Extract rest of the log after level
+            const afterLevel = entry.log.substring(levelMatch[0].length);
+            
+            // Parse category, message and source location
+            // New format: "Category: Message (function @ FilePath:LineNumber)"
+            // The function name can contain :: so we need to handle that
+            const newSourceMatch = afterLevel.match(/^([^:]+):\s+(.*)\s+\(([^@]+)\s*@\s*(.+):(\d+)\)$/);
+            if (newSourceMatch) {
+                logCategory = newSourceMatch[1].trim();
+                logMessage = newSourceMatch[2].trim();
+                logFunction = newSourceMatch[3].trim();
+                logFile = newSourceMatch[4].trim();
+                logLine = newSourceMatch[5];
+            } else {
+                // Try old format: "Category: Message (FilePath:LineNumber)"
+                const oldSourceMatch = afterLevel.match(/^([^:]+):\s+(.*)\s+\(([^)]+)\)$/);
+                if (oldSourceMatch) {
+                    logCategory = oldSourceMatch[1].trim();
+                    logMessage = oldSourceMatch[2].trim();
+                    const sourceInfo = oldSourceMatch[3];
+                    
+                    // Split the source info to get file path and line number
+                    const lastColon = sourceInfo.lastIndexOf(':');
+                    if (lastColon !== -1) {
+                        logFile = sourceInfo.substring(0, lastColon);
+                        logLine = sourceInfo.substring(lastColon + 1);
+                    } else {
+                        logFile = sourceInfo;
+                    }
+                    logFunction = 'N/A'; // Old format doesn't have function
+                } else {
+                    logMessage = afterLevel;
+                    logFunction = 'N/A';
+                }
+            }
+            
+            // Map to CSS class
+            const levelClassMap = {
+                'TRACE': 'log-trace',
+                'DEBUG': 'log-debug',
+                'INFO': 'log-info',
+                'TODO_SOMEDAY': 'log-todo-someday',
+                'WARNING': 'log-warning',
+                'TODO_OR_DIE': 'log-todo-or-die',
+                'ERROR': 'log-error',
+                'CRITICAL': 'log-critical'
+            };
+            logClass = levelClassMap[logLevel] || '';
+        }
+        
+        // Apply the log level class to get the color
+        const levelSpan = `<span class="log-level-badge ${logClass}">[${logLevel}]</span>`;
+        const categorySpan = logCategory ? `<span class="log-category">${escapeHtml(logCategory)}:</span>` : '';
+        const messageSpan = `<span class="log-message">${escapeHtml(logMessage)}</span>`;
+        
+        logDiv.innerHTML = `<span class="test-id-badge">${entry.testId}</span>${levelSpan}${categorySpan} ${messageSpan}`;
+        
+        // Create source info container (hidden by default)
+        const sourceDiv = document.createElement('div');
+        sourceDiv.className = 'log-source-info';
+        sourceDiv.style.display = 'none';
+        
+        // Extract just the filename from the full path
+        const fileName = logFile ? logFile.split('\\').pop() : '';
+        
+        sourceDiv.innerHTML = `
+            <div class="source-detail">
+                <span class="source-label">Function:</span> ${escapeHtml(logFunction || 'N/A')}
+            </div>
+            <div class="source-detail">
+                <span class="source-label">File:</span> ${escapeHtml(fileName || 'N/A')}
+            </div>
+            <div class="source-detail">
+                <span class="source-label">Line:</span> ${escapeHtml(logLine || 'N/A')}
+            </div>
+            <div class="source-detail">
+                <span class="source-label">Full Path:</span> 
+                ${logFile ? `<a href="#" class="source-path-link" data-path="${escapeHtml(logFile)}" data-line="${escapeHtml(logLine)}">${escapeHtml(logFile)}</a>` : 'N/A'}
+            </div>
+        `;
         
         // Create test details container (hidden by default)
         const detailsDiv = document.createElement('div');
@@ -383,33 +470,20 @@ function createFullLogsView() {
         
         // Add click handler to log entry
         logDiv.addEventListener('click', () => {
-            const testId = entry.testId;
-            
-            // Hide all other test details
-            document.querySelectorAll('.log-test-details-inline').forEach(d => {
-                if (d.dataset.testId !== testId) {
-                    d.style.display = 'none';
-                }
-            });
-            
-            // Remove selected class from all other logs
-            document.querySelectorAll('.log-entry').forEach(l => {
-                if (l.dataset.testId !== testId) {
-                    l.classList.remove('selected');
-                }
-            });
-            
-            // Toggle this test's details
-            if (detailsDiv.style.display === 'none') {
+            // Toggle source info and test details
+            if (sourceDiv.style.display === 'none') {
+                sourceDiv.style.display = 'block';
                 detailsDiv.style.display = 'block';
                 logDiv.classList.add('selected');
             } else {
+                sourceDiv.style.display = 'none';
                 detailsDiv.style.display = 'none';
                 logDiv.classList.remove('selected');
             }
         });
         
         logWrapper.appendChild(logDiv);
+        logWrapper.appendChild(sourceDiv);
         logWrapper.appendChild(detailsDiv);
         container.appendChild(logWrapper);
     });
@@ -488,14 +562,59 @@ function filterLogs() {
     const searchTerm = document.getElementById('log-search').value.toLowerCase();
     const levelFilter = document.getElementById('log-level-filter').value;
     
-    const logEntries = document.querySelectorAll('.log-entry');
-    logEntries.forEach(entry => {
-        const text = entry.textContent.toLowerCase();
-        const matchesSearch = !searchTerm || text.includes(searchTerm);
-        const matchesLevel = !levelFilter || text.includes('[' + levelFilter + ']');
+    const logWrappers = document.querySelectorAll('.log-wrapper');
+    logWrappers.forEach(wrapper => {
+        const logEntry = wrapper.querySelector('.log-entry');
+        const text = logEntry.textContent.toLowerCase();
+        const logLevel = logEntry.dataset.logLevel || '';
         
-        entry.style.display = matchesSearch && matchesLevel ? 'block' : 'none';
+        const matchesSearch = !searchTerm || text.includes(searchTerm);
+        const matchesLevel = !levelFilter || logLevel === levelFilter;
+        
+        wrapper.style.display = matchesSearch && matchesLevel ? 'block' : 'none';
     });
+}
+
+// Load JSON from file
+function loadJsonFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Update data
+            allResults = data.results || [];
+            updateSummary(data.metadata);
+            populateCategoryFilter();
+            filteredResults = [...allResults];
+            displayResults();
+            createFullLogsView();
+            
+            // Update file name display
+            document.getElementById('loaded-file-name').textContent = file.name;
+            document.getElementById('session-info').textContent = `Local File: ${file.name}`;
+            
+            // Hide loading/error
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+            document.getElementById('error').textContent = `Error parsing JSON: ${error.message}`;
+            document.getElementById('error').style.display = 'block';
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Open file in VSCode
+function openInVSCode(path, line) {
+    // Create VSCode URI
+    // Format: vscode://file/{full_path}:{line}:{column}
+    const vscodePath = path.replace(/\\/g, '/');
+    const vscodeUri = `vscode://file/${vscodePath}:${line || 1}:1`;
+    
+    // Try to open in VSCode
+    window.location.href = vscodeUri;
 }
 
 // Set up event listeners
@@ -513,6 +632,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up log filters
     document.getElementById('log-search').addEventListener('input', filterLogs);
     document.getElementById('log-level-filter').addEventListener('change', filterLogs);
+    
+    // File upload handlers
+    document.getElementById('load-json-btn').addEventListener('click', () => {
+        document.getElementById('json-file-input').click();
+    });
+    
+    document.getElementById('json-file-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            loadJsonFile(file);
+        }
+    });
     
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -541,6 +672,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('test-modal').addEventListener('click', (e) => {
         if (e.target.id === 'test-modal') {
             document.getElementById('test-modal').classList.remove('show');
+        }
+    });
+    
+    // Handle source path clicks (use event delegation)
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('source-path-link')) {
+            e.preventDefault();
+            const path = e.target.dataset.path;
+            const line = e.target.dataset.line;
+            openInVSCode(path, line);
         }
     });
     
