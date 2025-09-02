@@ -1,4 +1,6 @@
 #include "json_test_loader_rapidjson.h"
+#include "pers/utils/TodoOrDie.h"
+#include "pers/utils/Logger.h"
 #include <iostream>
 #include <cstring>
 
@@ -19,6 +21,18 @@ void printUsage(const char* programName) {
 }
 
 int main(int argc, char* argv[]) {
+    // Set up TodoOrDie callback for testing
+    // This allows us to capture TodoOrDie events without aborting
+    pers::TodoOrDie::setCallback([](const std::string& functionName, 
+                                    const std::string& todoDescription,
+                                    const LogSource& source,
+                                    bool& skipLogging) {
+        std::cout << "\n[TodoOrDie Intercepted] " << functionName << " - " << todoDescription 
+                  << " at " << source.file << ":" << source.line << "\n";
+        // App decides what to do - for testing, we don't abort
+        // abort();  // Uncomment this to abort when TodoOrDie is hit
+    });
+    
     if (argc < 2) {
         printUsage(argv[0]);
         return 1;

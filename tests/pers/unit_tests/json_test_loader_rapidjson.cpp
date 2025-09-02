@@ -218,9 +218,9 @@ std::vector<JsonTestCase> JsonTestLoader::getTestSuite(const std::string& suiteN
 
 bool JsonTestLoader::executeTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
     // This is where we execute the actual test based on the test type
+    // Note: pers doesn't use exceptions, it uses abort() for fatal errors
     
-    try {
-        if (testCase.testType == "WebGPU Instance Creation") {
+    if (testCase.testType == "WebGPU Instance Creation") {
             auto factory = std::make_shared<WebGPUBackendFactory>();
             
             InstanceDesc desc;
@@ -424,12 +424,6 @@ bool JsonTestLoader::executeTest(const JsonTestCase& testCase, std::string& actu
             failureReason = "Test type not yet implemented: " + testCase.testType;
             return false;
         }
-    }
-    catch (const std::exception& e) {
-        actualResult = "Exception thrown";
-        failureReason = e.what();
-        return false;
-    }
 }
 
 // JsonTestExecutor implementation
@@ -542,16 +536,10 @@ JsonTestExecutor::TestExecutionResult JsonTestExecutor::executeTestWithTimeout(c
     std::future<bool> future = promise.get_future();
     
     std::thread testThread([this, &testCase, &result, &promise]() {
-        try {
-            result.passed = _loader.executeTest(testCase, result.actualResult, result.failureReason);
-            promise.set_value(true);
-        }
-        catch (const std::exception& e) {
-            result.actualResult = "Exception";
-            result.failureReason = e.what();
-            result.passed = false;
-            promise.set_value(false);
-        }
+        // Note: pers doesn't throw exceptions, it uses abort() for fatal errors
+        // So we don't need try-catch here
+        result.passed = _loader.executeTest(testCase, result.actualResult, result.failureReason);
+        promise.set_value(true);
     });
     
     if (future.wait_for(std::chrono::milliseconds(testCase.timeoutMs)) == std::future_status::timeout) {
