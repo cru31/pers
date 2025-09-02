@@ -81,3 +81,4 @@ backup/
 *.bak
 *~
 *.swp
+tests/pers/unit_tests/test_case_data/

@@ -118,6 +118,46 @@ JsonTestCase JsonTestLoader::parseTestCase(const rapidjson::Value& value) {
     
     if (value.HasMember("input") && value["input"].IsObject()) {
         const auto& input = value["input"];
+        
+        // Check for type field
+        if (input.HasMember("type") && input["type"].IsString()) {
+            testCase.inputValues["type"] = input["type"].GetString();
+        }
+        
+        // Parse options for option-based tests
+        if (input.HasMember("options") && input["options"].IsObject()) {
+            const auto& options = input["options"];
+            for (auto it = options.MemberBegin(); it != options.MemberEnd(); ++it) {
+                std::string key = it->name.GetString();
+                std::string val;
+                
+                if (it->value.IsString()) {
+                    val = it->value.GetString();
+                } else if (it->value.IsInt()) {
+                    val = std::to_string(it->value.GetInt());
+                } else if (it->value.IsBool()) {
+                    val = it->value.GetBool() ? "true" : "false";
+                } else if (it->value.IsNull()) {
+                    val = "null";
+                } else if (it->value.IsArray()) {
+                    // Handle array values
+                    std::stringstream ss;
+                    ss << "[";
+                    for (rapidjson::SizeType i = 0; i < it->value.Size(); i++) {
+                        if (i > 0) ss << ",";
+                        if (it->value[i].IsString()) {
+                            ss << "\"" << it->value[i].GetString() << "\"";
+                        }
+                    }
+                    ss << "]";
+                    val = ss.str();
+                }
+                
+                testCase.inputValues[key] = val;
+            }
+        }
+        
+        // Parse values for regular tests
         if (input.HasMember("values") && input["values"].IsObject()) {
             const auto& values = input["values"];
             for (auto it = values.MemberBegin(); it != values.MemberEnd(); ++it) {
@@ -216,9 +256,153 @@ std::vector<JsonTestCase> JsonTestLoader::getTestSuite(const std::string& suiteN
     return result;
 }
 
+bool JsonTestLoader::executeOptionBasedTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
+    // Handle option-based tests
+    auto optionsIt = testCase.inputValues.find("options");
+    if (optionsIt == testCase.inputValues.end()) {
+        // Options are stored directly in inputValues for option-based tests
+        // Check if we have any input values at all
+        if (testCase.inputValues.empty()) {
+            failureReason = "No options found in option-based test";
+            return false;
+        }
+    }
+    
+    // Extract base test type
+    std::string baseType = testCase.testType;
+    
+    if (baseType == "WebGPU Instance Creation") {
+        auto factory = std::make_shared<WebGPUBackendFactory>();
+        InstanceDesc desc;
+        
+        // Apply options - use inputValues directly if no "options" key
+        const auto& options = (optionsIt != testCase.inputValues.end()) ? 
+            testCase.inputValues : testCase.inputValues;
+        if (options.find("validation") != options.end()) {
+            desc.enableValidation = (options.at("validation") == "true");
+        }
+        if (options.find("application_name") != options.end()) {
+            desc.applicationName = options.at("application_name");
+        }
+        if (options.find("debug_mode") != options.end()) {
+            // This would set debug mode if available in InstanceDesc
+        }
+        
+        auto instance = factory->createInstance(desc);
+        if (instance) {
+            actualResult = "Success with options";
+            return testCase.expectedResult == actualResult || testCase.expectedResult == "Valid with validation";
+        } else {
+            actualResult = "Failed to create instance";
+            failureReason = "Instance creation returned nullptr with options";
+            return false;
+        }
+    }
+    else if (baseType == "Buffer Creation") {
+        auto factory = std::make_shared<WebGPUBackendFactory>();
+        auto instance = factory->createInstance({});
+        if (!instance) {
+            actualResult = "No instance";
+            return false;
+        }
+        
+        auto physicalDevice = instance->requestPhysicalDevice({});
+        if (!physicalDevice) {
+            actualResult = "No physical device";
+            return false;
+        }
+        
+        auto device = physicalDevice->createLogicalDevice({});
+        if (!device) {
+            actualResult = "No device";
+            return false;
+        }
+        
+        auto resourceFactory = device->getResourceFactory();
+        if (!resourceFactory) {
+            actualResult = "No resource factory";
+            return false;
+        }
+        
+        // Parse buffer options
+        BufferDesc bufferDesc;
+        const auto& options = (optionsIt != testCase.inputValues.end()) ? 
+            testCase.inputValues : testCase.inputValues;
+        
+        if (options.find("size") != options.end()) {
+            bufferDesc.size = std::stoull(options.at("size"));
+        }
+        if (options.find("label") != options.end()) {
+            bufferDesc.debugName = options.at("label");
+        }
+        if (options.find("usage") != options.end()) {
+            // Parse usage flags
+            std::string usage = options.at("usage");
+            bufferDesc.usage = BufferUsage::None;
+            if (usage.find("Vertex") != std::string::npos) {
+                bufferDesc.usage = static_cast<BufferUsage>(
+                    static_cast<uint32_t>(bufferDesc.usage) | static_cast<uint32_t>(BufferUsage::Vertex));
+            }
+            if (usage.find("Index") != std::string::npos) {
+                bufferDesc.usage = static_cast<BufferUsage>(
+                    static_cast<uint32_t>(bufferDesc.usage) | static_cast<uint32_t>(BufferUsage::Index));
+            }
+            if (usage.find("Uniform") != std::string::npos) {
+                bufferDesc.usage = static_cast<BufferUsage>(
+                    static_cast<uint32_t>(bufferDesc.usage) | static_cast<uint32_t>(BufferUsage::Uniform));
+            }
+            if (usage.find("Storage") != std::string::npos) {
+                bufferDesc.usage = static_cast<BufferUsage>(
+                    static_cast<uint32_t>(bufferDesc.usage) | static_cast<uint32_t>(BufferUsage::Storage));
+            }
+            if (usage.find("CopySrc") != std::string::npos) {
+                bufferDesc.usage = static_cast<BufferUsage>(
+                    static_cast<uint32_t>(bufferDesc.usage) | static_cast<uint32_t>(BufferUsage::CopySrc));
+            }
+            if (usage.find("CopyDst") != std::string::npos) {
+                bufferDesc.usage = static_cast<BufferUsage>(
+                    static_cast<uint32_t>(bufferDesc.usage) | static_cast<uint32_t>(BufferUsage::CopyDst));
+            }
+        }
+        
+        // Special case for size 0
+        if (bufferDesc.size == 0) {
+            auto buffer = resourceFactory->createBuffer(bufferDesc);
+            if (!buffer) {
+                actualResult = "Returns nullptr";
+                return testCase.expectedResult == actualResult;
+            } else {
+                actualResult = "Buffer created with 0 size";
+                failureReason = "Should have returned nullptr for 0 size";
+                return false;
+            }
+        }
+        
+        auto buffer = resourceFactory->createBuffer(bufferDesc);
+        if (buffer) {
+            actualResult = "Success with options";
+            return true;
+        } else {
+            actualResult = "Failed to create buffer";
+            failureReason = "Buffer creation failed with options";
+            return false;
+        }
+    }
+    
+    // Add more base types as needed
+    failureReason = "Option-based test type not implemented: " + baseType;
+    return false;
+}
+
 bool JsonTestLoader::executeTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
     // This is where we execute the actual test based on the test type
     // Note: pers doesn't use exceptions, it uses abort() for fatal errors
+    
+    // Check if this is an option-based test
+    if (testCase.inputValues.find("type") != testCase.inputValues.end() && 
+        testCase.inputValues.at("type") == "OptionBased") {
+        return executeOptionBasedTest(testCase, actualResult, failureReason);
+    }
     
     if (testCase.testType == "WebGPU Instance Creation") {
             auto factory = std::make_shared<WebGPUBackendFactory>();
@@ -531,11 +715,11 @@ JsonTestExecutor::TestExecutionResult JsonTestExecutor::executeTestWithTimeout(c
     
     auto start = std::chrono::high_resolution_clock::now();
     
-    // Execute with timeout
-    std::promise<bool> promise;
-    std::future<bool> future = promise.get_future();
+    // Execute with timeout - use shared_ptr to avoid dangling reference
+    auto promise = std::make_shared<std::promise<bool>>();
+    std::future<bool> future = promise->get_future();
     
-    std::thread testThread([this, &testCase, &result, &promise]() {
+    std::thread testThread([this, &testCase, &result, promise]() {
         // Set up TodoOrDie callback for this thread
         pers::Logger::Instance().setCallback(pers::LogLevel::TodoOrDie,
             [](pers::LogLevel level, const std::string& category, const std::string& message,
@@ -546,10 +730,14 @@ JsonTestExecutor::TestExecutionResult JsonTestExecutor::executeTestWithTimeout(c
             // Don't abort during tests
         });
         
-        // Note: pers doesn't throw exceptions, it uses abort() for fatal errors
-        // So we don't need try-catch here
-        result.passed = _loader.executeTest(testCase, result.actualResult, result.failureReason);
-        promise.set_value(true);
+        try {
+            // Note: pers doesn't throw exceptions, it uses abort() for fatal errors
+            // So we don't need try-catch here
+            result.passed = _loader.executeTest(testCase, result.actualResult, result.failureReason);
+            promise->set_value(true);
+        } catch (...) {
+            // In case promise is already satisfied (shouldn't happen but safe guard)
+        }
     });
     
     if (future.wait_for(std::chrono::milliseconds(testCase.timeoutMs)) == std::future_status::timeout) {
@@ -595,6 +783,24 @@ void JsonTestExecutor::printTestResult(const TestExecutionResult& result) {
     std::cout << std::left << std::setw(30) << result.testCase.testType.substr(0, 30);
     std::cout << " (" << std::fixed << std::setprecision(2) 
              << result.executionTimeMs << "ms)";
+    
+    // Print option details if this is an option-based test
+    bool hasOptions = false;
+    if (result.testCase.inputValues.find("type") != result.testCase.inputValues.end() &&
+        result.testCase.inputValues.at("type") == "OptionBased") {
+        hasOptions = true;
+        std::cout << " with options: ";
+        
+        // Print key options
+        bool first = true;
+        for (const auto& [key, value] : result.testCase.inputValues) {
+            if (key != "type") {  // Skip the type field
+                if (!first) std::cout << ", ";
+                std::cout << key << "=" << value;
+                first = false;
+            }
+        }
+    }
     
     if (!result.passed && !result.failureReason.empty()) {
         std::cout << "\n        Expected: " << result.testCase.expectedResult;

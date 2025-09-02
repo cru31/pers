@@ -54,6 +54,9 @@ public:
     // Execute a test case (returns pass/fail)
     bool executeTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason);
     
+    // Execute option-based test
+    bool executeOptionBasedTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason);
+    
 private:
     JsonTestMetadata _metadata;
     std::vector<JsonTestCase> _testCases;

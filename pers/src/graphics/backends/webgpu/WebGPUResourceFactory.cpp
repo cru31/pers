@@ -30,6 +30,13 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& d
         return nullptr;
     }
     
+    // Validate buffer size - WebGPU requires size > 0
+    if (desc.size == 0) {
+        LOG_WARNING("WebGPUResourceFactory",
+            "Cannot create buffer with size 0 - WebGPU requires size > 0");
+        return nullptr;
+    }
+    
     return std::make_shared<WebGPUBuffer>(desc, _device);
 }
 
