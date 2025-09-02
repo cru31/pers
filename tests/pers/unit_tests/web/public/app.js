@@ -8,6 +8,12 @@ async function loadResults() {
         const sessionResponse = await fetch('/api/session');
         const sessionData = await sessionResponse.json();
         document.getElementById('session-info').textContent = `Session: ${sessionData.sessionId}`;
+        
+        // Display JSON file path as hyperlink
+        if (sessionData.dataPath) {
+            const pathElement = document.getElementById('json-file-path');
+            pathElement.innerHTML = `JSON: <a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a>`;
+        }
 
         // Get test results
         const response = await fetch('/api/results');

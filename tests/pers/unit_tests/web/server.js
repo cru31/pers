@@ -32,7 +32,11 @@ app.get('/api/results', (req, res) => {
 
 // API endpoint to get session info
 app.get('/api/session', (req, res) => {
-    res.json({ sessionId: sessionId });
+    const absolutePath = path.resolve(dataPath);
+    res.json({ 
+        sessionId: sessionId,
+        dataPath: absolutePath
+    });
 });
 
 // Serve index.html for root
