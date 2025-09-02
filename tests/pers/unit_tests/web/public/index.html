@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pers Test Results Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pers Graphics Engine - Test Results</h1>
+            <div id="session-info"></div>
+        </header>
+
+        <div class="summary-cards">
+            <div class="card">
+                <h3>Total Tests</h3>
+                <div class="card-value" id="total-tests">-</div>
+            </div>
+            <div class="card passed">
+                <h3>Passed</h3>
+                <div class="card-value" id="passed-tests">-</div>
+            </div>
+            <div class="card failed">
+                <h3>Failed</h3>
+                <div class="card-value" id="failed-tests">-</div>
+            </div>
+            <div class="card">
+                <h3>Pass Rate</h3>
+                <div class="card-value" id="pass-rate">-</div>
+            </div>
+            <div class="card">
+                <h3>Total Time</h3>
+                <div class="card-value" id="total-time">-</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <input type="text" id="search" placeholder="Search tests...">
+            <select id="category-filter">
+                <option value="">All Categories</option>
+            </select>
+            <select id="status-filter">
+                <option value="">All Status</option>
+                <option value="passed">Passed</option>
+                <option value="failed">Failed</option>
+                <option value="skipped">Skipped</option>
+            </select>
+        </div>
+
+        <div class="table-container">
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Category</th>
+                        <th>Test Type</th>
+                        <th>Status</th>
+                        <th>Time (ms)</th>
+                        <th>Expected</th>
+                        <th>Actual</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <!-- Results will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="loading">Loading test results...</div>
+        <div id="error" style="display: none;"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

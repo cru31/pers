@@ -26,6 +26,7 @@ struct TestExecutionDetail {
     std::string failureReason;
     double executionTimeMs;
     std::string timestamp;
+    std::vector<std::string> logMessages;  // Captured log messages during test execution
 };
 
 class TestResultWriter {

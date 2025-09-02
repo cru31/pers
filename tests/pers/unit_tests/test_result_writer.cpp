@@ -60,6 +60,13 @@ bool TestResultWriter::writeToJson(const std::string& filePath) {
         testResult.AddMember("execution_time_ms", result.executionTimeMs, allocator);
         testResult.AddMember("timestamp", rapidjson::Value(result.timestamp.c_str(), allocator), allocator);
         
+        // Add log messages
+        rapidjson::Value logMessages(rapidjson::kArrayType);
+        for (const auto& log : result.logMessages) {
+            logMessages.PushBack(rapidjson::Value(log.c_str(), allocator), allocator);
+        }
+        testResult.AddMember("log_messages", logMessages, allocator);
+        
         results.PushBack(testResult, allocator);
     }
     

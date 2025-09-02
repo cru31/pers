@@ -5,7 +5,8 @@
   "dependencies": [
     "glm",
     "assimp",
-    "sdl3"
+    "sdl3",
+    "rapidjson"
   ],
   "features": {
     "tests": {

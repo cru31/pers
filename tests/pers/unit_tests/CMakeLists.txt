@@ -4,15 +4,29 @@ cmake_minimum_required(VERSION 3.20)
 # JSON test loader executable  
 add_executable(pers_json_tests
     json_test_main.cpp
-    json_test_loader_rapidjson.cpp
+    json_test_loader.cpp
+    json_test_executor.cpp
     test_result_writer.cpp
+    test_handlers.cpp
+    webgpu_instance_handler.cpp
+    adapter_request_handler.cpp
+    device_creation_handler.cpp
+    queue_creation_handler.cpp
+    command_encoder_handler.cpp
+    buffer_creation_handler.cpp
+    shader_handler.cpp
+    queue_operations_handler.cpp
 )
 
 # Find rapidjson
 find_package(RapidJSON CONFIG REQUIRED)
 
+# Find GLFW (may be needed later)
+find_package(glfw3 CONFIG REQUIRED)
+
 target_link_libraries(pers_json_tests PRIVATE
     pers_static
+    glfw
 )
 
 # Include directories

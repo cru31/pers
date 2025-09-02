@@ -1,4 +1,5 @@
 #include "json_test_loader_rapidjson.h"
+#include "test_handlers.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -257,28 +258,23 @@ std::vector<JsonTestCase> JsonTestLoader::getTestSuite(const std::string& suiteN
 }
 
 bool JsonTestLoader::executeOptionBasedTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
-    // Handle option-based tests
-    auto optionsIt = testCase.inputValues.find("options");
-    if (optionsIt == testCase.inputValues.end()) {
-        // Options are stored directly in inputValues for option-based tests
-        // Check if we have any input values at all
-        if (testCase.inputValues.empty()) {
-            failureReason = "No options found in option-based test";
-            return false;
-        }
-    }
-    
-    // Extract base test type
-    std::string baseType = testCase.testType;
-    
-    if (baseType == "WebGPU Instance Creation") {
-        auto factory = std::make_shared<WebGPUBackendFactory>();
-        InstanceDesc desc;
-        
-        // Apply options - use inputValues directly if no "options" key
-        const auto& options = (optionsIt != testCase.inputValues.end()) ? 
-            testCase.inputValues : testCase.inputValues;
-        if (options.find("validation") != options.end()) {
+    // All option-based tests are now handled by TestHandlerRegistry
+    return TestHandlerRegistry::Instance().executeTest(testCase, actualResult, failureReason);
+}
+
+bool JsonTestLoader::executeTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
+    // Use the TestHandlerRegistry to execute tests
+    return TestHandlerRegistry::Instance().executeTest(testCase, actualResult, failureReason);
+}
+
+// JsonTestExecutor implementation
+
+JsonTestExecutor::JsonTestExecutor() {
+}
+
+void JsonTestExecutor::runTestsFromFile(const std::string& filePath) {
+    if (!_loader.loadFromFile(filePath)) {
+        std::cerr << "Failed to load test file: " << filePath << std::endl;
             desc.enableValidation = (options.at("validation") == "true");
         }
         if (options.find("application_name") != options.end()) {
@@ -388,6 +384,198 @@ bool JsonTestLoader::executeOptionBasedTest(const JsonTestCase& testCase, std::s
             return false;
         }
     }
+    else if (baseType == "Adapter Request") {
+        // Parse options for Adapter Request
+        auto factory = std::make_shared<WebGPUBackendFactory>();
+        auto instance = factory->createInstance({});
+        
+        if (!instance) {
+            actualResult = "Instance creation failed";
+            failureReason = "Failed to create instance for adapter request";
+            return false;
+        }
+        
+        PhysicalDeviceDesc pdDesc;
+        const auto& options = testCase.inputValues;
+        
+        // Parse power preference
+        if (options.find("power_preference") != options.end()) {
+            const std::string& pref = options.at("power_preference");
+            if (pref == "LowPower") {
+                pdDesc.powerPreference = PowerPreference::LowPower;
+            } else if (pref == "HighPerformance") {
+                pdDesc.powerPreference = PowerPreference::HighPerformance;
+            } else {
+                pdDesc.powerPreference = PowerPreference::Default;
+            }
+        }
+        
+        // Parse force fallback
+        if (options.find("force_fallback") != options.end()) {
+            pdDesc.forceFallback = (options.at("force_fallback") == "true");
+        }
+        
+        // Parse compatible surface (not yet implemented in our API)
+        // if (options.find("compatible_surface") != options.end()) {
+        //     // Would need surface support
+        // }
+        
+        // Parse request adapter options (not directly supported in our API)
+        // if (options.find("request_adapter_options") != options.end()) {
+        //     // Would need additional adapter type hints
+        // }
+        
+        auto physicalDevice = instance->requestPhysicalDevice(pdDesc);
+        
+        if (physicalDevice) {
+            actualResult = "At least 1 adapter found";
+            return true;
+        } else {
+            actualResult = "No adapter found";
+            failureReason = "Failed to request physical device with options";
+            return false;
+        }
+    }
+    else if (baseType == "Device Creation") {
+        // Parse options for Device Creation  
+        auto factory = std::make_shared<WebGPUBackendFactory>();
+        auto instance = factory->createInstance({});
+        auto physicalDevice = instance->requestPhysicalDevice({});
+        
+        if (!physicalDevice) {
+            actualResult = "Physical device request failed";
+            failureReason = "Failed to get physical device for device creation";
+            return false;
+        }
+        
+        LogicalDeviceDesc ldDesc;
+        const auto& options = testCase.inputValues;
+        
+        // Parse required features
+        if (options.find("required_features") != options.end()) {
+            // Features would need to be parsed from string format
+            // For now, we'll keep default features
+        }
+        
+        // Parse required limits
+        if (options.find("required_limits") != options.end()) {
+            const std::string& limits = options.at("required_limits");
+            if (limits == "minimal") {
+                // Set minimal limits
+            } else if (limits == "default") {
+                // Use default limits
+            } else if (limits == "maximum") {
+                // Request maximum limits
+            }
+        }
+        
+        // Parse enable cache
+        if (options.find("enable_cache") != options.end()) {
+            ldDesc.enablePipelineCache = (options.at("enable_cache") == "true");
+        }
+        
+        // Parse default queue desc
+        if (options.find("default_queue_desc") != options.end()) {
+            // Would need to parse queue configuration
+        }
+        
+        auto device = physicalDevice->createLogicalDevice(ldDesc);
+        
+        if (device) {
+            actualResult = "Valid device created";
+            return true;
+        } else {
+            actualResult = "Device creation failed";
+            failureReason = "Failed to create logical device with options";
+            return false;
+        }
+    }
+    else if (baseType == "Queue Creation") {
+        // Parse options for Queue Creation
+        auto factory = std::make_shared<WebGPUBackendFactory>();
+        auto instance = factory->createInstance({});
+        auto physicalDevice = instance->requestPhysicalDevice({});
+        auto device = physicalDevice->createLogicalDevice({});
+        
+        if (!device) {
+            actualResult = "Device creation failed";
+            failureReason = "Failed to create device for queue creation";
+            return false;
+        }
+        
+        const auto& options = testCase.inputValues;
+        
+        // Parse queue label
+        std::string queueLabel = "Default";
+        if (options.find("queue_label") != options.end()) {
+            queueLabel = options.at("queue_label");
+        }
+        
+        // Parse queue priority (not directly supported in our API yet)
+        // if (options.find("queue_priority") != options.end()) {
+        //     const std::string& priority = options.at("queue_priority");
+        // }
+        
+        // Parse multiple queues
+        bool multipleQueues = false;
+        if (options.find("multiple_queues") != options.end()) {
+            multipleQueues = (options.at("multiple_queues") == "true");
+        }
+        
+        // Get queue from device
+        auto queue = device->getQueue();
+        
+        if (queue) {
+            actualResult = "Valid queue created";
+            return true;
+        } else {
+            actualResult = "Queue creation failed";
+            failureReason = "Failed to get queue from device";
+            return false;
+        }
+    }
+    else if (baseType == "Command Encoder Creation") {
+        // Parse options for Command Encoder Creation
+        auto factory = std::make_shared<WebGPUBackendFactory>();
+        auto instance = factory->createInstance({});
+        auto physicalDevice = instance->requestPhysicalDevice({});
+        auto device = physicalDevice->createLogicalDevice({});
+        
+        if (!device) {
+            actualResult = "Device creation failed";
+            failureReason = "Failed to create device for command encoder";
+            return false;
+        }
+        
+        const auto& options = testCase.inputValues;
+        
+        // Parse encoder label
+        std::string encoderLabel = "Main Encoder";
+        if (options.find("encoder_label") != options.end()) {
+            encoderLabel = options.at("encoder_label");
+        }
+        
+        // Parse encoder type (hint only, not enforced)
+        std::string encoderType = "General";
+        if (options.find("encoder_type") != options.end()) {
+            encoderType = options.at("encoder_type");
+        }
+        
+        // Create command encoder
+        CommandEncoderDesc ceDesc;
+        ceDesc.debugName = encoderLabel;
+        
+        auto commandEncoder = device->createCommandEncoder(ceDesc);
+        
+        if (commandEncoder) {
+            actualResult = "Valid encoder created";
+            return true;
+        } else {
+            actualResult = "Encoder creation failed";
+            failureReason = "Failed to create command encoder with options";
+            return false;
+        }
+    }
     
     // Add more base types as needed
     failureReason = "Option-based test type not implemented: " + baseType;
@@ -395,17 +583,8 @@ bool JsonTestLoader::executeOptionBasedTest(const JsonTestCase& testCase, std::s
 }
 
 bool JsonTestLoader::executeTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
-    // This is where we execute the actual test based on the test type
-    // Note: pers doesn't use exceptions, it uses abort() for fatal errors
-    
-    // Check if this is an option-based test
-    if (testCase.inputValues.find("type") != testCase.inputValues.end() && 
-        testCase.inputValues.at("type") == "OptionBased") {
-        return executeOptionBasedTest(testCase, actualResult, failureReason);
-    }
-    
-    if (testCase.testType == "WebGPU Instance Creation") {
-            auto factory = std::make_shared<WebGPUBackendFactory>();
+    // Use the TestHandlerRegistry to execute tests
+    return TestHandlerRegistry::Instance().executeTest(testCase, actualResult, failureReason);
             
             InstanceDesc desc;
             desc.enableValidation = true;

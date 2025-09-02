@@ -1,0 +1,12 @@
+{
+  "name": "pers-test-viewer",
+  "version": "1.0.0",
+  "description": "Web viewer for Pers Graphics Engine test results",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
