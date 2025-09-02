@@ -238,17 +238,54 @@ td {
 .log-messages {
     max-height: 400px;
     overflow-y: auto;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 5px;
-    padding: 10px;
+    padding: 15px;
     margin-bottom: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: #e0e0e0;
 }
 
-.log-messages pre {
-    margin: 0;
-    background: transparent;
-    padding: 0;
+/* Log level colors */
+.log-trace {
+    color: #808080;
+}
+
+.log-debug {
+    color: #9ca3af;
+}
+
+.log-info {
+    color: #60a5fa;
+}
+
+.log-todo-someday {
+    color: #fbbf24;
+}
+
+.log-warning {
+    color: #fb923c;
+}
+
+.log-todo-or-die {
+    color: #f87171;
+}
+
+.log-error {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.log-critical {
+    color: #dc2626;
+    font-weight: bold;
+    background: rgba(220, 38, 38, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
 }
 
 #loading {

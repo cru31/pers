@@ -206,30 +206,33 @@ function truncate(str, length) {
 
 // Format log messages with color coding
 function formatLogMessages(logs) {
-    if (!logs || logs.length === 0) return 'No logs captured';
+    if (!logs || logs.length === 0) return '<div class="no-logs">No logs captured</div>';
     
     return logs.map(log => {
-        // Apply color based on log level
-        let coloredLog = log;
+        // Escape HTML to prevent XSS
+        const escapedLog = log.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        // Apply CSS class based on log level
         if (log.includes('[TRACE]')) {
-            coloredLog = `<span style="color: #888">${log}</span>`;
+            return `<div class="log-trace">${escapedLog}</div>`;
         } else if (log.includes('[DEBUG]')) {
-            coloredLog = `<span style="color: #666">${log}</span>`;
+            return `<div class="log-debug">${escapedLog}</div>`;
         } else if (log.includes('[INFO]')) {
-            coloredLog = `<span style="color: #333">${log}</span>`;
+            return `<div class="log-info">${escapedLog}</div>`;
         } else if (log.includes('[TODO_SOMEDAY]')) {
-            coloredLog = `<span style="color: #FFA500">${log}</span>`;
+            return `<div class="log-todo-someday">${escapedLog}</div>`;
         } else if (log.includes('[WARNING]')) {
-            coloredLog = `<span style="color: #FF8C00">${log}</span>`;
+            return `<div class="log-warning">${escapedLog}</div>`;
         } else if (log.includes('[TODO_OR_DIE]')) {
-            coloredLog = `<span style="color: #FF4500">${log}</span>`;
+            return `<div class="log-todo-or-die">${escapedLog}</div>`;
         } else if (log.includes('[ERROR]')) {
-            coloredLog = `<span style="color: #DC143C">${log}</span>`;
+            return `<div class="log-error">${escapedLog}</div>`;
         } else if (log.includes('[CRITICAL]')) {
-            coloredLog = `<span style="color: #8B0000; font-weight: bold">${log}</span>`;
+            return `<div class="log-critical">${escapedLog}</div>`;
+        } else {
+            return `<div>${escapedLog}</div>`;
         }
-        return coloredLog;
-    }).join('\n');
+    }).join('');
 }
 
 // Filter results
