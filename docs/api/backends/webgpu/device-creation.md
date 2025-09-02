@@ -99,8 +99,8 @@ bool supportsSurface(const NativeSurfaceHandle& surface) const;
 ```cpp
 // Check if adapter supports our window surface
 if (!physicalDevice->supportsSurface(surface)) {
-    Logger::Instance().Log(LogLevel::Error, "Device", 
-        "Adapter doesn't support surface", PERS_SOURCE_LOC);
+    LOG_ERROR("Device", 
+        "Adapter doesn't support surface");
     return false;
 }
 ```
@@ -159,8 +159,8 @@ instanceDesc.enableValidation = true;
 
 auto instance = factory->createInstance(instanceDesc);
 if (!instance) {
-    Logger::Instance().Log(LogLevel::Error, "Init", 
-        "Failed to create instance", PERS_SOURCE_LOC);
+    LOG_ERROR("Init", 
+        "Failed to create instance");
     return false;
 }
 
@@ -171,8 +171,8 @@ physicalOptions.compatibleSurface = surface;
 
 auto physicalDevice = instance->requestPhysicalDevice(physicalOptions);
 if (!physicalDevice) {
-    Logger::Instance().Log(LogLevel::Error, "Init", 
-        "No compatible adapter found", PERS_SOURCE_LOC);
+    LOG_ERROR("Init", 
+        "No compatible adapter found");
     return false;
 }
 
@@ -193,8 +193,8 @@ if (capabilities.supportsDepth32FloatStencil8) {
 
 auto logicalDevice = physicalDevice->createLogicalDevice(logicalDesc);
 if (!logicalDevice) {
-    Logger::Instance().Log(LogLevel::Error, "Init", 
-        "Failed to create logical device", PERS_SOURCE_LOC);
+    LOG_ERROR("Init", 
+        "Failed to create logical device");
     return false;
 }
 
@@ -251,8 +251,8 @@ options.powerPreference = PowerPreference::HighPerformance;
 
 auto physicalDevice = instance->requestPhysicalDevice(options);
 if (!physicalDevice) {
-    Logger::Instance().Log(LogLevel::Warning, "Init", 
-        "No hardware adapter, trying software", PERS_SOURCE_LOC);
+    LOG_WARNING("Init", 
+        "No hardware adapter, trying software");
     
     // Enable software renderer in instance
     InstanceDesc softwareDesc = instanceDesc;

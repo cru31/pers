@@ -8,11 +8,26 @@
 #include <mutex>
 #include <thread>
 #include <atomic>
+#include <functional>
 
 namespace pers {
 
 // Macro to capture source location information
 #define PERS_SOURCE_LOC pers::LogSource{__FILE__, __LINE__, __FUNCTION__}
+
+// Logger macros for easy usage
+#define LOG_TRACE(category, message) pers::Logger::Instance().Log(pers::LogLevel::Trace, category, message, PERS_SOURCE_LOC)
+#define LOG_DEBUG(category, message) pers::Logger::Instance().Log(pers::LogLevel::Debug, category, message, PERS_SOURCE_LOC)
+#define LOG_INFO(category, message) pers::Logger::Instance().Log(pers::LogLevel::Info, category, message, PERS_SOURCE_LOC)
+#define LOG_WARNING(category, message) pers::Logger::Instance().Log(pers::LogLevel::Warning, category, message, PERS_SOURCE_LOC)
+#define LOG_ERROR(category, message) pers::Logger::Instance().Log(pers::LogLevel::Error, category, message, PERS_SOURCE_LOC)
+#define LOG_CRITICAL(category, message) pers::Logger::Instance().Log(pers::LogLevel::Critical, category, message, PERS_SOURCE_LOC)
+#define LOG_TODO_SOMEDAY(category, message) pers::Logger::Instance().Log(pers::LogLevel::TodoSomeday, category, message, PERS_SOURCE_LOC)
+#define LOG_TODO_OR_DIE(category, message) pers::Logger::Instance().Log(pers::LogLevel::TodoOrDie, category, message, PERS_SOURCE_LOC)
+
+// Compatibility macros
+#define TODO_OR_DIE(functionName, todoDescription) LOG_TODO_OR_DIE(functionName, todoDescription)
+#define TODO_SOMEDAY(functionName, todoDescription) LOG_TODO_SOMEDAY(functionName, todoDescription)
 
 enum class LogLevel {
     Trace = 0,
@@ -74,7 +89,19 @@ struct LogSource {
 
 class Logger {
 public:
+    // Callback type for log events
+    using LogCallback = std::function<void(LogLevel level,
+                                          const std::string& category,
+                                          const std::string& message,
+                                          const LogSource& source,
+                                          bool& skipLogging)>;
+    
     static Logger& Instance();
+    
+    // Callback management
+    void setCallback(LogLevel level, const LogCallback& callback);
+    void clearCallback(LogLevel level);
+    void clearAllCallbacks();
     
     void AddOutput(const std::shared_ptr<ILogOutput>& output);
     void RemoveAllOutputs();

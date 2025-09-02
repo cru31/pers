@@ -12,13 +12,12 @@
 #include "pers/graphics/IRenderPassEncoder.h"
 #include "pers/graphics/SwapChainDescBuilder.h"
 #include "pers/utils/Logger.h"
-#include "pers/utils/TodoOrDie.h"
 #include <chrono>
 #include <array>
 
 TriangleRenderer::~TriangleRenderer() {
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer", 
-        "Destructor called", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Destructor called");
     cleanup();
 }
 
@@ -27,8 +26,8 @@ bool TriangleRenderer::initialize(std::shared_ptr<pers::IInstance> instance, con
     _instance = instance;
     
     if (!_instance) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer", 
-            "Invalid instance provided", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Invalid instance provided");
         return false;
     }
     
@@ -37,11 +36,11 @@ bool TriangleRenderer::initialize(std::shared_ptr<pers::IInstance> instance, con
     
     // Surface will be created and set by the app
     // Wait for surface to be set
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Waiting for surface to be set...", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Waiting for surface to be set...");
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Renderer initialized successfully", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Renderer initialized successfully");
     return true;
 }
 
@@ -49,36 +48,36 @@ void TriangleRenderer::setSurface(const pers::NativeSurfaceHandle& surface) {
     _surface = surface;
     
     if (!_surface.isValid()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Invalid surface provided", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Invalid surface provided");
         return;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Surface set, requesting physical device...", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Surface set, requesting physical device...");
     
     // Now that we have a surface, request a compatible adapter
     if (!requestPhysicalDevice()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to request physical device", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to request physical device");
         return;
     }
     
     // Create logical device
     if (!createLogicalDevice()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create logical device", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create logical device");
         return;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Device initialization complete!", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Device initialization complete!");
 }
 
 bool TriangleRenderer::requestPhysicalDevice() {
     if (!_instance || !_surface.isValid()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Instance or surface not ready", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Instance or surface not ready");
         return false;
     }
     
@@ -87,21 +86,21 @@ bool TriangleRenderer::requestPhysicalDevice() {
     options.powerPreference = pers::PowerPreference::HighPerformance;
     options.compatibleSurface = _surface;  // Request adapter compatible with this surface
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Requesting physical device with high performance preference...", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Requesting physical device with high performance preference...");
     
     _physicalDevice = _instance->requestPhysicalDevice(options);
     
     if (!_physicalDevice) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to get physical device", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to get physical device");
         return false;
     }
     
     // Print device capabilities
     auto caps = _physicalDevice->getCapabilities();
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Physical device obtained:", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Physical device obtained:");
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
         "  - Device Name: %s", caps.deviceName.c_str());
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
@@ -115,21 +114,21 @@ bool TriangleRenderer::requestPhysicalDevice() {
     
     // Check surface support
     if (!_physicalDevice->supportsSurface(_surface)) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Physical device doesn't support the surface!", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Physical device doesn't support the surface!");
         return false;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Physical device supports the surface", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Physical device supports the surface");
     
     return true;
 }
 
 bool TriangleRenderer::createLogicalDevice() {
     if (!_physicalDevice) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Physical device not ready", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Physical device not ready");
         return false;
     }
     
@@ -142,8 +141,8 @@ bool TriangleRenderer::createLogicalDevice() {
     // For now, we don't request any special features or limits
     // Just use the adapter's defaults
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Creating logical device...", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Creating logical device...");
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
         "  - Validation: %s", deviceDesc.enableValidation ? "Enabled" : "Disabled");
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
@@ -152,33 +151,33 @@ bool TriangleRenderer::createLogicalDevice() {
     _device = _physicalDevice->createLogicalDevice(deviceDesc);
     
     if (!_device) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create logical device", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create logical device");
         return false;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Logical device created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Logical device created successfully");
     
     // Get the queue
     _queue = _device->getQueue();
     
     if (!_queue) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to get queue from device", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to get queue from device");
         return false;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Queue obtained successfully", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Queue obtained successfully");
     
     return true;
 }
 
 bool TriangleRenderer::createSwapChain() {
     if (!_device || !_surface.isValid()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Device or surface not ready", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Device or surface not ready");
         return false;
     }
     
@@ -198,32 +197,32 @@ bool TriangleRenderer::createSwapChain() {
     _swapChain = _device->createSwapChain(_surface, swapChainDesc);
     
     if (!_swapChain) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create swap chain", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create swap chain");
         return false;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Swap chain created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Swap chain created successfully");
     
     return true;
 }
 
 bool TriangleRenderer::createTriangleResources() {
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Creating triangle resources...", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Creating triangle resources...");
     
     if (!_device) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Device not ready", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Device not ready");
         return false;
     }
     
     // Get resource factory
     auto factory = _device->getResourceFactory();
     if (!factory) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to get resource factory", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to get resource factory");
         return false;
     }
     
@@ -249,8 +248,8 @@ bool TriangleRenderer::createTriangleResources() {
     
     _vertexBuffer = factory->createBuffer(vertexBufferDesc);
     if (!_vertexBuffer) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create vertex buffer", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create vertex buffer");
         return false;
     }
     
@@ -286,8 +285,8 @@ fn main() -> @location(0) vec4<f32> {
     
     auto vertexShader = factory->createShaderModule(vertexShaderDesc);
     if (!vertexShader) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create vertex shader", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create vertex shader");
         return false;
     }
     
@@ -299,8 +298,8 @@ fn main() -> @location(0) vec4<f32> {
     
     auto fragmentShader = factory->createShaderModule(fragmentShaderDesc);
     if (!fragmentShader) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create fragment shader", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create fragment shader");
         return false;
     }
     
@@ -339,13 +338,13 @@ fn main() -> @location(0) vec4<f32> {
     
     _renderPipeline = factory->createRenderPipeline(pipelineDesc);
     if (!_renderPipeline) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create render pipeline", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create render pipeline");
         return false;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Triangle resources created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Triangle resources created successfully");
     return true;
 }
 
@@ -357,16 +356,16 @@ void TriangleRenderer::renderFrame() {
     // 1. Get current texture from swap chain
     auto textureView = _swapChain->getCurrentTextureView();
     if (!textureView) {
-        pers::Logger::Instance().Log(pers::LogLevel::Warning, "TriangleRenderer",
-            "Failed to get current texture view", PERS_SOURCE_LOC);
+        LOG_WARNING("TriangleRenderer",
+            "Failed to get current texture view");
         return;
     }
     
     // 2. Create command encoder
     auto commandEncoder = _device->createCommandEncoder();
     if (!commandEncoder) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to create command encoder", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create command encoder");
         return;
     }
     
@@ -383,8 +382,8 @@ void TriangleRenderer::renderFrame() {
     
     auto renderPass = commandEncoder->beginRenderPass(renderPassDesc);
     if (!renderPass) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to begin render pass", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to begin render pass");
         return;
     }
     
@@ -403,8 +402,8 @@ void TriangleRenderer::renderFrame() {
     // 8. Finish and submit commands
     auto commandBuffer = commandEncoder->finish();
     if (!commandBuffer) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "TriangleRenderer",
-            "Failed to finish command encoder", PERS_SOURCE_LOC);
+        LOG_ERROR("TriangleRenderer",
+            "Failed to finish command encoder");
         return;
     }
     
@@ -455,6 +454,6 @@ void TriangleRenderer::cleanup() {
     // Release instance
     _instance.reset();
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "TriangleRenderer",
-        "Cleanup completed", PERS_SOURCE_LOC);
+    LOG_INFO("TriangleRenderer",
+        "Cleanup completed");
 }

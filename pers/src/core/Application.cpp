@@ -14,19 +14,19 @@ Application::~Application() {
 
 bool Application::initialize(const std::shared_ptr<IWindowFactory>& windowFactory, 
                             const std::shared_ptr<pers::IGraphicsBackendFactory>& graphicsFactory) {
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "=== Application Initialization ===", PERS_SOURCE_LOC);
+    LOG_INFO("Application", "=== Application Initialization ===");
     
     // Store factories
     _windowFactory = windowFactory;
     _graphicsFactory = graphicsFactory;
     
     if (!_windowFactory) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Invalid window factory provided", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Invalid window factory provided");
         return false;
     }
     
     if (!_graphicsFactory) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Invalid graphics factory provided", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Invalid graphics factory provided");
         return false;
     }
     
@@ -47,7 +47,7 @@ bool Application::initialize(const std::shared_ptr<IWindowFactory>& windowFactor
     
     // Call derived class initialization
     if (!onInitialize()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Derived class initialization failed", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Derived class initialization failed");
         return false;
     }
     
@@ -85,7 +85,7 @@ bool Application::createWindow() {
     
     _window = _windowFactory->createWindow(_windowWidth, _windowHeight, _windowTitle);
     if (!_window || !_window->isValid()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Failed to create window", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Failed to create window");
         return false;
     }
     
@@ -96,7 +96,7 @@ bool Application::createWindow() {
 
 bool Application::setupWindowCallbacks() {
     if (!_window || !_window->isValid()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Invalid window", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Invalid window");
         return false;
     }
     
@@ -113,7 +113,7 @@ bool Application::setupWindowCallbacks() {
 }
 
 bool Application::createInstance() {
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Creating graphics instance", PERS_SOURCE_LOC);
+    LOG_INFO("Application", "Creating graphics instance");
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "Application", PERS_SOURCE_LOC,
         "Using backend: %s", _graphicsFactory->getBackendName().c_str());
     
@@ -128,22 +128,22 @@ bool Application::createInstance() {
     
     _instance = _graphicsFactory->createInstance(instanceDesc);
     if (!_instance) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Failed to create instance", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Failed to create instance");
         return false;
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Instance created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("Application", "Instance created successfully");
     return true;
 }
 
 pers::NativeSurfaceHandle Application::createSurface() const {
     if (!_instance) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Instance not initialized", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Instance not initialized");
         return pers::NativeSurfaceHandle(nullptr);
     }
     
     if (!_window) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Window not initialized", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Window not initialized");
         return pers::NativeSurfaceHandle(nullptr);
     }
     
@@ -153,16 +153,16 @@ pers::NativeSurfaceHandle Application::createSurface() const {
     // Create surface using the instance
     pers::NativeSurfaceHandle surface = _instance->createSurface(&nativeHandle);
     if (!surface.isValid()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "Application", "Failed to create surface", PERS_SOURCE_LOC);
+        LOG_ERROR("Application", "Failed to create surface");
         return pers::NativeSurfaceHandle(nullptr);
     }
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Surface created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("Application", "Surface created successfully");
     return surface;
 }
 
 void Application::cleanup() {
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Starting cleanup", PERS_SOURCE_LOC);
+    LOG_INFO("Application", "Starting cleanup");
     
     // Call derived class cleanup first
     onCleanup();
@@ -179,7 +179,7 @@ void Application::cleanup() {
     // Clean up window factory (shared, may still be referenced elsewhere)
     _windowFactory.reset();
     
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "Application", "Cleanup completed", PERS_SOURCE_LOC);
+    LOG_INFO("Application", "Cleanup completed");
 }
 
 void Application::handleResize(int width, int height) {

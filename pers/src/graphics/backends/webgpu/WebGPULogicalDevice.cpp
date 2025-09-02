@@ -4,7 +4,6 @@
 #include "pers/graphics/backends/webgpu/WebGPUCommandEncoder.h"
 #include "pers/graphics/backends/webgpu/WebGPUResourceFactory.h"
 #include "pers/graphics/SwapChainDescBuilder.h"
-#include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include <webgpu/webgpu.h>
 #include <iostream>
@@ -16,16 +15,16 @@ WebGPULogicalDevice::WebGPULogicalDevice(WGPUDevice device, WGPUAdapter adapter)
     
     if (_device) {
         wgpuDeviceAddRef(_device);
-        Logger::Instance().Log(LogLevel::Info, "WebGPULogicalDevice", "Created with device", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPULogicalDevice", "Created with device");
         
         // Create default queue immediately
         if (!createDefaultQueue()) {
-            Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", "Failed to create default queue", PERS_SOURCE_LOC);
+            LOG_ERROR("WebGPULogicalDevice", "Failed to create default queue");
             // Device is still valid but queue creation failed
             // Caller should check if queue is available
         }
     } else {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", "Created with null device!", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice", "Created with null device!");
     }
     
     if (_adapter) {
@@ -56,10 +55,10 @@ bool WebGPULogicalDevice::createDefaultQueue() {
     WGPUQueue queue = wgpuDeviceGetQueue(_device);
     if (queue) {
         _defaultQueue = std::make_shared<WebGPUQueue>(queue);
-        Logger::Instance().Log(LogLevel::Info, "WebGPULogicalDevice", "Default queue created", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPULogicalDevice", "Default queue created");
         return true;
     } else {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", "Failed to get default queue", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice", "Failed to get default queue");
         return false;
     }
 }
@@ -70,16 +69,16 @@ std::shared_ptr<IQueue> WebGPULogicalDevice::getQueue() const {
 
 std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() const {
     if (!_device) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice",
-            "Cannot create resource factory without device", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice",
+            "Cannot create resource factory without device");
         return nullptr;
     }
     
     // Create and cache resource factory on first access
     if (!_resourceFactory) {
         _resourceFactory = std::make_shared<webgpu::WebGPUResourceFactory>(_device);
-        Logger::Instance().Log(LogLevel::Debug, "WebGPULogicalDevice",
-            "Created and cached resource factory", PERS_SOURCE_LOC);
+        LOG_DEBUG("WebGPULogicalDevice",
+            "Created and cached resource factory");
     }
     
     return _resourceFactory;
@@ -87,8 +86,8 @@ std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() cons
 
 std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder() {
     if (!_device) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", 
-                              "Cannot create command encoder with null device", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice", 
+                              "Cannot create command encoder with null device");
         return nullptr;
     }
     
@@ -99,8 +98,8 @@ std::shared_ptr<ICommandEncoder> WebGPULogicalDevice::createCommandEncoder() {
     // Create command encoder
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(_device, &encoderDesc);
     if (!encoder) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", 
-                              "Failed to create command encoder", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice", 
+                              "Failed to create command encoder");
         return nullptr;
     }
     
@@ -112,14 +111,14 @@ std::shared_ptr<ISwapChain> WebGPULogicalDevice::createSwapChain(
     const SwapChainDesc& desc) {
     
     if (!_device) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", 
-                              "Cannot create swap chain: device is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice", 
+                              "Cannot create swap chain: device is null");
         return nullptr;
     }
     
     if (!surface.getRaw()) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", 
-                              "Cannot create swap chain: surface is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice", 
+                              "Cannot create swap chain: surface is null");
         return nullptr;
     }
     
@@ -131,14 +130,13 @@ std::shared_ptr<ISwapChain> WebGPULogicalDevice::createSwapChain(
             desc
         );
         
-        Logger::Instance().Log(LogLevel::Info, "WebGPULogicalDevice", 
-                              "Swap chain created successfully", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPULogicalDevice", 
+                              "Swap chain created successfully");
         
         return swapChain;
     } catch (const std::exception& e) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPULogicalDevice", 
-                              std::string("Failed to create swap chain: ") + e.what(), 
-                              PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPULogicalDevice", 
+                              std::string("Failed to create swap chain: ") + e.what());
         return nullptr;
     }
 }
@@ -160,9 +158,8 @@ void WebGPULogicalDevice::waitIdle() {
         _defaultQueue->waitIdle();
     }
     
-    TodoOrDie::Log("WebGPULogicalDevice::waitIdle", 
-                   "Investigate if wgpu-native has a device poll mechanism. Standard WebGPU would use: wgpuDevicePoll(_device, true, nullptr)", 
-                   PERS_SOURCE_LOC);
+    TODO_OR_DIE("WebGPULogicalDevice::waitIdle", 
+                   "Investigate if wgpu-native has a device poll mechanism. Standard WebGPU would use: wgpuDevicePoll(_device, true, nullptr)");
 }
 
 NativeDeviceHandle WebGPULogicalDevice::getNativeDeviceHandle() const {

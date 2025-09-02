@@ -17,7 +17,7 @@
 #include "pers/graphics/ICommandEncoder.h"
 #include "pers/graphics/IResourceFactory.h"
 #include "pers/graphics/backends/webgpu/WebGPUBackendFactory.h"
-#include "pers/utils/TodoOrDie.h"
+#include "pers/utils/Logger.h"
 
 namespace pers::tests::json {
 
@@ -536,6 +536,16 @@ JsonTestExecutor::TestExecutionResult JsonTestExecutor::executeTestWithTimeout(c
     std::future<bool> future = promise.get_future();
     
     std::thread testThread([this, &testCase, &result, &promise]() {
+        // Set up TodoOrDie callback for this thread
+        pers::Logger::Instance().setCallback(pers::LogLevel::TodoOrDie,
+            [](pers::LogLevel level, const std::string& category, const std::string& message,
+               const pers::LogSource& source, bool& skipLogging) {
+            std::cout << "\n[TodoOrDie Intercepted in Test Thread] " << category << " - " << message 
+                      << " at " << source.file << ":" << source.line << "\n";
+            skipLogging = false;
+            // Don't abort during tests
+        });
+        
         // Note: pers doesn't throw exceptions, it uses abort() for fatal errors
         // So we don't need try-catch here
         result.passed = _loader.executeTest(testCase, result.actualResult, result.failureReason);

@@ -191,8 +191,8 @@ auto result = builder
 
 if (!result.isValid) {
     // Handle configuration failure
-    Logger::Instance().Log(LogLevel::Error, "SwapChain", 
-                          result.getErrorMessage(), PERS_SOURCE_LOC);
+    LOG_ERROR("SwapChain", 
+                          result.getErrorMessage());
     return;
 }
 
@@ -262,8 +262,8 @@ switch (surfaceTexture.status) {
         break;
     case WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal:
         // Works but not optimal, consider reconfiguration
-        Logger::Instance().Log(LogLevel::Debug, "SwapChain", 
-                              "Surface suboptimal", PERS_SOURCE_LOC);
+        LOG_DEBUG("SwapChain", 
+                              "Surface suboptimal");
         break;
     case WGPUSurfaceGetCurrentTextureStatus_Timeout:
     case WGPUSurfaceGetCurrentTextureStatus_Outdated:

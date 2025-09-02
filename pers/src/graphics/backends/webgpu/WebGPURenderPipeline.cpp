@@ -124,8 +124,8 @@ WebGPURenderPipeline::WebGPURenderPipeline(const RenderPipelineDesc& desc, WGPUD
     , _pipeline(nullptr) {
     
     if (!device || !desc.vertex || !desc.fragment) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPURenderPipeline",
-            "Invalid parameters for pipeline creation", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPURenderPipeline",
+            "Invalid parameters for pipeline creation");
         return;
     }
     
@@ -137,8 +137,8 @@ WebGPURenderPipeline::WebGPURenderPipeline(const RenderPipelineDesc& desc, WGPUD
     WGPUShaderModule fragShader = fragmentModule->getNativeHandle();
     
     if (!vertShader || !fragShader) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPURenderPipeline",
-            "Shader modules not ready", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPURenderPipeline",
+            "Shader modules not ready");
         return;
     }
     

@@ -92,9 +92,8 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
         result.formatSupported = false;
         result.failureReason = "No supported texture format found";
         
-        Logger::Instance().Log(LogLevel::Warning, "SwapChainDescBuilder",
-                              "SwapChain format negotiation failed - Preferred format not available, no fallback formats matched",
-                              PERS_SOURCE_LOC);
+        LOG_WARNING("SwapChainDescBuilder",
+                              "SwapChain format negotiation failed - Preferred format not available, no fallback formats matched");
         
         return result;
     }
@@ -113,9 +112,8 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
         result.presentModeSupported = false;
         result.failureReason = "No supported present mode found";
         
-        Logger::Instance().Log(LogLevel::Warning, "SwapChainDescBuilder",
-                              "SwapChain present mode negotiation failed",
-                              PERS_SOURCE_LOC);
+        LOG_WARNING("SwapChainDescBuilder",
+                              "SwapChain present mode negotiation failed");
         
         return result;
     }
@@ -134,9 +132,8 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
         result.alphaModeSupported = false;
         result.failureReason = "No supported alpha mode found";
         
-        Logger::Instance().Log(LogLevel::Warning, "SwapChainDescBuilder",
-                              "SwapChain alpha mode negotiation failed",
-                              PERS_SOURCE_LOC);
+        LOG_WARNING("SwapChainDescBuilder",
+                              "SwapChain alpha mode negotiation failed");
         
         return result;
     }
@@ -145,9 +142,8 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     result.negotiatedAlphaMode = selectedAlphaMode.value();
     
     // Log successful negotiation
-    Logger::Instance().Log(LogLevel::Info, "SwapChainDescBuilder",
-                          "SwapChain negotiation successful",
-                          PERS_SOURCE_LOC);
+    LOG_INFO("SwapChainDescBuilder",
+                          "SwapChain negotiation successful");
     
     return result;
 }
@@ -158,9 +154,8 @@ SwapChainDesc SwapChainDescBuilder::build(const SwapChainNegotiationResult& nego
     if (!negotiationResult.formatSupported || 
         !negotiationResult.presentModeSupported || 
         !negotiationResult.alphaModeSupported) {
-        Logger::Instance().Log(LogLevel::Error, "SwapChainDescBuilder",
-                              "Cannot build SwapChainDesc from failed negotiation",
-                              PERS_SOURCE_LOC);
+        LOG_ERROR("SwapChainDescBuilder",
+                              "Cannot build SwapChainDesc from failed negotiation");
         // Return default-initialized desc
         return desc;
     }

@@ -3,7 +3,6 @@
 #include "pers/graphics/backends/webgpu/WebGPUShaderModule.h"
 #include "pers/graphics/backends/webgpu/WebGPURenderPipeline.h"
 #include "pers/utils/Logger.h"
-#include "pers/utils/TodoOrDie.h"
 #include <webgpu/webgpu.h>
 
 namespace pers {
@@ -13,8 +12,8 @@ WebGPUResourceFactory::WebGPUResourceFactory(WGPUDevice device)
     : _device(device) {
     if (_device) {
         wgpuDeviceAddRef(_device);
-        Logger::Instance().Log(LogLevel::Info, "WebGPUResourceFactory",
-            "Created resource factory", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUResourceFactory",
+            "Created resource factory");
     }
 }
 
@@ -26,8 +25,8 @@ WebGPUResourceFactory::~WebGPUResourceFactory() {
 
 std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& desc) {
     if (!_device) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUResourceFactory",
-            "Cannot create buffer without device", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create buffer without device");
         return nullptr;
     }
     
@@ -35,29 +34,29 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& d
 }
 
 std::shared_ptr<ITexture> WebGPUResourceFactory::createTexture(const TextureDesc& desc) {
-    TodoOrDie::Log("WebGPUResourceFactory::createTexture", 
-                   "Implement WebGPUTexture", PERS_SOURCE_LOC);
+    TODO_OR_DIE("WebGPUResourceFactory::createTexture", 
+                   "Implement WebGPUTexture");
     return nullptr;
 }
 
 std::shared_ptr<ITextureView> WebGPUResourceFactory::createTextureView(
     const std::shared_ptr<ITexture>& texture,
     const TextureViewDesc& desc) {
-    TodoOrDie::Log("WebGPUResourceFactory::createTextureView", 
-                   "Implement WebGPUTextureView", PERS_SOURCE_LOC);
+    TODO_OR_DIE("WebGPUResourceFactory::createTextureView", 
+                   "Implement WebGPUTextureView");
     return nullptr;
 }
 
 std::shared_ptr<ISampler> WebGPUResourceFactory::createSampler(const SamplerDesc& desc) {
-    TodoOrDie::Log("WebGPUResourceFactory::createSampler", 
-                   "Implement WebGPUSampler", PERS_SOURCE_LOC);
+    TODO_OR_DIE("WebGPUResourceFactory::createSampler", 
+                   "Implement WebGPUSampler");
     return nullptr;
 }
 
 std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const ShaderModuleDesc& desc) {
     if (!_device) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUResourceFactory",
-            "Cannot create shader module without device", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create shader module without device");
         return nullptr;
     }
     
@@ -77,8 +76,8 @@ std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const S
 
 std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(const RenderPipelineDesc& desc) {
     if (!_device) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUResourceFactory",
-            "Cannot create render pipeline without device", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create render pipeline without device");
         return nullptr;
     }
     

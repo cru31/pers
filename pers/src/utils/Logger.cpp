@@ -149,6 +149,21 @@ public:
         }
     }
     
+    void setCallback(LogLevel level, const Logger::LogCallback& callback) {
+        std::lock_guard<std::mutex> lock(mutex);
+        callbacks[level] = callback;
+    }
+    
+    void clearCallback(LogLevel level) {
+        std::lock_guard<std::mutex> lock(mutex);
+        callbacks.erase(level);
+    }
+    
+    void clearAllCallbacks() {
+        std::lock_guard<std::mutex> lock(mutex);
+        callbacks.clear();
+    }
+    
     void AddOutput(const std::shared_ptr<ILogOutput>& output) {
         std::lock_guard<std::mutex> lock(mutex);
         outputs.push_back(output);
@@ -183,7 +198,7 @@ public:
         categoryFilter = pattern;
     }
     
-    void Log(const LogEntry& entry) {
+    void Log(const LogEntry& entry, const LogSource& source) {
         if (entry.level < minLevel) {
             return;
         }
@@ -195,6 +210,22 @@ public:
             if (it != enabledLevels.end() && !it->second) {
                 return;
             }
+        }
+        
+        bool skipLogging = false;
+        
+        // Check for callback
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            auto callbackIt = callbacks.find(entry.level);
+            if (callbackIt != callbacks.end() && callbackIt->second) {
+                callbackIt->second(entry.level, entry.category, entry.message, source, skipLogging);
+            }
+        }
+        
+        // If callback requested to skip logging, return
+        if (skipLogging) {
+            return;
         }
         
         std::lock_guard<std::mutex> lock(mutex);
@@ -222,6 +253,7 @@ private:
     std::atomic<LogLevel> minLevel;
     std::string categoryFilter;
     std::map<LogLevel, bool> enabledLevels;
+    std::map<LogLevel, Logger::LogCallback> callbacks;
     mutable std::mutex mutex;
 };
 
@@ -265,6 +297,18 @@ bool Logger::IsLogLevelEnabled(LogLevel level) const {
     return impl->IsLogLevelEnabled(level);
 }
 
+void Logger::setCallback(LogLevel level, const LogCallback& callback) {
+    impl->setCallback(level, callback);
+}
+
+void Logger::clearCallback(LogLevel level) {
+    impl->clearCallback(level);
+}
+
+void Logger::clearAllCallbacks() {
+    impl->clearAllCallbacks();
+}
+
 void Logger::Log(LogLevel level,
                  const std::string& category,
                  const std::string& message,
@@ -279,7 +323,7 @@ void Logger::Log(LogLevel level,
     entry.function = source.function ? source.function : "";
     entry.threadId = std::this_thread::get_id();
     
-    impl->Log(entry);
+    impl->Log(entry, source);
 }
 
 void Logger::Flush() {

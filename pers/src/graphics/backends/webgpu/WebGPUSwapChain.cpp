@@ -2,7 +2,6 @@
 #include "pers/graphics/backends/webgpu/WebGPULogicalDevice.h"
 #include "pers/graphics/backends/webgpu/WebGPUTextureView.h"
 #include "pers/utils/Logger.h"
-#include "pers/utils/TodoSomeday.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -31,9 +30,8 @@ WebGPUSwapChain::WebGPUSwapChain(const std::shared_ptr<WebGPULogicalDevice>& dev
     
     configureSurface();
     
-    Logger::Instance().Log(LogLevel::Info, "WebGPUSwapChain", 
-                          "Created: " + std::to_string(_desc.width) + "x" + std::to_string(_desc.height), 
-                          PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUSwapChain", 
+                          "Created: " + std::to_string(_desc.width) + "x" + std::to_string(_desc.height));
 }
 
 WebGPUSwapChain::~WebGPUSwapChain() {
@@ -41,7 +39,7 @@ WebGPUSwapChain::~WebGPUSwapChain() {
     
     // Surface is not owned by SwapChain, so we don't release it
     
-    Logger::Instance().Log(LogLevel::Info, "WebGPUSwapChain", "Destroyed", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUSwapChain", "Destroyed");
 }
 
 void WebGPUSwapChain::configureSurface() {
@@ -83,17 +81,16 @@ std::shared_ptr<ITextureView> WebGPUSwapChain::getCurrentTextureView() {
     
     if (_currentSurfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal && 
         _currentSurfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUSwapChain", 
+        LOG_ERROR("WebGPUSwapChain", 
                               "Failed to get current texture from surface, status: " + 
-                              std::to_string(static_cast<int>(_currentSurfaceTexture.status)), 
-                              PERS_SOURCE_LOC);
+                              std::to_string(static_cast<int>(_currentSurfaceTexture.status)));
         return nullptr;
     }
     
     // Log suboptimal state for debugging
     if (_currentSurfaceTexture.status == WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
-        Logger::Instance().Log(LogLevel::Debug, "WebGPUSwapChain", 
-                              "Surface is suboptimal, may need reconfiguration", PERS_SOURCE_LOC);
+        LOG_DEBUG("WebGPUSwapChain", 
+                              "Surface is suboptimal, may need reconfiguration");
     }
     
     // Create texture view from the surface texture  
@@ -108,8 +105,8 @@ std::shared_ptr<ITextureView> WebGPUSwapChain::getCurrentTextureView() {
     _currentTextureView = wgpuTextureCreateView(_currentSurfaceTexture.texture, &viewDesc);
     
     if (!_currentTextureView) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUSwapChain", 
-                              "Failed to create texture view from surface texture", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUSwapChain", 
+                              "Failed to create texture view from surface texture");
         return nullptr;
     }
     
@@ -128,8 +125,8 @@ std::shared_ptr<ITextureView> WebGPUSwapChain::getCurrentTextureView() {
 
 void WebGPUSwapChain::present() {
     if (!_hasCurrentTexture) {
-        Logger::Instance().Log(LogLevel::Warning, "WebGPUSwapChain", 
-                              "present() called without current texture", PERS_SOURCE_LOC);
+        LOG_WARNING("WebGPUSwapChain", 
+                              "present() called without current texture");
         return;
     }
     
@@ -145,10 +142,9 @@ void WebGPUSwapChain::resize(uint32_t width, uint32_t height) {
         return; // No change needed
     }
     
-    Logger::Instance().Log(LogLevel::Info, "WebGPUSwapChain", 
+    LOG_INFO("WebGPUSwapChain", 
                           "Resizing from " + std::to_string(_desc.width) + "x" + std::to_string(_desc.height) + 
-                          " to " + std::to_string(width) + "x" + std::to_string(height), 
-                          PERS_SOURCE_LOC);
+                          " to " + std::to_string(width) + "x" + std::to_string(height));
     
     // Release current texture if any
     releaseCurrentTexture();
@@ -214,9 +210,8 @@ SurfaceCapabilities WebGPUSwapChain::querySurfaceCapabilities(
     caps.maxWidth = getDefaultMaxTextureDimension();
     caps.maxHeight = getDefaultMaxTextureDimension();
     
-    TodoSomeday::Log("WebGPUSwapChain", 
-        "Using default texture limits (8192x8192). Actual adapter limits will be queried when API stabilizes.", 
-        PERS_SOURCE_LOC);
+    LOG_TODO_SOMEDAY("WebGPUSwapChain", 
+        "Using default texture limits (8192x8192). Actual adapter limits will be queried when API stabilizes.");
     
     // Set minimum dimensions
     caps.minWidth = 1;
@@ -234,11 +229,10 @@ SurfaceCapabilities WebGPUSwapChain::querySurfaceCapabilities(
     // Free WebGPU allocated memory
     wgpuSurfaceCapabilitiesFreeMembers(wgpuCaps);
     
-    Logger::Instance().Log(LogLevel::Debug, "WebGPUSwapChain", 
+    LOG_DEBUG("WebGPUSwapChain", 
                           "Surface capabilities: " + std::to_string(caps.formats.size()) + " formats, " +
                           std::to_string(caps.presentModes.size()) + " present modes, max size " +
-                          std::to_string(caps.maxWidth) + "x" + std::to_string(caps.maxHeight), 
-                          PERS_SOURCE_LOC);
+                          std::to_string(caps.maxWidth) + "x" + std::to_string(caps.maxHeight));
     
     return caps;
 }
@@ -252,8 +246,8 @@ WGPUTextureFormat WebGPUSwapChain::convertToWGPUFormat(TextureFormat format) {
         case TextureFormat::RGBA8UnormSrgb: return WGPUTextureFormat_RGBA8UnormSrgb;
         case TextureFormat::RGBA16Float: return WGPUTextureFormat_RGBA16Float;
         default:
-            Logger::Instance().Log(LogLevel::Error, "WebGPUSwapChain", 
-                                  "Unsupported swap chain format", PERS_SOURCE_LOC);
+            LOG_ERROR("WebGPUSwapChain", 
+                                  "Unsupported swap chain format");
             return WGPUTextureFormat_BGRA8Unorm; // Default fallback
     }
 }

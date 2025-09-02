@@ -30,8 +30,8 @@ WebGPUShaderModule::WebGPUShaderModule(const ShaderModuleDesc& desc)
     if (_stage == ShaderStage::None) {
         _stage = detectShaderStage(_code);
         if (_stage == ShaderStage::None) {
-            Logger::Instance().Log(LogLevel::Error, "WebGPUShaderModule",
-                "Failed to detect shader stage from code", PERS_SOURCE_LOC);
+            LOG_ERROR("WebGPUShaderModule",
+                "Failed to detect shader stage from code");
             return;
         }
     }

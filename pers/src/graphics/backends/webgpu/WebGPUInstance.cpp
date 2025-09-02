@@ -1,7 +1,6 @@
 #include "pers/graphics/backends/webgpu/WebGPUInstance.h"
 #include "pers/graphics/backends/webgpu/WebGPUPhysicalDevice.h"
 #include "pers/graphics/backends/IGraphicsBackendFactory.h"
-#include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include "pers/core/platform/NativeWindowHandle.h"
 #include <webgpu/webgpu.h>
@@ -50,13 +49,13 @@ bool WebGPUInstance::initialize(const InstanceDesc& desc) {
     if (desc.allowSoftwareRenderer) {
         // Allow all backends including software fallbacks
         extras.backends = WGPUInstanceBackend_All;
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Software renderer allowed, using all backends", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Software renderer allowed, using all backends");
     } else {
         // Only use primary hardware-accelerated backends
         extras.backends = WGPUInstanceBackend_Primary;
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Using primary hardware backends only (Vulkan, Metal, DX12, BrowserWebGPU)", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Using primary hardware backends only (Vulkan, Metal, DX12, BrowserWebGPU)");
     }
     
     // Configure instance flags based on InstanceDesc
@@ -64,20 +63,20 @@ bool WebGPUInstance::initialize(const InstanceDesc& desc) {
     
     if (desc.enableValidation) {
         extras.flags |= WGPUInstanceFlag_Validation;
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Validation enabled", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Validation enabled");
         
         // Debug flag provides more detailed error messages when validation is enabled
         extras.flags |= WGPUInstanceFlag_Debug;
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Debug mode enabled for detailed validation messages", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Debug mode enabled for detailed validation messages");
     }
     
     // Configure DX12 compiler preference (Windows only)
 #ifdef _WIN32
     extras.dx12ShaderCompiler = WGPUDx12Compiler_Dxc;  // Prefer DXC over FXC
-    Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-        "Using DXC shader compiler for DX12", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUInstance",
+        "Using DXC shader compiler for DX12");
 #else
     extras.dx12ShaderCompiler = WGPUDx12Compiler_Undefined;
 #endif
@@ -97,22 +96,22 @@ bool WebGPUInstance::initialize(const InstanceDesc& desc) {
     
     _instance = wgpuCreateInstance(&instanceDesc);
     if (!_instance) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUInstance",
-            "Failed to create WGPUInstance", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUInstance",
+            "Failed to create WGPUInstance");
         return false;
     }
     
-    Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-        "Created successfully with configured settings", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUInstance",
+        "Created successfully with configured settings");
     
     // Log actual configuration used
     if (desc.enableGPUBasedValidation) {
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Note: GPU-based validation will be enabled at device creation", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Note: GPU-based validation will be enabled at device creation");
     }
     if (desc.enableSynchronizationValidation) {
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Note: Synchronization validation will be enabled at device creation", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Note: Synchronization validation will be enabled at device creation");
     }
     
     return true;
@@ -122,8 +121,8 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
     const PhysicalDeviceOptions& options) {
     
     if (!_instance) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUInstance", 
-            "Cannot request physical device: instance is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUInstance", 
+            "Cannot request physical device: instance is null");
         return nullptr;
     }
     
@@ -147,8 +146,8 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
     // Set compatible surface if provided
     if (options.compatibleSurface.isValid()) {
         adapterOptions.compatibleSurface = options.compatibleSurface.as<WGPUSurface>();
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance", 
-            "Requesting adapter with compatible surface", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance", 
+            "Requesting adapter with compatible surface");
     }
     
     // Force fallback adapter based on options
@@ -170,8 +169,8 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
         
         if (status == WGPURequestAdapterStatus_Success) {
             data->adapter = adapter;
-            Logger::Instance().Log(LogLevel::Info, "WebGPUInstance", 
-                "Adapter obtained successfully", PERS_SOURCE_LOC);
+            LOG_INFO("WebGPUInstance", 
+                "Adapter obtained successfully");
         } else {
             const char* statusStr = "Unknown";
             switch (status) {
@@ -210,7 +209,7 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
     std::thread eventThread([this, &callbackData, &stopProcessing]() {
         while (!stopProcessing.load()) {
             wgpuInstanceProcessEvents(_instance);
-            
+
             // Check if received (with lock)
             {
                 std::lock_guard<std::mutex> lock(callbackData.mutex);
@@ -218,9 +217,10 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
                     break;
                 }
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(0));
         }
-    });
+    }
+    );
     
     const auto timeout = std::chrono::seconds(5);
     bool success = callbackData.cv.wait_for(lock, timeout, [&callbackData]() {
@@ -234,14 +234,14 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
     }
     
     if (!success) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUInstance", 
-            "Timeout waiting for adapter", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUInstance", 
+            "Timeout waiting for adapter");
         return nullptr;
     }
     
     if (!callbackData.adapter) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUInstance", 
-            "Failed to get adapter", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUInstance", 
+            "Failed to get adapter");
         return nullptr;
     }
     
@@ -254,23 +254,23 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
         Logger::Instance().LogFormat(LogLevel::Info, "WebGPUInstance", PERS_SOURCE_LOC,
             "Adapter device: %s", adapterInfo.device.data);
     } else {
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Adapter device: (empty/nullptr)", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Adapter device: (empty/nullptr)");
     }
     
     if (adapterInfo.description.data && adapterInfo.description.length > 0) {
         Logger::Instance().LogFormat(LogLevel::Info, "WebGPUInstance", PERS_SOURCE_LOC,
             "Adapter description: %s", adapterInfo.description.data);
     } else {
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Adapter description: (empty/nullptr)", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Adapter description: (empty/nullptr)");
     }
     
     // Check if adapter type matches preferences
     bool isSoftware = (adapterInfo.adapterType == WGPUAdapterType_CPU);
     if (isSoftware && !_desc.allowSoftwareRenderer) {
-        Logger::Instance().Log(LogLevel::Warning, "WebGPUInstance", 
-            "Software adapter obtained but software rendering is disabled", PERS_SOURCE_LOC);
+        LOG_WARNING("WebGPUInstance", 
+            "Software adapter obtained but software rendering is disabled");
         wgpuAdapterInfoFreeMembers(adapterInfo);  // Free adapter info members
         wgpuAdapterRelease(callbackData.adapter);
         return nullptr;
@@ -285,22 +285,22 @@ std::shared_ptr<IPhysicalDevice> WebGPUInstance::requestPhysicalDevice(
     // We can release our reference as WebGPUPhysicalDevice will add its own
     wgpuAdapterRelease(callbackData.adapter);
     
-    Logger::Instance().Log(LogLevel::Info, "WebGPUInstance", 
-        "Physical device created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUInstance", 
+        "Physical device created successfully");
     
     return physicalDevice;
 }
 
 NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
     if (!_instance) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUInstance",
-            "Instance not initialized", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUInstance",
+            "Instance not initialized");
         return NativeSurfaceHandle(nullptr);
     }
     
     if (!windowHandle) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUInstance",
-            "Invalid window handle", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUInstance",
+            "Invalid window handle");
         return NativeSurfaceHandle(nullptr);
     }
     
@@ -310,8 +310,8 @@ NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
     WGPUSurface surface = nullptr;
     
 #ifdef _WIN32
-    Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-        "Creating Windows surface...", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUInstance",
+        "Creating Windows surface...");
     
     // Get HWND from NativeWindowHandle
     HWND hwnd = static_cast<HWND>(nativeHandle->hwnd);
@@ -334,8 +334,8 @@ NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
 #elif defined(__linux__)
     // Check which Linux windowing system we're using
     if (nativeHandle->type == NativeWindowHandle::X11) {
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Creating Linux X11 surface...", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Creating Linux X11 surface...");
         
         Display* display = static_cast<Display*>(nativeHandle->display);
         Window window = reinterpret_cast<Window>(nativeHandle->window);
@@ -356,8 +356,8 @@ NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
         surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
         
     } else if (nativeHandle->type == NativeWindowHandle::Wayland) {
-        Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-            "Creating Linux Wayland surface...", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUInstance",
+            "Creating Linux Wayland surface...");
         
         struct wl_display* display = static_cast<struct wl_display*>(nativeHandle->display);
         struct wl_surface* wlSurface = static_cast<struct wl_surface*>(nativeHandle->window);
@@ -384,8 +384,8 @@ NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
     }
     
 #elif defined(__APPLE__)
-    Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-        "Creating macOS Metal surface...", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUInstance",
+        "Creating macOS Metal surface...");
     
     // Get CAMetalLayer from NativeWindowHandle
     void* metalLayer = nativeHandle->metalLayer;
@@ -405,19 +405,19 @@ NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
     surface = wgpuInstanceCreateSurface(_instance, &surfaceDesc);
     
 #else
-    Logger::Instance().Log(LogLevel::Error, "WebGPUInstance",
-        "Unsupported platform", PERS_SOURCE_LOC);
+    LOG_ERROR("WebGPUInstance",
+        "Unsupported platform");
     return NativeSurfaceHandle(nullptr);
 #endif
     
     if (!surface) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUInstance",
-            "Failed to create surface", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUInstance",
+            "Failed to create surface");
         return NativeSurfaceHandle(nullptr);
     }
     
-    Logger::Instance().Log(LogLevel::Info, "WebGPUInstance",
-        "Surface created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUInstance",
+        "Surface created successfully");
     return NativeSurfaceHandle::fromBackend(surface);
 }
 

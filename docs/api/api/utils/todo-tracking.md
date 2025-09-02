@@ -244,16 +244,16 @@ If migrating from the old `NotImplemented` system:
 ```cpp
 // Old approach
 void someFunction() {
-    NotImplemented::Log("someFunction", "Need to implement", PERS_SOURCE_LOC);
+    NotImplemented::Log("someFunction", "Need to implement");
 }
 
 // New approach - evaluate criticality
 void someFunction() {
     // If critical:
-    TodoOrDie::Log("someFunction", "Need to implement", PERS_SOURCE_LOC);
+    TodoOrDie::Log("someFunction", "Need to implement");
     
     // If nice-to-have:
-    TodoSomeday::Log("Component", "Implement someFunction for better performance", PERS_SOURCE_LOC);
+    TodoSomeday::Log("Component", "Implement someFunction for better performance");
 }
 ```
 

@@ -6,8 +6,8 @@ namespace pers {
 WebGPUCommandBuffer::WebGPUCommandBuffer(WGPUCommandBuffer commandBuffer)
     : _commandBuffer(commandBuffer) {
     if (!_commandBuffer) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandBuffer", 
-                              "Created with null command buffer handle", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandBuffer", 
+                              "Created with null command buffer handle");
     }
 }
 

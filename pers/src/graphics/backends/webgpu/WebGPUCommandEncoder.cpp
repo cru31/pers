@@ -9,8 +9,8 @@ namespace pers {
 WebGPUCommandEncoder::WebGPUCommandEncoder(WGPUCommandEncoder encoder)
     : _encoder(encoder) {
     if (!_encoder) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                              "Created with null encoder handle", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandEncoder", 
+                              "Created with null encoder handle");
     }
 }
 
@@ -23,14 +23,14 @@ WebGPUCommandEncoder::~WebGPUCommandEncoder() {
 
 std::shared_ptr<IRenderPassEncoder> WebGPUCommandEncoder::beginRenderPass(const RenderPassDesc& desc) {
     if (!_encoder) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                              "Cannot begin render pass with null encoder", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandEncoder", 
+                              "Cannot begin render pass with null encoder");
         return nullptr;
     }
     
     if (_finished) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                              "Cannot begin render pass on finished encoder", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandEncoder", 
+                              "Cannot begin render pass on finished encoder");
         return nullptr;
     }
     
@@ -46,15 +46,15 @@ std::shared_ptr<IRenderPassEncoder> WebGPUCommandEncoder::beginRenderPass(const 
     std::vector<WGPURenderPassColorAttachment> colorAttachments;
     for (const auto& attachment : desc.colorAttachments) {
         if (!attachment.view) {
-            Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                                  "Color attachment has null view", PERS_SOURCE_LOC);
+            LOG_ERROR("WebGPUCommandEncoder", 
+                                  "Color attachment has null view");
             return nullptr;
         }
         
         auto webgpuTextureView = std::dynamic_pointer_cast<WebGPUTextureView>(attachment.view);
         if (!webgpuTextureView) {
-            Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                                  "Invalid color attachment type", PERS_SOURCE_LOC);
+            LOG_ERROR("WebGPUCommandEncoder", 
+                                  "Invalid color attachment type");
             return nullptr;
         }
         
@@ -106,8 +106,8 @@ std::shared_ptr<IRenderPassEncoder> WebGPUCommandEncoder::beginRenderPass(const 
     if (desc.depthStencilAttachment && desc.depthStencilAttachment->view) {
         auto webgpuTextureView = std::dynamic_pointer_cast<WebGPUTextureView>(desc.depthStencilAttachment->view);
         if (!webgpuTextureView) {
-            Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                                  "Invalid depth stencil attachment type", PERS_SOURCE_LOC);
+            LOG_ERROR("WebGPUCommandEncoder", 
+                                  "Invalid depth stencil attachment type");
             return nullptr;
         }
         
@@ -180,8 +180,8 @@ std::shared_ptr<IRenderPassEncoder> WebGPUCommandEncoder::beginRenderPass(const 
     // Begin render pass
     WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(_encoder, &renderPassDesc);
     if (!renderPassEncoder) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                              "Failed to begin render pass", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandEncoder", 
+                              "Failed to begin render pass");
         return nullptr;
     }
     
@@ -190,14 +190,14 @@ std::shared_ptr<IRenderPassEncoder> WebGPUCommandEncoder::beginRenderPass(const 
 
 std::shared_ptr<ICommandBuffer> WebGPUCommandEncoder::finish() {
     if (!_encoder) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                              "Cannot finish null encoder", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandEncoder", 
+                              "Cannot finish null encoder");
         return nullptr;
     }
     
     if (_finished) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                              "Encoder already finished", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandEncoder", 
+                              "Encoder already finished");
         return nullptr;
     }
     
@@ -207,8 +207,8 @@ std::shared_ptr<ICommandBuffer> WebGPUCommandEncoder::finish() {
     
     WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(_encoder, &cmdBufferDesc);
     if (!commandBuffer) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUCommandEncoder", 
-                              "Failed to finish command encoder", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUCommandEncoder", 
+                              "Failed to finish command encoder");
         return nullptr;
     }
     

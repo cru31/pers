@@ -1,6 +1,5 @@
 #include "pers/graphics/backends/webgpu/WebGPUPhysicalDevice.h"
 #include "pers/graphics/backends/webgpu/WebGPULogicalDevice.h"
-#include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include <webgpu/webgpu.h>
 #include <vector>
@@ -87,8 +86,8 @@ WebGPUPhysicalDevice::WebGPUPhysicalDevice(WGPUAdapter adapter)
     if (_adapter) {
         wgpuAdapterAddRef(_adapter);
         queryAdapterInfo(); // Query info once during construction
-        Logger::Instance().Log(LogLevel::Info, "WebGPUPhysicalDevice", 
-            "Created with adapter", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUPhysicalDevice", 
+            "Created with adapter");
     }
 }
 
@@ -111,12 +110,12 @@ void WebGPUPhysicalDevice::queryAdapterInfo() {
     WGPUStatus status = wgpuAdapterGetInfo(_adapter, &_adapterInfo);
     if (status == WGPUStatus_Success) {
         _adapterInfoValid = true;
-        Logger::Instance().Log(LogLevel::Info, "WebGPUPhysicalDevice", 
-            "Adapter info queried successfully", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUPhysicalDevice", 
+            "Adapter info queried successfully");
     } else {
         _adapterInfoValid = false;
-        Logger::Instance().Log(LogLevel::Error, "WebGPUPhysicalDevice", 
-            "Failed to get adapter info", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUPhysicalDevice", 
+            "Failed to get adapter info");
     }
 }
 
@@ -263,8 +262,8 @@ bool WebGPUPhysicalDevice::supportsSurface(const NativeSurfaceHandle& surface) c
     
     WGPUSurface wgpuSurface = surface.as<WGPUSurface>();
     if (!wgpuSurface) {
-        Logger::Instance().Log(LogLevel::Warning, "WebGPUPhysicalDevice",
-            "Invalid surface handle", PERS_SOURCE_LOC);
+        LOG_WARNING("WebGPUPhysicalDevice",
+            "Invalid surface handle");
         return false;
     }
     
@@ -286,8 +285,8 @@ bool WebGPUPhysicalDevice::supportsSurface(const NativeSurfaceHandle& surface) c
         wgpuSurfaceCapabilitiesFreeMembers(capabilities);
     } else {
         // No formats available means surface is not compatible
-        Logger::Instance().Log(LogLevel::Warning, "WebGPUPhysicalDevice",
-            "Surface not supported by this adapter (no compatible formats)", PERS_SOURCE_LOC);
+        LOG_WARNING("WebGPUPhysicalDevice",
+            "Surface not supported by this adapter (no compatible formats)");
     }
     
     return isSupported;
@@ -297,8 +296,8 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
     const LogicalDeviceDesc& desc) {
     
     if (!_adapter) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUPhysicalDevice", 
-            "Cannot create logical device: adapter is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUPhysicalDevice", 
+            "Cannot create logical device: adapter is null");
         return nullptr;
     }
     
@@ -306,8 +305,8 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
     std::vector<WGPUFeatureName> requiredFeatures;
     if (!desc.requiredFeatures.empty()) {
         if (!checkFeatureSupport(desc.requiredFeatures, requiredFeatures)) {
-            Logger::Instance().Log(LogLevel::Error, "WebGPUPhysicalDevice",
-                "One or more required features are not supported", PERS_SOURCE_LOC);
+            LOG_ERROR("WebGPUPhysicalDevice",
+                "One or more required features are not supported");
             return nullptr;
         }
     }
@@ -339,30 +338,30 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
         if (status == WGPUStatus_Success) {
             // Validate requested limits are within adapter capability
             if (!validateLimitsWithinCapability(*desc.requiredLimits, adapterLimits)) {
-                Logger::Instance().Log(LogLevel::Error, "WebGPUPhysicalDevice",
-                    "Requested limits exceed adapter capability", PERS_SOURCE_LOC);
+                LOG_ERROR("WebGPUPhysicalDevice",
+                    "Requested limits exceed adapter capability");
                 return nullptr;
             }
         } else {
-            Logger::Instance().Log(LogLevel::Warning, "WebGPUPhysicalDevice",
-                "Failed to query adapter limits for validation", PERS_SOURCE_LOC);
+            LOG_WARNING("WebGPUPhysicalDevice",
+                "Failed to query adapter limits for validation");
         }
         
         // Use user-specified limits
         requiredLimits = convertToWGPULimits(*desc.requiredLimits);
         deviceDesc.requiredLimits = &requiredLimits;
-        Logger::Instance().Log(LogLevel::Info, "WebGPUPhysicalDevice", 
-            "Using user-specified device limits", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUPhysicalDevice", 
+            "Using user-specified device limits");
     } else {
         // Use adapter's default limits
         WGPUStatus status = wgpuAdapterGetLimits(_adapter, &requiredLimits);
         if (status == WGPUStatus_Success) {
             deviceDesc.requiredLimits = &requiredLimits;
-            Logger::Instance().Log(LogLevel::Info, "WebGPUPhysicalDevice", 
-                "Using adapter's default limits", PERS_SOURCE_LOC);
+            LOG_INFO("WebGPUPhysicalDevice", 
+                "Using adapter's default limits");
         } else {
-            Logger::Instance().Log(LogLevel::Warning, "WebGPUPhysicalDevice", 
-                "Failed to query adapter limits, device will use its defaults", PERS_SOURCE_LOC);
+            LOG_WARNING("WebGPUPhysicalDevice", 
+                "Failed to query adapter limits, device will use its defaults");
         }
     }
     
@@ -441,8 +440,8 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
             data->device = device;
             
             if (status == WGPURequestDeviceStatus_Success) {
-                Logger::Instance().Log(LogLevel::Info, "WebGPUPhysicalDevice",
-                    "Device obtained successfully", PERS_SOURCE_LOC);
+                LOG_INFO("WebGPUPhysicalDevice",
+                    "Device obtained successfully");
             } else {
                 data->errorMessage = message.data ? std::string(message.data, message.length) : "Unknown error";
                 const char* statusStr = "Unknown";
@@ -490,8 +489,8 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
     }
     
     if (!callbackData.device) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUPhysicalDevice",
-            "Device creation succeeded but device is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUPhysicalDevice",
+            "Device creation succeeded but device is null");
         return nullptr;
     }
     
@@ -501,8 +500,8 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
     // Release our reference as WebGPULogicalDevice will add its own
     wgpuDeviceRelease(callbackData.device);
     
-    Logger::Instance().Log(LogLevel::Info, "WebGPUPhysicalDevice",
-        "Logical device created successfully", PERS_SOURCE_LOC);
+    LOG_INFO("WebGPUPhysicalDevice",
+        "Logical device created successfully");
     
     return logicalDevice;
 }

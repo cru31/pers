@@ -2,7 +2,6 @@
 #include "pers/graphics/ICommandBuffer.h"
 #include "pers/graphics/IBuffer.h"
 #include "pers/graphics/ITexture.h"
-#include "pers/utils/TodoOrDie.h"
 #include "pers/utils/Logger.h"
 #include <webgpu/webgpu.h>
 #include <vector>
@@ -18,9 +17,9 @@ WebGPUQueue::WebGPUQueue(WGPUQueue queue)
     
     if (_queue) {
         wgpuQueueAddRef(_queue);
-        Logger::Instance().Log(LogLevel::Info, "WebGPUQueue", "Created with queue", PERS_SOURCE_LOC);
+        LOG_INFO("WebGPUQueue", "Created with queue");
     } else {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Created with null queue!", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Created with null queue!");
     }
 }
 
@@ -33,19 +32,19 @@ WebGPUQueue::~WebGPUQueue() {
 
 bool WebGPUQueue::submit(const std::shared_ptr<ICommandBuffer>& commandBuffer) {
     if (!_queue) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Cannot submit: queue is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Cannot submit: queue is null");
         return false;
     }
     
     if (!commandBuffer) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Cannot submit null command buffer", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Cannot submit null command buffer");
         return false;
     }
     
     // Get native command buffer handle
     NativeCommandBufferHandle nativeHandle = commandBuffer->getNativeCommandBufferHandle();
     if (!nativeHandle.isValid()) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Command buffer has invalid native handle", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Command buffer has invalid native handle");
         return false;
     }
     
@@ -61,7 +60,7 @@ bool WebGPUQueue::submit(const std::shared_ptr<ICommandBuffer>& commandBuffer) {
 
 bool WebGPUQueue::submit(const std::vector<std::shared_ptr<ICommandBuffer>>& commandBuffers) {
     if (!_queue) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Cannot submit: queue is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Cannot submit: queue is null");
         return false;
     }
     
@@ -102,19 +101,19 @@ bool WebGPUQueue::submitBatch(const std::vector<std::shared_ptr<ICommandBuffer>>
 
 bool WebGPUQueue::writeBuffer(const BufferWriteDesc& desc) {
     if (!_queue) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Cannot write buffer: queue is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Cannot write buffer: queue is null");
         return false;
     }
     
     if (!desc.buffer || !desc.data || desc.size == 0) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Invalid buffer write parameters", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Invalid buffer write parameters");
         return false;
     }
     
     // Get native buffer handle
     NativeBufferHandle nativeHandle = desc.buffer->getNativeBufferHandle();
     if (!nativeHandle.isValid()) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Invalid buffer handle", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Invalid buffer handle");
         return false;
     }
     
@@ -129,18 +128,17 @@ bool WebGPUQueue::writeTexture(const std::shared_ptr<ITexture>& texture,
                                uint64_t dataSize,
                                uint32_t mipLevel) {
     if (!_queue) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Cannot write texture: queue is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Cannot write texture: queue is null");
         return false;
     }
     
-    TodoOrDie::Log(
+    TODO_OR_DIE(
         "WebGPUQueue::writeTexture",
         "Implement texture data upload via queue. Steps: "
         "1. Get native texture handle from ITexture, "
         "2. Set up WGPUImageCopyTexture descriptor, "
         "3. Set up WGPUTextureDataLayout, "
-        "4. Call wgpuQueueWriteTexture",
-        PERS_SOURCE_LOC
+        "4. Call wgpuQueueWriteTexture"
     );
     
     return false;
@@ -172,8 +170,8 @@ bool WebGPUQueue::waitIdle() {
                 data->isComplete = true;
                 
                 if (status != WGPUQueueWorkDoneStatus_Success) {
-                    Logger::Instance().Log(LogLevel::Warning, "WebGPUQueue", 
-                                         "Queue work done with non-success status", PERS_SOURCE_LOC);
+                    LOG_WARNING("WebGPUQueue", 
+                                         "Queue work done with non-success status");
                 }
             }
             data->cv.notify_one();
@@ -194,8 +192,8 @@ bool WebGPUQueue::waitIdle() {
     });
     
     if (!success) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", 
-                              "Timeout waiting for queue to idle", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", 
+                              "Timeout waiting for queue to idle");
         return false;
     }
     
@@ -208,12 +206,12 @@ NativeQueueHandle WebGPUQueue::getNativeQueueHandle() const {
 
 void WebGPUQueue::writeBuffer(WGPUBuffer buffer, uint64_t offset, const void* data, uint64_t size) {
     if (!_queue) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Cannot write buffer: queue is null", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Cannot write buffer: queue is null");
         return;
     }
     
     if (!buffer || !data || size == 0) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUQueue", "Invalid buffer write parameters", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUQueue", "Invalid buffer write parameters");
         return;
     }
     

@@ -17,8 +17,8 @@ PersTriangleApp::PersTriangleApp() {
 PersTriangleApp::~PersTriangleApp() = default;
 
 bool PersTriangleApp::onInitialize() {
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "PersTriangleApp",
-        "=== PERS Triangle Application ===", PERS_SOURCE_LOC);
+    LOG_INFO("PersTriangleApp",
+        "=== PERS Triangle Application ===");
     
     // Initialize renderer
     if (!initializeRenderer()) {
@@ -42,16 +42,16 @@ bool PersTriangleApp::initializeRenderer() {
     
     // Initialize renderer with the instance we got from base class
     if (!_renderer->initialize(getInstance(), size)) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "PersTriangleApp",
-            "Failed to initialize renderer", PERS_SOURCE_LOC);
+        LOG_ERROR("PersTriangleApp",
+            "Failed to initialize renderer");
         return false;
     }
     
     // Create surface using base class helper and set it on renderer
     pers::NativeSurfaceHandle surface = createSurface();
     if (!surface.isValid()) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "PersTriangleApp",
-            "Failed to create surface", PERS_SOURCE_LOC);
+        LOG_ERROR("PersTriangleApp",
+            "Failed to create surface");
         return false;
     }
     
@@ -62,8 +62,8 @@ bool PersTriangleApp::initializeRenderer() {
 
 bool PersTriangleApp::createTriangle() {
     if (!_renderer) {
-        pers::Logger::Instance().Log(pers::LogLevel::Error, "PersTriangleApp",
-            "Renderer not initialized", PERS_SOURCE_LOC);
+        LOG_ERROR("PersTriangleApp",
+            "Renderer not initialized");
         return false;
     }
     
@@ -101,15 +101,15 @@ void PersTriangleApp::onKeyPress(int key, int scancode, int action, int mods) {
         switch (key) {
             case 70: // GLFW_KEY_F = 70
                 pers::Logger::Instance().Log(pers::LogLevel::Debug, "PersTriangleApp",
-                    "F key pressed", PERS_SOURCE_LOC);
+                    "F key pressed");
                 break;
         }
     }
 }
 
 void PersTriangleApp::onCleanup() {
-    pers::Logger::Instance().Log(pers::LogLevel::Info, "PersTriangleApp",
-        "Cleaning up triangle resources", PERS_SOURCE_LOC);
+    LOG_INFO("PersTriangleApp",
+        "Cleaning up triangle resources");
     
     // Clean up renderer (must be before instance is destroyed)
     _renderer.reset();

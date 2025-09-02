@@ -1,6 +1,5 @@
 #include "pers/graphics/backends/webgpu/WebGPUBuffer.h"
 #include "pers/utils/Logger.h"
-#include "pers/utils/TodoOrDie.h"
 #include <webgpu/webgpu.h>
 
 namespace pers {
@@ -55,8 +54,8 @@ WebGPUBuffer::WebGPUBuffer(const BufferDesc& desc, WGPUDevice device)
     , _mappedData(nullptr) {
     
     if (!device || _size == 0) {
-        Logger::Instance().Log(LogLevel::Error, "WebGPUBuffer",
-            "Invalid parameters for buffer creation", PERS_SOURCE_LOC);
+        LOG_ERROR("WebGPUBuffer",
+            "Invalid parameters for buffer creation");
         return;
     }
     
@@ -111,8 +110,8 @@ void* WebGPUBuffer::map(uint64_t offset, uint64_t size) {
     uint64_t mapSize = size > 0 ? size : (_size - offset);
     
     // WebGPU async map - for now we use sync wrapper
-    TodoOrDie::Log("WebGPUBuffer::map",
-                   "Implement proper async mapping with callbacks", PERS_SOURCE_LOC);
+    TODO_OR_DIE("WebGPUBuffer::map",
+                   "Implement proper async mapping with callbacks");
     
     // For now, return nullptr as async mapping needs proper implementation
     return nullptr;
