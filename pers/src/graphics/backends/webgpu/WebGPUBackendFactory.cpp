@@ -9,9 +9,6 @@ std::shared_ptr<IInstance> WebGPUBackendFactory::createInstance(
     
     LOG_INFO("WebGPUBackendFactory", "Creating WebGPU instance...");
     
-    // Test TodoOrDie for NYI categorization
-    TODO_OR_DIE("WebGPUBackendFactory::createInstance", "Intentional TodoOrDie for testing NYI categorization");
-    
     auto instance = std::make_shared<WebGPUInstance>();
     if (!instance->initialize(desc)) {
         LOG_ERROR("WebGPUBackendFactory", "Failed to initialize WebGPU instance");
