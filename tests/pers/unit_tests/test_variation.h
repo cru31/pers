@@ -27,6 +27,7 @@ struct ExpectedBehavior {
 // Test variation with options and expected behavior
 struct TestVariation {
     int id;
+    std::string combinedId;  // Combined ID with file ID (e.g., "001-a")
     std::string variationName;
     std::unordered_map<std::string, std::any> options;
     ExpectedBehavior expectedBehavior;

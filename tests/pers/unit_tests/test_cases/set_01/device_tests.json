@@ -1,0 +1,79 @@
+{
+  "fileType": "test_cases",
+  "fileId": "dev",
+  "metadata": {
+    "version": "1.0",
+    "category": "Device Management",
+    "description": "Tests for WebGPU logical device creation and configuration"
+  },
+  "testTypes": [
+    {
+      "category": "Device Management",
+      "testType": "Device Creation",
+      "handlerClass": "DeviceCreationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Basic Device",
+          "options": {
+            "requiredFeatures": [],
+            "requiredLimits": {}
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "hasDefaultQueue": true,
+              "supportsBasicOperations": true
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Device With Timestamp Query",
+          "options": {
+            "requiredFeatures": ["timestamp-query"],
+            "requiredLimits": {}
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "hasTimestampQuery": true
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Device With Texture Compression BC",
+          "options": {
+            "requiredFeatures": ["texture-compression-bc"],
+            "requiredLimits": {}
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "hasTextureCompressionBC": true
+            }
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Device With High Limits",
+          "options": {
+            "requiredFeatures": [],
+            "requiredLimits": {
+              "maxBindGroups": 8,
+              "maxStorageBufferBindingSize": 134217728
+            }
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "maxBindGroups": 8,
+              "maxStorageBufferBindingSize": 134217728
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

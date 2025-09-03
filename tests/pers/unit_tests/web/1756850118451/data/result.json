@@ -1,0 +1,79 @@
+{
+    "metadata": {
+        "timestamp": "2025-09-03 06:55:18",
+        "total_tests": 4,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_applicable": 4,
+        "not_yet_implemented": 0,
+        "pass_rate": 0.0,
+        "total_time_ms": 1.2495
+    },
+    "results": [
+        {
+            "id": "INST_001",
+            "category": "Instance Management",
+            "test_type": "Instance Creation - Validation Enabled",
+            "input": "type=InstanceDesc, enableValidation=true, applicationName=Test App, engineName=Pers Graphics Engine, apiVersion=1.0.0",
+            "expected_result": "Valid instance created with validation",
+            "actual_result": "N/A - Not a test target",
+            "expected_callstack": [
+                "WebGPUBackendFactory::createInstance()",
+                "WebGPUInstance::initialize()",
+                "wgpuCreateInstance()"
+            ],
+            "actual_callstack": [],
+            "passed": false,
+            "failure_reason": "No handler implemented (feature not in Pers or not testable yet)",
+            "execution_time_ms": 0.7176,
+            "timestamp": "2025-09-03 06:55:18",
+            "log_messages": []
+        },
+        {
+            "id": "INST_002",
+            "category": "Instance Management",
+            "test_type": "Instance Creation - Validation Disabled",
+            "input": "type=InstanceDesc, enableValidation=false, applicationName=Performance Test, engineName=Pers Graphics Engine",
+            "expected_result": "Valid instance created without validation",
+            "actual_result": "N/A - Not a test target",
+            "expected_callstack": [],
+            "actual_callstack": [],
+            "passed": false,
+            "failure_reason": "No handler implemented (feature not in Pers or not testable yet)",
+            "execution_time_ms": 0.1939,
+            "timestamp": "2025-09-03 06:55:18",
+            "log_messages": []
+        },
+        {
+            "id": "INST_003",
+            "category": "Instance Management",
+            "test_type": "Instance Creation - Empty Application Name",
+            "input": "type=InstanceDesc, enableValidation=true, applicationName=, engineName=Pers Graphics Engine",
+            "expected_result": "Valid instance created with default name",
+            "actual_result": "N/A - Not a test target",
+            "expected_callstack": [],
+            "actual_callstack": [],
+            "passed": false,
+            "failure_reason": "No handler implemented (feature not in Pers or not testable yet)",
+            "execution_time_ms": 0.1704,
+            "timestamp": "2025-09-03 06:55:18",
+            "log_messages": []
+        },
+        {
+            "id": "INST_004",
+            "category": "Instance Management",
+            "test_type": "Instance Creation - Very Long Application Name",
+            "input": "type=InstanceDesc, enableValidation=true, applicationName=ThisIsAnExtremelyLongApplicationNameThatExceedsNormalLimitsAndShouldBeHandledProperlyByTheSystemWithoutCausingBufferOverflowsOrOtherIssues_1234567890_ABCDEFGHIJKLMNOPQRSTUVWXYZ, engineName=Pers",
+            "expected_result": "Valid instance with truncated name",
+            "actual_result": "N/A - Not a test target",
+            "expected_callstack": [],
+            "actual_callstack": [],
+            "passed": false,
+            "failure_reason": "No handler implemented (feature not in Pers or not testable yet)",
+            "execution_time_ms": 0.1676,
+            "timestamp": "2025-09-03 06:55:18",
+            "log_messages": []
+        }
+    ]
+}

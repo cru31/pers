@@ -32,7 +32,7 @@ target_include_directories(pers_unit_tests PRIVATE
 # Define paths as compile definitions
 target_compile_definitions(pers_unit_tests PRIVATE
     WEB_SERVER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/web"
-    TEST_CASES_JSON="${CMAKE_CURRENT_SOURCE_DIR}/test_cases.json"
+    TEST_CASES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_cases/set_01"
 )
 
 # Include the centralized copy function
@@ -41,12 +41,12 @@ include(${CMAKE_SOURCE_DIR}/cmake/CopyRuntimeDependencies.cmake)
 # Copy runtime dependencies for test executable
 copy_runtime_dependencies(pers_unit_tests)
 
-# Copy JSON test files to output directory
+# Copy test cases directory to output directory
 add_custom_command(TARGET pers_unit_tests POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${CMAKE_CURRENT_SOURCE_DIR}/test_cases.json"
-    $<TARGET_FILE_DIR:pers_unit_tests>
-    COMMENT "Copying test cases JSON"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_cases"
+    "$<TARGET_FILE_DIR:pers_unit_tests>/test_cases"
+    COMMENT "Copying test cases directory"
 )
 
 # Copy web resources including node_modules to output directory

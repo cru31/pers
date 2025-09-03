@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <chrono>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
 
 namespace pers::tests {
 
@@ -29,6 +31,21 @@ bool JsonTestLoader::loadTestTypes(const std::string& filePath,
     
     if (doc.HasParseError()) {
         return false;
+    }
+    
+    // Check if this is a test case file
+    if (!doc.HasMember("fileType") || !doc["fileType"].IsString() || 
+        std::string(doc["fileType"].GetString()) != "test_cases") {
+        return false;  // Not a test case file
+    }
+    
+    // Get file ID or generate one
+    std::string fileId;
+    if (doc.HasMember("fileId") && doc["fileId"].IsString()) {
+        fileId = doc["fileId"].GetString();
+    } else {
+        // Generate a 5-character hash based on file path and timestamp
+        fileId = generateFileHash(filePath);
     }
     
     // Parse test types
@@ -54,11 +71,16 @@ bool JsonTestLoader::loadTestTypes(const std::string& filePath,
             testType.handlerClass = testTypeObj["handlerClass"].GetString();
         }
         
-        // Parse variations
+        // Parse variations with file ID
         if (testTypeObj.HasMember("variations") && testTypeObj["variations"].IsArray()) {
             const auto& variations = testTypeObj["variations"];
             for (SizeType j = 0; j < variations.Size(); j++) {
-                testType.variations.push_back(parseVariation(&variations[j]));
+                TestVariation variation = parseVariation(&variations[j]);
+                // Combine file ID with variation ID (e.g., "tc001-001")
+                char idStr[20];
+                std::snprintf(idStr, sizeof(idStr), "%s-%03d", fileId.c_str(), variation.id);
+                variation.combinedId = idStr;
+                testType.variations.push_back(variation);
             }
         }
         
@@ -288,10 +310,8 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
             
             Value resultObj(kObjectType);
             
-            // Format ID with leading zeros
-            char idStr[10];
-            std::snprintf(idStr, sizeof(idStr), "%03d", variation.id);
-            resultObj.AddMember("id", Value().SetString(idStr, allocator), allocator);
+            // Use combined ID
+            resultObj.AddMember("id", Value().SetString(variation.combinedId.c_str(), allocator), allocator);
             
             resultObj.AddMember("category", Value().SetString(testType.category.c_str(), allocator), allocator);
             resultObj.AddMember("test_type", Value().SetString(testType.testType.c_str(), allocator), allocator);
@@ -373,6 +393,30 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
     std::fclose(fp);
     
     return true;
+}
+
+std::string JsonTestLoader::generateFileHash(const std::string& filePath) {
+    // Combine file path and current timestamp
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    
+    std::stringstream ss;
+    ss << filePath << "_" << time_t;
+    std::string combined = ss.str();
+    
+    // Simple hash function to generate 5-character string
+    std::hash<std::string> hasher;
+    size_t hashValue = hasher(combined);
+    
+    // Convert to base36 (0-9, a-z) for compactness
+    const char* base36 = "0123456789abcdefghijklmnopqrstuvwxyz";
+    std::string result;
+    for (int i = 0; i < 5; i++) {
+        result += base36[hashValue % 36];
+        hashValue /= 36;
+    }
+    
+    return result;
 }
 
 } // namespace pers::tests

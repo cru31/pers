@@ -1,0 +1,107 @@
+{
+  "fileType": "test_cases",
+  "fileId": "pipe",
+  "metadata": {
+    "version": "1.0",
+    "category": "Pipeline Management",
+    "description": "Tests for WebGPU render and compute pipeline creation"
+  },
+  "testTypes": [
+    {
+      "category": "Pipeline Management",
+      "testType": "Render Pipeline Creation",
+      "handlerClass": "RenderPipelineHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Basic Triangle Pipeline",
+          "options": {
+            "vertexShader": "triangle_vert",
+            "fragmentShader": "triangle_frag",
+            "topology": "triangle-list",
+            "cullMode": "back"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "isValid": true,
+              "hasVertexStage": true,
+              "hasFragmentStage": true
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Line Strip Pipeline",
+          "options": {
+            "vertexShader": "line_vert",
+            "fragmentShader": "line_frag",
+            "topology": "line-strip",
+            "cullMode": "none"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "topology": "line-strip"
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Pipeline With Depth Test",
+          "options": {
+            "vertexShader": "depth_vert",
+            "fragmentShader": "depth_frag",
+            "topology": "triangle-list",
+            "depthTest": true,
+            "depthWrite": true,
+            "depthCompare": "less"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "hasDepthStencilState": true,
+              "depthTestEnabled": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Pipeline Management",
+      "testType": "Compute Pipeline Creation",
+      "handlerClass": "ComputePipelineHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Basic Compute Pipeline",
+          "options": {
+            "computeShader": "compute_basic",
+            "workgroupSize": [64, 1, 1]
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "isValid": true,
+              "hasComputeStage": true
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "2D Workgroup Pipeline",
+          "options": {
+            "computeShader": "compute_2d",
+            "workgroupSize": [16, 16, 1]
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "workgroupDimensions": 2
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

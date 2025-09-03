@@ -1,0 +1,98 @@
+{
+  "fileType": "test_cases",
+  "fileId": "buf",
+  "metadata": {
+    "version": "1.0",
+    "category": "Buffer Management",
+    "description": "Tests for WebGPU buffer creation and operations"
+  },
+  "testTypes": [
+    {
+      "category": "Buffer Management",
+      "testType": "Buffer Creation",
+      "handlerClass": "BufferCreationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Vertex Buffer 1KB",
+          "options": {
+            "size": 1024,
+            "usage": "VERTEX",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "actualSize": 1024,
+              "mappable": false
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Index Buffer 4KB",
+          "options": {
+            "size": 4096,
+            "usage": "INDEX",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "actualSize": 4096,
+              "mappable": false
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Uniform Buffer 256B",
+          "options": {
+            "size": 256,
+            "usage": "UNIFORM",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "actualSize": 256,
+              "mappable": false
+            }
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Storage Buffer 16KB",
+          "options": {
+            "size": 16384,
+            "usage": "STORAGE",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "actualSize": 16384,
+              "mappable": false
+            }
+          }
+        },
+        {
+          "id": 5,
+          "variationName": "Copy Source Buffer",
+          "options": {
+            "size": 512,
+            "usage": "COPY_SRC",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "actualSize": 512,
+              "canCopyFrom": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -165,6 +165,45 @@ th {
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Sortable headers */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+th.sortable:hover {
+    background: rgba(123, 97, 255, 0.1);
+}
+
+.sort-indicator {
+    margin-left: 8px;
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    transition: all 0.2s;
+    opacity: 0.3;
+}
+
+.sort-indicator.asc {
+    border-width: 0 5px 8px 5px;
+    border-color: transparent transparent #7b61ff transparent;
+    opacity: 1;
+}
+
+.sort-indicator.desc {
+    border-width: 8px 5px 0 5px;
+    border-color: #7b61ff transparent transparent transparent;
+    opacity: 1;
+}
+
+.sort-indicator:not(.asc):not(.desc) {
+    border-width: 4px 4px 4px 4px;
+    border-color: transparent transparent #888 transparent;
+}
+
 tbody tr {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     transition: background-color 0.2s;

@@ -82,3 +82,4 @@ backup/
 *~
 *.swp
 tests/pers/unit_tests/test_case_data/
+tests/pers/unit_tests/web/node_modules/

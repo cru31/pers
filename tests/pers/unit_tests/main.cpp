@@ -75,7 +75,7 @@ void printTestResult(const TestTypeDefinition& testType,
                      const TestResult& result) {
     std::cout << "[" << (result.passed ? "PASS" : "FAIL") << "] ";
     std::cout << testType.category << " - " << testType.testType << " - " << variation.variationName;
-    std::cout << " (ID: " << variation.id << ")";
+    std::cout << " (ID: " << variation.combinedId << ")";
     
     if (!result.passed) {
         std::cout << "\n  Reason: " << result.failureReason;
@@ -85,7 +85,6 @@ void printTestResult(const TestTypeDefinition& testType,
 }
 
 int main(int argc, char* argv[]) {
-    std::string inputFile;
     
     // Create timestamp directory for results
     auto now = std::chrono::system_clock::now();
@@ -122,31 +121,69 @@ int main(int argc, char* argv[]) {
 #endif
     
     std::string outputFile = resultsDir + "/result.json";
+    std::string inputPath;
     
     if (argc >= 2) {
-        inputFile = argv[1];
+        inputPath = argv[1];
         if (argc >= 3) {
             outputFile = argv[2];
         }
     } else {
-        // Use default path from CMake or fallback
-#ifdef TEST_CASES_JSON
-        inputFile = TEST_CASES_JSON;
+        // Use default directory from CMake or fallback
+#ifdef TEST_CASES_DIR
+        inputPath = TEST_CASES_DIR;
 #else
-        inputFile = "test_cases.json";
+        inputPath = ".";
 #endif
-        std::cout << "Using default test cases file: " << inputFile << std::endl;
+        std::cout << "Using default test cases directory: " << inputPath << std::endl;
     }
     
     std::cout << "================================" << std::endl;
     std::cout << "Pers Graphics Engine Unit Tests" << std::endl;
     std::cout << "================================" << std::endl;
-    std::cout << "Loading tests from: " << inputFile << std::endl;
     
-    // Load test definitions
+    // Load test definitions from directory or single file
     std::vector<TestTypeDefinition> testTypes;
-    if (!JsonTestLoader::loadTestTypes(inputFile, testTypes)) {
-        std::cerr << "Failed to load test cases from " << inputFile << std::endl;
+    fs::path inputFs(inputPath);
+    
+    if (fs::is_directory(inputFs)) {
+        std::cout << "Loading test cases from directory: " << inputPath << std::endl;
+        
+        // Find all JSON files in the directory
+        std::vector<std::string> jsonFiles;
+        for (const auto& entry : fs::directory_iterator(inputFs)) {
+            if (entry.path().extension() == ".json") {
+                jsonFiles.push_back(entry.path().string());
+            }
+        }
+        
+        if (jsonFiles.empty()) {
+            std::cerr << "No JSON files found in directory: " << inputPath << std::endl;
+            return 1;
+        }
+        
+        std::cout << "Found " << jsonFiles.size() << " JSON file(s)" << std::endl;
+        
+        // Load test types from all JSON files
+        for (const auto& jsonFile : jsonFiles) {
+            std::cout << "  Loading: " << fs::path(jsonFile).filename().string() << std::endl;
+            if (!JsonTestLoader::loadTestTypes(jsonFile, testTypes)) {
+                std::cerr << "  Warning: Failed to load test cases from " << jsonFile << std::endl;
+            }
+        }
+        
+        if (testTypes.empty()) {
+            std::cerr << "No test types loaded from any JSON files" << std::endl;
+            return 1;
+        }
+    } else if (fs::is_regular_file(inputFs)) {
+        std::cout << "Loading test cases from file: " << inputPath << std::endl;
+        if (!JsonTestLoader::loadTestTypes(inputPath, testTypes)) {
+            std::cerr << "Failed to load test cases from " << inputPath << std::endl;
+            return 1;
+        }
+    } else {
+        std::cerr << "Input path is neither a file nor a directory: " << inputPath << std::endl;
         return 1;
     }
     
@@ -189,7 +226,7 @@ int main(int argc, char* argv[]) {
                 testNotImplementedCount++;
                 
                 std::cout << "[NYI ] " << testType.category << " - " << testType.testType 
-                         << " - " << variation.variationName << " (ID: " << variation.id << ")" << std::endl;
+                         << " - " << variation.variationName << " (ID: " << variation.combinedId << ")" << std::endl;
             }
         } else {
             // Execute each variation
@@ -254,11 +291,11 @@ int main(int argc, char* argv[]) {
               << (100.0 * engineFeatureNYICount / totalTests) << "%)" << std::endl;
     std::cout << "Time:        " << duration.count() << " ms" << std::endl;
     
-    // Get absolute path for input file
-    fs::path inputFilePath = fs::absolute(inputFile);
+    // Get absolute path for input path (directory or file)
+    fs::path inputAbsolutePath = fs::absolute(inputPath);
     
     // Save results
-    if (JsonTestLoader::saveTestResults(outputFile, testTypes, allResults, inputFilePath.string())) {
+    if (JsonTestLoader::saveTestResults(outputFile, testTypes, allResults, inputAbsolutePath.string())) {
         std::cout << "Results saved to: " << outputFile << std::endl;
     } else {
         std::cerr << "Failed to save results to: " << outputFile << std::endl;

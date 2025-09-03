@@ -1,0 +1,104 @@
+{
+  "fileType": "test_cases",
+  "fileId": "tex",
+  "metadata": {
+    "version": "1.0",
+    "category": "Texture Management",
+    "description": "Tests for WebGPU texture creation and operations"
+  },
+  "testTypes": [
+    {
+      "category": "Texture Management",
+      "testType": "Texture Creation",
+      "handlerClass": "TextureCreationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "2D Texture RGBA 256x256",
+          "options": {
+            "dimension": "2D",
+            "format": "rgba8unorm",
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "mipLevelCount": 1,
+            "sampleCount": 1,
+            "usage": "TEXTURE_BINDING"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "actualWidth": 256,
+              "actualHeight": 256,
+              "actualFormat": "rgba8unorm"
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "3D Texture 64x64x64",
+          "options": {
+            "dimension": "3D",
+            "format": "rgba8unorm",
+            "width": 64,
+            "height": 64,
+            "depth": 64,
+            "mipLevelCount": 1,
+            "sampleCount": 1,
+            "usage": "TEXTURE_BINDING"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "actualDepth": 64,
+              "is3D": true
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Depth Texture 1024x1024",
+          "options": {
+            "dimension": "2D",
+            "format": "depth24plus",
+            "width": 1024,
+            "height": 1024,
+            "depth": 1,
+            "mipLevelCount": 1,
+            "sampleCount": 1,
+            "usage": "RENDER_ATTACHMENT"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "isDepthTexture": true,
+              "actualWidth": 1024,
+              "actualHeight": 1024
+            }
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Cube Map Texture",
+          "options": {
+            "dimension": "2D",
+            "format": "rgba8unorm",
+            "width": 512,
+            "height": 512,
+            "depth": 6,
+            "mipLevelCount": 1,
+            "sampleCount": 1,
+            "usage": "TEXTURE_BINDING"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "isCubeCompatible": true,
+              "layerCount": 6
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

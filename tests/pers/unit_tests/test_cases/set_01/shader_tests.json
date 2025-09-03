@@ -1,0 +1,93 @@
+{
+  "fileType": "test_cases",
+  "fileId": "shd",
+  "metadata": {
+    "version": "1.0",
+    "category": "Shader Management",
+    "description": "Tests for WebGPU shader compilation and validation"
+  },
+  "testTypes": [
+    {
+      "category": "Shader Management",
+      "testType": "Shader Compilation",
+      "handlerClass": "ShaderCompilationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Valid Vertex Shader",
+          "options": {
+            "shaderType": "vertex",
+            "source": "@vertex fn main() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0, 0.0, 0.0, 1.0); }",
+            "entryPoint": "main"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "compilationSuccess": true,
+              "hasEntryPoint": true
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Valid Fragment Shader",
+          "options": {
+            "shaderType": "fragment",
+            "source": "@fragment fn main() -> @location(0) vec4<f32> { return vec4<f32>(1.0, 0.0, 0.0, 1.0); }",
+            "entryPoint": "main"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "compilationSuccess": true,
+              "hasEntryPoint": true
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Valid Compute Shader",
+          "options": {
+            "shaderType": "compute",
+            "source": "@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id: vec3<u32>) { }",
+            "entryPoint": "main"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": true,
+            "properties": {
+              "compilationSuccess": true,
+              "workgroupSize": 64
+            }
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Invalid Shader Syntax",
+          "options": {
+            "shaderType": "vertex",
+            "source": "@vertex fn main() { invalid syntax }",
+            "entryPoint": "main"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": false,
+            "errorCode": "COMPILATION_FAILED",
+            "errorMessageContains": ["syntax", "error"]
+          }
+        },
+        {
+          "id": 5,
+          "variationName": "Missing Entry Point",
+          "options": {
+            "shaderType": "vertex",
+            "source": "@vertex fn other() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0, 0.0, 0.0, 1.0); }",
+            "entryPoint": "main"
+          },
+          "expectedBehavior": {
+            "shouldSucceed": false,
+            "errorCode": "ENTRY_POINT_NOT_FOUND"
+          }
+        }
+      ]
+    }
+  ]
+}

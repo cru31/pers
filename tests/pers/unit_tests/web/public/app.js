@@ -1,5 +1,7 @@
 let allResults = [];
 let filteredResults = [];
+let sortColumn = null;
+let sortDirection = 'asc';
 
 // Fetch and display results
 async function loadResults() {
@@ -76,6 +78,103 @@ function updateSummary(metadata) {
         metadata.pass_rate ? `${metadata.pass_rate.toFixed(1)}%` : '0%';
     document.getElementById('total-time').textContent = 
         metadata.total_time_ms ? `${metadata.total_time_ms.toFixed(0)}ms` : '0ms';
+}
+
+// Sort results
+function sortResults(column) {
+    // Toggle direction if same column
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'asc';
+    }
+    
+    // Sort the filtered results
+    filteredResults.sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(column) {
+            case 'id':
+                aVal = a.id || '';
+                bVal = b.id || '';
+                break;
+            case 'category':
+                aVal = a.category || '';
+                bVal = b.category || '';
+                break;
+            case 'test_type':
+                aVal = a.test_type || '';
+                bVal = b.test_type || '';
+                break;
+            case 'status':
+                // Sort by status priority: passed, failed, na, nyi
+                aVal = getStatusPriority(a);
+                bVal = getStatusPriority(b);
+                break;
+            case 'time':
+                aVal = a.execution_time_ms || 0;
+                bVal = b.execution_time_ms || 0;
+                break;
+            case 'expected':
+                aVal = a.expected_result || '';
+                bVal = b.expected_result || '';
+                break;
+            case 'actual':
+                aVal = a.actual_result || '';
+                bVal = b.actual_result || '';
+                break;
+            default:
+                return 0;
+        }
+        
+        // Handle numeric vs string comparison
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        } else {
+            // String comparison
+            aVal = String(aVal).toLowerCase();
+            bVal = String(bVal).toLowerCase();
+            if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        }
+    });
+    
+    // Update sort indicators
+    updateSortIndicators();
+    
+    // Re-display results
+    displayResults();
+}
+
+// Get status priority for sorting
+function getStatusPriority(result) {
+    if (result.actual_result && result.actual_result.includes('Test Not Implemented')) {
+        return 3; // NA (Test NYI)
+    } else if (result.passed) {
+        return 0; // Passed
+    } else if (result.log_messages && result.log_messages.some(log => 
+               log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'))) {
+        return 2; // Engine NYI
+    } else {
+        return 1; // Failed
+    }
+}
+
+// Update sort indicators in table headers
+function updateSortIndicators() {
+    const headers = document.querySelectorAll('th.sortable');
+    headers.forEach(header => {
+        const indicator = header.querySelector('.sort-indicator');
+        if (indicator) {
+            if (header.dataset.column === sortColumn) {
+                indicator.className = `sort-indicator ${sortDirection}`;
+            } else {
+                indicator.className = 'sort-indicator';
+            }
+        }
+    });
 }
 
 // Populate category filter
@@ -703,6 +802,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('search').addEventListener('input', filterResults);
     document.getElementById('category-filter').addEventListener('change', filterResults);
     document.getElementById('status-filter').addEventListener('change', filterResults);
+    
+    // Add click handlers for sortable headers
+    document.querySelectorAll('th.sortable').forEach(header => {
+        header.addEventListener('click', () => {
+            sortResults(header.dataset.column);
+        });
+    });
     
     // Set up clickable status cards
     document.querySelectorAll('.card.clickable').forEach(card => {

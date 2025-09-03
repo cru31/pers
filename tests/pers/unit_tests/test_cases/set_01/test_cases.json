@@ -1,4 +1,6 @@
 {
+  "fileType": "test_cases",
+  "fileId": "tc001",
   "metadata": {
     "version": "2.0",
     "totalTests": 500,
