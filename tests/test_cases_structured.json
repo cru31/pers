@@ -1,0 +1,291 @@
+{
+  "metadata": {
+    "version": "2.0",
+    "totalTests": 500,
+    "generatedAt": "2025-01-03"
+  },
+  "testTypes": [
+    {
+      "category": "Instance Management",
+      "type": "Instance Creation",
+      "handler": "InstanceCreationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "name": "Validation Enabled",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "Pers Unit Test",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedResult": "Valid instance created with validation"
+        },
+        {
+          "id": 2,
+          "name": "Validation Disabled",
+          "options": {
+            "enableValidation": false,
+            "applicationName": "Pers Unit Test",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedResult": "Valid instance created without validation"
+        },
+        {
+          "id": 3,
+          "name": "Empty Application Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedResult": "Instance created with empty app name"
+        },
+        {
+          "id": 4,
+          "name": "Long Application Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "[LONG_STRING_1024]",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedResult": "Instance created with long app name"
+        },
+        {
+          "id": 5,
+          "name": "Special Characters",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "Test@App#$%^&*()",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedResult": "Instance created with special characters"
+        },
+        {
+          "id": 6,
+          "name": "Unicode Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "テストアプリ😀",
+            "engineName": "Pers Graphics Engine"  
+          },
+          "expectedResult": "Instance created with unicode name"
+        },
+        {
+          "id": 7,
+          "name": "Empty Engine Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "Test App",
+            "engineName": ""
+          },
+          "expectedResult": "Instance created with empty engine name"
+        }
+      ]
+    },
+    {
+      "category": "Instance Management",
+      "type": "Instance Double Creation",
+      "handler": "InstanceDoubleCreationHandler",
+      "variations": [
+        {
+          "id": 8,
+          "name": "Sequential Creation",
+          "options": {
+            "count": 2,
+            "applicationName": "Double Instance Test",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedResult": "Two instances created successfully"
+        }
+      ]
+    },
+    {
+      "category": "Physical Device",
+      "type": "Request Physical Device",
+      "handler": "RequestPhysicalDeviceHandler",
+      "variations": [
+        {
+          "id": 9,
+          "name": "High Performance",
+          "options": {
+            "powerPreference": "HighPerformance",
+            "forceFallback": false
+          },
+          "expectedResult": "High performance adapter acquired"
+        },
+        {
+          "id": 10,
+          "name": "Low Power",
+          "options": {
+            "powerPreference": "LowPower",
+            "forceFallback": false
+          },
+          "expectedResult": "Low power adapter acquired"
+        },
+        {
+          "id": 11,
+          "name": "Default",
+          "options": {
+            "powerPreference": "Undefined",
+            "forceFallback": false
+          },
+          "expectedResult": "Default adapter acquired"
+        },
+        {
+          "id": 12,
+          "name": "Fallback",
+          "options": {
+            "powerPreference": "Undefined",
+            "forceFallback": true
+          },
+          "expectedResult": "Fallback adapter acquired"
+        }
+      ]
+    },
+    {
+      "category": "Physical Device",
+      "type": "Query Adapter",
+      "handler": "QueryAdapterHandler",
+      "variations": [
+        {
+          "id": 13,
+          "name": "Features",
+          "options": {
+            "queryType": "features"
+          },
+          "expectedResult": "Features queried successfully"
+        },
+        {
+          "id": 14,
+          "name": "Limits",
+          "options": {
+            "queryType": "limits"
+          },
+          "expectedResult": "Limits queried successfully"
+        },
+        {
+          "id": 15,
+          "name": "Properties",
+          "options": {
+            "queryType": "properties"
+          },
+          "expectedResult": "Properties queried successfully"
+        }
+      ]
+    },
+    {
+      "category": "Buffer Management",
+      "type": "Buffer Creation",
+      "handler": "BufferCreationHandler",
+      "variations": [
+        {
+          "id": 16,
+          "name": "Zero Size",
+          "options": {
+            "size": 0,
+            "usage": "Vertex",
+            "mappedAtCreation": false
+          },
+          "expectedResult": "Buffer creation failed (zero size)"
+        },
+        {
+          "id": 17,
+          "name": "Small Vertex Buffer",
+          "options": {
+            "size": 256,
+            "usage": "Vertex",
+            "mappedAtCreation": false
+          },
+          "expectedResult": "Vertex buffer created"
+        },
+        {
+          "id": 18,
+          "name": "Small Index Buffer",
+          "options": {
+            "size": 256,
+            "usage": "Index",
+            "mappedAtCreation": false
+          },
+          "expectedResult": "Index buffer created"
+        },
+        {
+          "id": 19,
+          "name": "Uniform Buffer",
+          "options": {
+            "size": 256,
+            "usage": "Uniform",
+            "mappedAtCreation": false
+          },
+          "expectedResult": "Uniform buffer created"
+        },
+        {
+          "id": 20,
+          "name": "Storage Buffer",
+          "options": {
+            "size": 1024,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedResult": "Storage buffer created"
+        },
+        {
+          "id": 21,
+          "name": "Mapped at Creation",
+          "options": {
+            "size": 256,
+            "usage": "Vertex",
+            "mappedAtCreation": true
+          },
+          "expectedResult": "Mapped buffer created"
+        },
+        {
+          "id": 22,
+          "name": "Large Buffer",
+          "options": {
+            "size": 16777216,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedResult": "Large buffer created"
+        }
+      ]
+    },
+    {
+      "category": "Buffer Management",
+      "type": "Buffer Map",
+      "handler": "BufferMapHandler",
+      "variations": [
+        {
+          "id": 23,
+          "name": "Map Write",
+          "options": {
+            "size": 1024,
+            "mapMode": "Write",
+            "testData": "pattern"
+          },
+          "expectedResult": "Buffer mapped and written"
+        },
+        {
+          "id": 24,
+          "name": "Map Read",
+          "options": {
+            "size": 1024,
+            "mapMode": "Read",
+            "testData": "verify"
+          },
+          "expectedResult": "Buffer mapped and read"
+        },
+        {
+          "id": 25,
+          "name": "Map Async",
+          "options": {
+            "size": 1024,
+            "mapMode": "Write",
+            "async": true
+          },
+          "expectedResult": "Buffer mapped asynchronously"
+        }
+      ]
+    }
+  ]
+}

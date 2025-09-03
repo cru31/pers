@@ -9,10 +9,10 @@ async function loadResults() {
         const sessionData = await sessionResponse.json();
         document.getElementById('session-info').textContent = `Session: ${sessionData.sessionId}`;
         
-        // Display JSON file path as hyperlink
+        // Display Result JSON path as hyperlink
         if (sessionData.dataPath) {
             const pathElement = document.getElementById('json-file-path');
-            pathElement.innerHTML = `JSON: <a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a>`;
+            pathElement.innerHTML = `Result JSON: <a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a>`;
         }
 
         // Get test results
@@ -26,6 +26,14 @@ async function loadResults() {
         
         // Update summary
         updateSummary(data.metadata);
+        
+        // Display both Test Cases and Result JSON paths from metadata if available
+        if (data && data.metadata && data.metadata.test_case_json) {
+            const pathElement = document.getElementById('json-file-path');
+            const testCasesLink = `Test Cases: <a href="#" class="source-path-link" data-path="${data.metadata.test_case_json}" style="color: #667eea;">${data.metadata.test_case_json}</a>`;
+            const resultLink = sessionData.dataPath ? `<br>Result: <a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a>` : '';
+            pathElement.innerHTML = testCasesLink + resultLink;
+        }
         
         // Populate category filter
         populateCategoryFilter();
@@ -52,20 +60,16 @@ function updateSummary(metadata) {
     document.getElementById('passed-tests').textContent = metadata.passed || 0;
     document.getElementById('failed-tests').textContent = metadata.failed || 0;
     
-    // Update N/A count if element exists, or create it
+    // Update Test Not Implemented count
     let naElement = document.getElementById('na-tests');
-    if (!naElement) {
-        // Will be created in HTML update
-    } else {
-        naElement.textContent = metadata.not_applicable || 0;
+    if (naElement) {
+        naElement.textContent = metadata.test_not_implemented || 0;
     }
     
-    // Update Not Yet Implemented count if element exists
+    // Update Engine Feature NYI count
     let nyiElement = document.getElementById('nyi-tests');
-    if (!nyiElement) {
-        // Will be created in HTML update
-    } else {
-        nyiElement.textContent = metadata.not_yet_implemented || 0;
+    if (nyiElement) {
+        nyiElement.textContent = metadata.engine_feature_nyi || 0;
     }
     
     document.getElementById('pass-rate').textContent = 
@@ -109,9 +113,9 @@ function displayResults() {
         // Determine status - can have multiple badges
         let badges = [];
         
-        // Check N/A first (highest priority)
-        if (result.actual_result && result.actual_result.includes('N/A')) {
-            badges.push({ status: 'na', text: 'N/A' });
+        // Check Test Not Implemented first (highest priority)
+        if (result.actual_result && result.actual_result.includes('Test Not Implemented')) {
+            badges.push({ status: 'na', text: 'TEST NYI' });
         } else {
             // Check pass/fail status
             if (result.passed) {
@@ -247,21 +251,29 @@ function formatLogMessages(logs) {
     if (!logs || logs.length === 0) return '<div class="no-logs">No logs captured</div>';
     
     return logs.map(log => {
-        // First, parse the source location for creating links
-        // Format: "[LEVEL] Category: Message (function @ path:line)"
-        const sourceMatch = log.match(/\(([^@]+)\s*@\s*(.+):(\d+)\)$/);
         let processedLog = log;
         
-        if (sourceMatch) {
-            const functionName = sourceMatch[1];
-            const filePath = sourceMatch[2];
-            const lineNumber = sourceMatch[3];
+        // New format: "[LEVEL] [Category] [fullpath:line function] message"
+        // Example: "[INFO] [WebGPUInstance] [D:\path\to\file.cpp:105 namespace::class::function] Created successfully"
+        // The path may contain drive letter and backslashes on Windows
+        const newFormatMatch = log.match(/^(\[[^\]]+\])\s*(\[[^\]]+\])\s*\[([^:\]]+(?::[^:\]]+)?):(\d+)\s+([^\]]+)\]\s*(.*)$/);
+        
+        if (newFormatMatch) {
+            const level = newFormatMatch[1];
+            const category = newFormatMatch[2];
+            const filePath = newFormatMatch[3];
+            const lineNumber = newFormatMatch[4];
+            const functionName = newFormatMatch[5];
+            const message = newFormatMatch[6];
             
-            // Create clickable link for the source location
-            const linkHtml = `(<a href="#" class="source-path-link" data-path="${filePath}" data-line="${lineNumber}" style="color: #667eea; text-decoration: none;">${functionName} @ ${filePath}:${lineNumber}</a>)`;
+            // Extract just the filename from the path
+            const fileName = filePath.split(/[\/\\]/).pop();
             
-            // Replace the source location with the link
-            processedLog = log.replace(/\([^)]+\)$/, linkHtml);
+            // Create clickable link for the source location  
+            const linkHtml = `[<a href="#" class="source-path-link" data-path="${filePath}" data-line="${lineNumber}" style="color: #667eea; text-decoration: none;">${fileName}:${lineNumber} ${functionName}</a>]`;
+            
+            // Rebuild the log with the link at the end
+            processedLog = `${level} ${category} ${message} ${linkHtml}`;
         }
         
         // Parse log level and apply colored span
@@ -326,7 +338,7 @@ function filterResults() {
             let hasSelectedStatus = false;
             
             if (statusFilter === 'na') {
-                hasSelectedStatus = result.actual_result && result.actual_result.includes('N/A');
+                hasSelectedStatus = result.actual_result && result.actual_result.includes('Test Not Implemented');
             } else if (statusFilter === 'nyi') {
                 hasSelectedStatus = result.log_messages && result.log_messages.some(log => 
                                    log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'));
@@ -408,15 +420,15 @@ function createFullLogsView() {
             const afterLevel = entry.log.substring(levelMatch[0].length);
             
             // Parse category, message and source location
-            // New format: "Category: Message (function @ FilePath:LineNumber)"
-            // The function name can contain :: so we need to handle that
-            const newSourceMatch = afterLevel.match(/^([^:]+):\s+(.*)\s+\(([^@]+)\s*@\s*(.+):(\d+)\)$/);
+            // New format: "[Category] [fullpath:line function] message"
+            // The path may contain drive letter and backslashes on Windows
+            const newSourceMatch = afterLevel.match(/^(\[[^\]]+\])\s*\[([^:\]]+(?::[^:\]]+)?):(\d+)\s+([^\]]+)\]\s*(.*)$/);
             if (newSourceMatch) {
-                logCategory = newSourceMatch[1].trim();
-                logMessage = newSourceMatch[2].trim();
-                logFunction = newSourceMatch[3].trim();
-                logFile = newSourceMatch[4].trim();
-                logLine = newSourceMatch[5];
+                logCategory = newSourceMatch[1].replace(/[\[\]]/g, '').trim();
+                logFile = newSourceMatch[2].trim();
+                logLine = newSourceMatch[3];
+                logFunction = newSourceMatch[4].trim();
+                logMessage = newSourceMatch[5].trim();
             } else {
                 // Try old format: "Category: Message (FilePath:LineNumber)"
                 const oldSourceMatch = afterLevel.match(/^([^:]+):\s+(.*)\s+\(([^)]+)\)$/);

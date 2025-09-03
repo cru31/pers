@@ -1,0 +1,2746 @@
+{
+  "metadata": {
+    "version": "2.0",
+    "totalTests": 500,
+    "generatedAt": "2025-01-03"
+  },
+  "testTypes": [
+    {
+      "category": "Instance Management",
+      "testType": "Instance Creation",
+      "handlerClass": "InstanceCreationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Validation Enabled",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "Pers Unit Test",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true,
+              "validationLayersActive": true
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Validation Disabled",
+          "options": {
+            "enableValidation": false,
+            "applicationName": "Pers Unit Test",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true,
+              "validationLayersActive": false
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Empty Application Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Long Application Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "[LONG_STRING_1024]",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        },
+        {
+          "id": 5,
+          "variationName": "Special Characters",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "Test@App#$%^&*()",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        },
+        {
+          "id": 6,
+          "variationName": "Unicode Application Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "テストアプリ😀",
+            "engineName": "Pers Graphics Engine"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        },
+        {
+          "id": 7,
+          "variationName": "Empty Engine Name",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "Test App",
+            "engineName": ""
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        },
+        {
+          "id": 8,
+          "variationName": "Null Names",
+          "options": {
+            "enableValidation": false,
+            "applicationName": "",
+            "engineName": ""
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        },
+        {
+          "id": 9,
+          "variationName": "Version Numbers",
+          "options": {
+            "enableValidation": true,
+            "applicationName": "App v1.0",
+            "engineName": "Engine v2.3"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        },
+        {
+          "id": 10,
+          "variationName": "Maximum Length Names",
+          "options": {
+            "enableValidation": false,
+            "applicationName": "[LONG_STRING_1024]",
+            "engineName": "[LONG_STRING_1024]"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "instanceCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Physical Device",
+      "testType": "Request Adapter",
+      "handlerClass": "RequestAdapterHandler",
+      "variations": [
+        {
+          "id": 11,
+          "variationName": "High Performance",
+          "options": {
+            "powerPreference": "HighPerformance",
+            "forceFallback": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "adapterFound": true,
+              "adapterType": "DiscreteGPU"
+            },
+            "numericChecks": {
+              "dedicatedVideoMemory": ">0"
+            }
+          }
+        },
+        {
+          "id": 12,
+          "variationName": "Low Power",
+          "options": {
+            "powerPreference": "LowPower",
+            "forceFallback": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "adapterFound": true
+            }
+          }
+        },
+        {
+          "id": 13,
+          "variationName": "Default Preference",
+          "options": {
+            "powerPreference": "Undefined",
+            "forceFallback": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "adapterFound": true
+            }
+          }
+        },
+        {
+          "id": 14,
+          "variationName": "Force Fallback",
+          "options": {
+            "powerPreference": "Undefined",
+            "forceFallback": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "adapterFound": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Buffer Management",
+      "testType": "Buffer Creation",
+      "handlerClass": "BufferCreationHandler",
+      "variations": [
+        {
+          "id": 15,
+          "variationName": "Zero Size Buffer",
+          "options": {
+            "size": 0,
+            "usage": "Vertex",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "nullptr",
+            "properties": {
+              "bufferCreated": false
+            }
+          }
+        },
+        {
+          "id": 16,
+          "variationName": "256 Byte Vertex Buffer",
+          "options": {
+            "size": 256,
+            "usage": "Vertex",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            },
+            "numericChecks": {
+              "actualSize": ">=256"
+            }
+          }
+        },
+        {
+          "id": 17,
+          "variationName": "256 Byte Index Buffer",
+          "options": {
+            "size": 256,
+            "usage": "Index",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            },
+            "numericChecks": {
+              "actualSize": ">=256"
+            }
+          }
+        },
+        {
+          "id": 18,
+          "variationName": "256 Byte Uniform Buffer",
+          "options": {
+            "size": 256,
+            "usage": "Uniform",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            },
+            "numericChecks": {
+              "actualSize": ">=256"
+            }
+          }
+        },
+        {
+          "id": 19,
+          "variationName": "1KB Storage Buffer",
+          "options": {
+            "size": 1024,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            },
+            "numericChecks": {
+              "actualSize": ">=1024"
+            }
+          }
+        },
+        {
+          "id": 20,
+          "variationName": "256 Byte CopySrc Buffer",
+          "options": {
+            "size": 256,
+            "usage": "CopySrc",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 21,
+          "variationName": "256 Byte CopyDst Buffer",
+          "options": {
+            "size": 256,
+            "usage": "CopyDst",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 22,
+          "variationName": "Mapped Vertex Buffer",
+          "options": {
+            "size": 512,
+            "usage": "Vertex",
+            "mappedAtCreation": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true,
+              "mappedPointer": "not_null"
+            }
+          }
+        },
+        {
+          "id": 23,
+          "variationName": "64KB Buffer",
+          "options": {
+            "size": 65536,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            },
+            "numericChecks": {
+              "actualSize": ">=65536"
+            }
+          }
+        },
+        {
+          "id": 24,
+          "variationName": "1MB Buffer",
+          "options": {
+            "size": 1048576,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            },
+            "numericChecks": {
+              "actualSize": ">=1048576"
+            }
+          }
+        },
+        {
+          "id": 25,
+          "variationName": "16MB Buffer",
+          "options": {
+            "size": 16777216,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            },
+            "numericChecks": {
+              "actualSize": ">=16777216"
+            }
+          }
+        },
+        {
+          "id": 26,
+          "variationName": "256MB Buffer",
+          "options": {
+            "size": 268435456,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 27,
+          "variationName": "1 Byte Buffer",
+          "options": {
+            "size": 1,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 28,
+          "variationName": "4 Byte Aligned Buffer",
+          "options": {
+            "size": 4,
+            "usage": "Uniform",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 29,
+          "variationName": "16 Byte Aligned Buffer",
+          "options": {
+            "size": 16,
+            "usage": "Uniform",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 30,
+          "variationName": "MapWrite Buffer",
+          "options": {
+            "size": 1024,
+            "usage": "MapWrite",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 31,
+          "variationName": "MapRead Buffer",
+          "options": {
+            "size": 1024,
+            "usage": "MapRead",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 32,
+          "variationName": "Odd Size Buffer 17",
+          "options": {
+            "size": 17,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 33,
+          "variationName": "Odd Size Buffer 255",
+          "options": {
+            "size": 255,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 34,
+          "variationName": "Odd Size Buffer 257",
+          "options": {
+            "size": 257,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 35,
+          "variationName": "Power of 2 Size 512",
+          "options": {
+            "size": 512,
+            "usage": "Vertex",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 36,
+          "variationName": "Power of 2 Size 2048",
+          "options": {
+            "size": 2048,
+            "usage": "Index",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 37,
+          "variationName": "Power of 2 Size 4096",
+          "options": {
+            "size": 4096,
+            "usage": "Uniform",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 38,
+          "variationName": "Power of 2 Size 8192",
+          "options": {
+            "size": 8192,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 39,
+          "variationName": "Power of 2 Size 16384",
+          "options": {
+            "size": 16384,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        },
+        {
+          "id": 40,
+          "variationName": "Power of 2 Size 32768",
+          "options": {
+            "size": 32768,
+            "usage": "Storage",
+            "mappedAtCreation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bufferCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Device Management",
+      "testType": "Device Creation",
+      "handlerClass": "DeviceCreationHandler",
+      "variations": [
+        {
+          "id": 41,
+          "variationName": "Default Device",
+          "options": {
+            "enableValidation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "deviceCreated": true
+            }
+          }
+        },
+        {
+          "id": 42,
+          "variationName": "Device With Validation",
+          "options": {
+            "enableValidation": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "deviceCreated": true,
+              "validationEnabled": true
+            }
+          }
+        },
+        {
+          "id": 43,
+          "variationName": "Device With Debug Name",
+          "options": {
+            "enableValidation": false,
+            "debugName": "Test Device"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "deviceCreated": true
+            }
+          }
+        },
+        {
+          "id": 44,
+          "variationName": "Device With Empty Name",
+          "options": {
+            "enableValidation": false,
+            "debugName": ""
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "deviceCreated": true
+            }
+          }
+        },
+        {
+          "id": 45,
+          "variationName": "Device With Long Name",
+          "options": {
+            "enableValidation": false,
+            "debugName": "[LONG_STRING_1024]"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "deviceCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Shader Management",
+      "testType": "Shader Compilation",
+      "handlerClass": "ShaderCompilationHandler",
+      "variations": [
+        {
+          "id": 46,
+          "variationName": "Valid Vertex Shader",
+          "options": {
+            "shaderCode": "@vertex fn main() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0, 0.0, 0.0, 1.0); }",
+            "stage": "vertex"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "compilationSuccess": true,
+              "entryPoint": "main"
+            }
+          }
+        },
+        {
+          "id": 47,
+          "variationName": "Valid Fragment Shader",
+          "options": {
+            "shaderCode": "@fragment fn main() -> @location(0) vec4<f32> { return vec4<f32>(1.0, 0.0, 0.0, 1.0); }",
+            "stage": "fragment"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "compilationSuccess": true,
+              "entryPoint": "main"
+            }
+          }
+        },
+        {
+          "id": 48,
+          "variationName": "Invalid Shader Syntax",
+          "options": {
+            "shaderCode": "@vertex fn main() { invalid syntax }",
+            "stage": "vertex"
+          },
+          "expectedBehavior": {
+            "returnValue": "nullptr",
+            "properties": {
+              "compilationSuccess": false
+            },
+            "errorCode": "SYNTAX_ERROR"
+          }
+        },
+        {
+          "id": 49,
+          "variationName": "Empty Shader Code",
+          "options": {
+            "shaderCode": "",
+            "stage": "vertex"
+          },
+          "expectedBehavior": {
+            "returnValue": "nullptr",
+            "properties": {
+              "compilationSuccess": false
+            }
+          }
+        },
+        {
+          "id": 50,
+          "variationName": "Compute Shader",
+          "options": {
+            "shaderCode": "@compute @workgroup_size(1) fn main() { }",
+            "stage": "compute"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "compilationSuccess": true,
+              "entryPoint": "main"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Texture Management",
+      "testType": "Texture Creation",
+      "handlerClass": "TextureCreationHandler",
+      "variations": [
+        {
+          "id": 51,
+          "variationName": "2D Texture 256x256 RGBA8",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 52,
+          "variationName": "2D Texture 1x1 RGBA8",
+          "options": {
+            "width": 1,
+            "height": 1,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 53,
+          "variationName": "2D Texture 512x512 RGBA8",
+          "options": {
+            "width": 512,
+            "height": 512,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 54,
+          "variationName": "2D Texture 1024x1024 RGBA8",
+          "options": {
+            "width": 1024,
+            "height": 1024,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 55,
+          "variationName": "2D Texture 2048x2048 RGBA8",
+          "options": {
+            "width": 2048,
+            "height": 2048,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 56,
+          "variationName": "2D Texture 4096x4096 RGBA8",
+          "options": {
+            "width": 4096,
+            "height": 4096,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 57,
+          "variationName": "2D Texture Non-Square 256x128",
+          "options": {
+            "width": 256,
+            "height": 128,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 58,
+          "variationName": "2D Texture Non-Square 128x256",
+          "options": {
+            "width": 128,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 59,
+          "variationName": "2D Texture R8 Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "R8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 60,
+          "variationName": "2D Texture RG8 Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RG8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 61,
+          "variationName": "2D Texture BGRA8 Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "BGRA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 62,
+          "variationName": "2D Texture R32Float Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "R32Float",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 63,
+          "variationName": "2D Texture RG32Float Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RG32Float",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 64,
+          "variationName": "2D Texture RGBA32Float Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA32Float",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 65,
+          "variationName": "2D Texture Depth24Plus Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "Depth24Plus",
+            "usage": "RenderAttachment"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 66,
+          "variationName": "2D Texture Depth32Float Format",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "Depth32Float",
+            "usage": "RenderAttachment"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 67,
+          "variationName": "2D Texture Render Target",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "RenderAttachment"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 68,
+          "variationName": "2D Texture Storage",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "StorageBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 69,
+          "variationName": "2D Texture Copy Src",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "CopySrc"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 70,
+          "variationName": "2D Texture Copy Dst",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "CopyDst"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 71,
+          "variationName": "3D Texture 64x64x64",
+          "options": {
+            "width": 64,
+            "height": 64,
+            "depth": 64,
+            "dimension": "3D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 72,
+          "variationName": "3D Texture 128x128x128",
+          "options": {
+            "width": 128,
+            "height": 128,
+            "depth": 128,
+            "dimension": "3D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 73,
+          "variationName": "3D Texture Non-Cubic",
+          "options": {
+            "width": 64,
+            "height": 128,
+            "depth": 32,
+            "dimension": "3D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 74,
+          "variationName": "1D Texture 256",
+          "options": {
+            "width": 256,
+            "height": 1,
+            "depth": 1,
+            "dimension": "1D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 75,
+          "variationName": "1D Texture 1024",
+          "options": {
+            "width": 1024,
+            "height": 1,
+            "depth": 1,
+            "dimension": "1D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 76,
+          "variationName": "Texture Array 2D Layers=4",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "arrayLayers": 4,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 77,
+          "variationName": "Texture Array 2D Layers=16",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "arrayLayers": 16,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 78,
+          "variationName": "Cube Map Texture",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "arrayLayers": 6,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 79,
+          "variationName": "Texture With Mipmaps 2",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "mipLevelCount": 2,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        },
+        {
+          "id": 80,
+          "variationName": "Texture With Full Mipmaps",
+          "options": {
+            "width": 256,
+            "height": 256,
+            "depth": 1,
+            "mipLevelCount": 9,
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "usage": "TextureBinding"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "textureCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Pipeline Management",
+      "testType": "Render Pipeline Creation",
+      "handlerClass": "RenderPipelineCreationHandler",
+      "variations": [
+        {
+          "id": 81,
+          "variationName": "Basic Triangle Pipeline",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "TriangleList",
+            "cullMode": "None"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 82,
+          "variationName": "Pipeline With Culling Back",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "TriangleList",
+            "cullMode": "Back"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 83,
+          "variationName": "Pipeline With Culling Front",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "TriangleList",
+            "cullMode": "Front"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 84,
+          "variationName": "Line Strip Pipeline",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "LineStrip",
+            "cullMode": "None"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 85,
+          "variationName": "Line List Pipeline",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "LineList",
+            "cullMode": "None"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 86,
+          "variationName": "Point List Pipeline",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "PointList",
+            "cullMode": "None"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 87,
+          "variationName": "Triangle Strip Pipeline",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "TriangleStrip",
+            "cullMode": "None"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 88,
+          "variationName": "Pipeline With Depth Test",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "TriangleList",
+            "depthTest": true,
+            "depthCompare": "Less"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 89,
+          "variationName": "Pipeline With Depth Write",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "TriangleList",
+            "depthTest": true,
+            "depthWrite": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 90,
+          "variationName": "Pipeline With Stencil Test",
+          "options": {
+            "vertexShader": "basic_vertex",
+            "fragmentShader": "basic_fragment",
+            "topology": "TriangleList",
+            "stencilTest": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Command Encoding",
+      "testType": "Command Encoder Creation",
+      "handlerClass": "CommandEncoderCreationHandler",
+      "variations": [
+        {
+          "id": 91,
+          "variationName": "Basic Command Encoder",
+          "options": {
+            "label": "Basic Encoder"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "encoderCreated": true
+            }
+          }
+        },
+        {
+          "id": 92,
+          "variationName": "Command Encoder No Label",
+          "options": {
+            "label": ""
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "encoderCreated": true
+            }
+          }
+        },
+        {
+          "id": 93,
+          "variationName": "Command Encoder Long Label",
+          "options": {
+            "label": "[LONG_STRING_1024]"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "encoderCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Render Pass",
+      "testType": "Render Pass Creation",
+      "handlerClass": "RenderPassCreationHandler",
+      "variations": [
+        {
+          "id": 94,
+          "variationName": "Basic Render Pass",
+          "options": {
+            "colorAttachmentCount": 1,
+            "hasDepthStencil": false,
+            "clearColor": [0.0, 0.0, 0.0, 1.0]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "renderPassCreated": true
+            }
+          }
+        },
+        {
+          "id": 95,
+          "variationName": "Render Pass With Depth",
+          "options": {
+            "colorAttachmentCount": 1,
+            "hasDepthStencil": true,
+            "clearDepth": 1.0
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "renderPassCreated": true
+            }
+          }
+        },
+        {
+          "id": 96,
+          "variationName": "Render Pass Multiple Color Attachments",
+          "options": {
+            "colorAttachmentCount": 4,
+            "hasDepthStencil": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "renderPassCreated": true
+            }
+          }
+        },
+        {
+          "id": 97,
+          "variationName": "Render Pass With Stencil",
+          "options": {
+            "colorAttachmentCount": 1,
+            "hasDepthStencil": true,
+            "clearStencil": 0
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "renderPassCreated": true
+            }
+          }
+        },
+        {
+          "id": 98,
+          "variationName": "Render Pass No Color Attachments",
+          "options": {
+            "colorAttachmentCount": 0,
+            "hasDepthStencil": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "renderPassCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Queue Operations",
+      "testType": "Queue Submit",
+      "handlerClass": "QueueSubmitHandler",
+      "variations": [
+        {
+          "id": 99,
+          "variationName": "Submit Empty Command Buffer",
+          "options": {
+            "commandCount": 0
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "submitSuccess": true
+            }
+          }
+        },
+        {
+          "id": 100,
+          "variationName": "Submit Single Command Buffer",
+          "options": {
+            "commandCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "submitSuccess": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Sampler Management",
+      "testType": "Sampler Creation",
+      "handlerClass": "SamplerCreationHandler",
+      "variations": [
+        {
+          "id": 101,
+          "variationName": "Linear Sampler",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "mipmapFilter": "Linear"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 102,
+          "variationName": "Nearest Sampler",
+          "options": {
+            "minFilter": "Nearest",
+            "magFilter": "Nearest",
+            "mipmapFilter": "Nearest"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 103,
+          "variationName": "Sampler Clamp To Edge",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "addressModeU": "ClampToEdge",
+            "addressModeV": "ClampToEdge"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 104,
+          "variationName": "Sampler Repeat",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "addressModeU": "Repeat",
+            "addressModeV": "Repeat"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 105,
+          "variationName": "Sampler Mirror Repeat",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "addressModeU": "MirrorRepeat",
+            "addressModeV": "MirrorRepeat"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 106,
+          "variationName": "Sampler With Anisotropy 1",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "maxAnisotropy": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 107,
+          "variationName": "Sampler With Anisotropy 16",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "maxAnisotropy": 16
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 108,
+          "variationName": "Sampler With Compare Function",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "compare": "Less"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 109,
+          "variationName": "Sampler LOD Clamp",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Linear",
+            "lodMinClamp": 0.0,
+            "lodMaxClamp": 10.0
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        },
+        {
+          "id": 110,
+          "variationName": "Sampler Mixed Filters",
+          "options": {
+            "minFilter": "Linear",
+            "magFilter": "Nearest",
+            "mipmapFilter": "Linear"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "samplerCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Bind Group",
+      "testType": "Bind Group Creation",
+      "handlerClass": "BindGroupCreationHandler",
+      "variations": [
+        {
+          "id": 111,
+          "variationName": "Single Buffer Bind Group",
+          "options": {
+            "entryCount": 1,
+            "entryType": "buffer"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bindGroupCreated": true
+            }
+          }
+        },
+        {
+          "id": 112,
+          "variationName": "Single Texture Bind Group",
+          "options": {
+            "entryCount": 1,
+            "entryType": "texture"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bindGroupCreated": true
+            }
+          }
+        },
+        {
+          "id": 113,
+          "variationName": "Single Sampler Bind Group",
+          "options": {
+            "entryCount": 1,
+            "entryType": "sampler"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bindGroupCreated": true
+            }
+          }
+        },
+        {
+          "id": 114,
+          "variationName": "Multiple Entries Bind Group",
+          "options": {
+            "entryCount": 4,
+            "entryType": "mixed"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bindGroupCreated": true
+            }
+          }
+        },
+        {
+          "id": 115,
+          "variationName": "Empty Bind Group",
+          "options": {
+            "entryCount": 0,
+            "entryType": "none"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "bindGroupCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Bind Group Layout",
+      "testType": "Bind Group Layout Creation",
+      "handlerClass": "BindGroupLayoutCreationHandler",
+      "variations": [
+        {
+          "id": 116,
+          "variationName": "Uniform Buffer Layout",
+          "options": {
+            "binding": 0,
+            "visibility": "Vertex",
+            "bufferType": "Uniform"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        },
+        {
+          "id": 117,
+          "variationName": "Storage Buffer Layout",
+          "options": {
+            "binding": 0,
+            "visibility": "Fragment",
+            "bufferType": "Storage"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        },
+        {
+          "id": 118,
+          "variationName": "Texture Layout",
+          "options": {
+            "binding": 0,
+            "visibility": "Fragment",
+            "textureType": "Float"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        },
+        {
+          "id": 119,
+          "variationName": "Sampler Layout",
+          "options": {
+            "binding": 0,
+            "visibility": "Fragment",
+            "samplerType": "Filtering"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        },
+        {
+          "id": 120,
+          "variationName": "Multi-Stage Visibility Layout",
+          "options": {
+            "binding": 0,
+            "visibility": "VertexFragment",
+            "bufferType": "Uniform"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Pipeline Layout",
+      "testType": "Pipeline Layout Creation",
+      "handlerClass": "PipelineLayoutCreationHandler",
+      "variations": [
+        {
+          "id": 121,
+          "variationName": "Single Bind Group Layout",
+          "options": {
+            "bindGroupLayoutCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        },
+        {
+          "id": 122,
+          "variationName": "Multiple Bind Group Layouts",
+          "options": {
+            "bindGroupLayoutCount": 4
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        },
+        {
+          "id": 123,
+          "variationName": "Empty Pipeline Layout",
+          "options": {
+            "bindGroupLayoutCount": 0
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "layoutCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Compute Pipeline",
+      "testType": "Compute Pipeline Creation",
+      "handlerClass": "ComputePipelineCreationHandler",
+      "variations": [
+        {
+          "id": 124,
+          "variationName": "Basic Compute Pipeline",
+          "options": {
+            "computeShader": "basic_compute",
+            "entryPoint": "main"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        },
+        {
+          "id": 125,
+          "variationName": "Compute Pipeline With Layout",
+          "options": {
+            "computeShader": "compute_with_buffers",
+            "entryPoint": "main",
+            "hasLayout": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "pipelineCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Query Set",
+      "testType": "Query Set Creation",
+      "handlerClass": "QuerySetCreationHandler",
+      "variations": [
+        {
+          "id": 126,
+          "variationName": "Occlusion Query Set",
+          "options": {
+            "type": "Occlusion",
+            "count": 256
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "querySetCreated": true
+            }
+          }
+        },
+        {
+          "id": 127,
+          "variationName": "Timestamp Query Set",
+          "options": {
+            "type": "Timestamp",
+            "count": 256
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "querySetCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Texture View",
+      "testType": "Texture View Creation",
+      "handlerClass": "TextureViewCreationHandler",
+      "variations": [
+        {
+          "id": 128,
+          "variationName": "Default 2D View",
+          "options": {
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "baseMipLevel": 0,
+            "mipLevelCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "viewCreated": true
+            }
+          }
+        },
+        {
+          "id": 129,
+          "variationName": "Cube View",
+          "options": {
+            "dimension": "Cube",
+            "format": "RGBA8Unorm",
+            "baseArrayLayer": 0,
+            "arrayLayerCount": 6
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "viewCreated": true
+            }
+          }
+        },
+        {
+          "id": 130,
+          "variationName": "Array View Single Layer",
+          "options": {
+            "dimension": "2D",
+            "format": "RGBA8Unorm",
+            "baseArrayLayer": 2,
+            "arrayLayerCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "viewCreated": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Buffer Operations",
+      "testType": "Buffer Map",
+      "handlerClass": "BufferMapHandler",
+      "variations": [
+        {
+          "id": 131,
+          "variationName": "Map Write 1KB",
+          "options": {
+            "size": 1024,
+            "mapMode": "Write"
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "mapSuccess": true,
+              "mappedPointer": "not_null"
+            }
+          }
+        },
+        {
+          "id": 132,
+          "variationName": "Map Read 1KB",
+          "options": {
+            "size": 1024,
+            "mapMode": "Read"
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "mapSuccess": true,
+              "mappedPointer": "not_null"
+            }
+          }
+        },
+        {
+          "id": 133,
+          "variationName": "Map Write Offset",
+          "options": {
+            "size": 1024,
+            "mapMode": "Write",
+            "offset": 256,
+            "length": 512
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "mapSuccess": true,
+              "mappedPointer": "not_null"
+            }
+          }
+        },
+        {
+          "id": 134,
+          "variationName": "Map Read Offset",
+          "options": {
+            "size": 1024,
+            "mapMode": "Read",
+            "offset": 128,
+            "length": 256
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "mapSuccess": true,
+              "mappedPointer": "not_null"
+            }
+          }
+        },
+        {
+          "id": 135,
+          "variationName": "Map Entire Buffer",
+          "options": {
+            "size": 4096,
+            "mapMode": "Write",
+            "offset": 0,
+            "length": 4096
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "mapSuccess": true,
+              "mappedPointer": "not_null"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Buffer Operations",
+      "testType": "Buffer Copy",
+      "handlerClass": "BufferCopyHandler",
+      "variations": [
+        {
+          "id": 136,
+          "variationName": "Copy Buffer To Buffer 256",
+          "options": {
+            "srcSize": 256,
+            "dstSize": 256,
+            "copySize": 256
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "copySuccess": true
+            }
+          }
+        },
+        {
+          "id": 137,
+          "variationName": "Copy Buffer To Buffer Partial",
+          "options": {
+            "srcSize": 1024,
+            "dstSize": 1024,
+            "copySize": 256,
+            "srcOffset": 128,
+            "dstOffset": 512
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "copySuccess": true
+            }
+          }
+        },
+        {
+          "id": 138,
+          "variationName": "Copy Buffer To Texture",
+          "options": {
+            "srcSize": 1024,
+            "textureWidth": 16,
+            "textureHeight": 16,
+            "bytesPerRow": 64
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "copySuccess": true
+            }
+          }
+        },
+        {
+          "id": 139,
+          "variationName": "Copy Texture To Buffer",
+          "options": {
+            "textureWidth": 16,
+            "textureHeight": 16,
+            "dstSize": 1024,
+            "bytesPerRow": 64
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "copySuccess": true
+            }
+          }
+        },
+        {
+          "id": 140,
+          "variationName": "Copy Texture To Texture",
+          "options": {
+            "srcWidth": 256,
+            "srcHeight": 256,
+            "dstWidth": 256,
+            "dstHeight": 256
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "copySuccess": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Draw Operations",
+      "testType": "Draw Commands",
+      "handlerClass": "DrawCommandsHandler",
+      "variations": [
+        {
+          "id": 141,
+          "variationName": "Draw 3 Vertices",
+          "options": {
+            "vertexCount": 3,
+            "instanceCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 142,
+          "variationName": "Draw 6 Vertices",
+          "options": {
+            "vertexCount": 6,
+            "instanceCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 143,
+          "variationName": "Draw Indexed 6 Indices",
+          "options": {
+            "indexCount": 6,
+            "instanceCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 144,
+          "variationName": "Draw Instanced 100",
+          "options": {
+            "vertexCount": 3,
+            "instanceCount": 100
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 145,
+          "variationName": "Draw Indexed Instanced",
+          "options": {
+            "indexCount": 6,
+            "instanceCount": 50
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 146,
+          "variationName": "Draw Indirect",
+          "options": {
+            "indirectBuffer": true,
+            "offset": 0
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 147,
+          "variationName": "Draw Indexed Indirect",
+          "options": {
+            "indirectBuffer": true,
+            "indexed": true,
+            "offset": 0
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 148,
+          "variationName": "Draw With Base Vertex",
+          "options": {
+            "vertexCount": 3,
+            "instanceCount": 1,
+            "firstVertex": 10
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 149,
+          "variationName": "Draw With Base Instance",
+          "options": {
+            "vertexCount": 3,
+            "instanceCount": 10,
+            "firstInstance": 5
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        },
+        {
+          "id": 150,
+          "variationName": "Draw Zero Vertices",
+          "options": {
+            "vertexCount": 0,
+            "instanceCount": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "drawSuccess": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Compute Operations",
+      "testType": "Dispatch Commands",
+      "handlerClass": "DispatchCommandsHandler",
+      "variations": [
+        {
+          "id": 151,
+          "variationName": "Dispatch 1x1x1",
+          "options": {
+            "workgroupsX": 1,
+            "workgroupsY": 1,
+            "workgroupsZ": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "dispatchSuccess": true
+            }
+          }
+        },
+        {
+          "id": 152,
+          "variationName": "Dispatch 64x1x1",
+          "options": {
+            "workgroupsX": 64,
+            "workgroupsY": 1,
+            "workgroupsZ": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "dispatchSuccess": true
+            }
+          }
+        },
+        {
+          "id": 153,
+          "variationName": "Dispatch 16x16x1",
+          "options": {
+            "workgroupsX": 16,
+            "workgroupsY": 16,
+            "workgroupsZ": 1
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "dispatchSuccess": true
+            }
+          }
+        },
+        {
+          "id": 154,
+          "variationName": "Dispatch 8x8x8",
+          "options": {
+            "workgroupsX": 8,
+            "workgroupsY": 8,
+            "workgroupsZ": 8
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "dispatchSuccess": true
+            }
+          }
+        },
+        {
+          "id": 155,
+          "variationName": "Dispatch Indirect",
+          "options": {
+            "indirectBuffer": true,
+            "offset": 0
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "dispatchSuccess": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Vertex Input",
+      "testType": "Vertex Buffer Setup",
+      "handlerClass": "VertexBufferSetupHandler",
+      "variations": [
+        {
+          "id": 156,
+          "variationName": "Single Vertex Buffer",
+          "options": {
+            "bufferCount": 1,
+            "stride": 12
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 157,
+          "variationName": "Multiple Vertex Buffers",
+          "options": {
+            "bufferCount": 4,
+            "stride": 12
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 158,
+          "variationName": "Interleaved Attributes",
+          "options": {
+            "bufferCount": 1,
+            "stride": 32,
+            "interleaved": true
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 159,
+          "variationName": "Separate Attributes",
+          "options": {
+            "bufferCount": 3,
+            "stride": 12,
+            "interleaved": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 160,
+          "variationName": "Large Stride",
+          "options": {
+            "bufferCount": 1,
+            "stride": 256
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "category": "Index Buffer",
+      "testType": "Index Buffer Setup",
+      "handlerClass": "IndexBufferSetupHandler",
+      "variations": [
+        {
+          "id": 161,
+          "variationName": "Index Buffer Uint16",
+          "options": {
+            "indexFormat": "Uint16",
+            "indexCount": 6
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 162,
+          "variationName": "Index Buffer Uint32",
+          "options": {
+            "indexFormat": "Uint32",
+            "indexCount": 6
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 163,
+          "variationName": "Large Index Buffer",
+          "options": {
+            "indexFormat": "Uint32",
+            "indexCount": 65536
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 164,
+          "variationName": "Small Index Buffer",
+          "options": {
+            "indexFormat": "Uint16",
+            "indexCount": 3
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        },
+        {
+          "id": 165,
+          "variationName": "Index Buffer With Offset",
+          "options": {
+            "indexFormat": "Uint16",
+            "indexCount": 6,
+            "offset": 12
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "setupSuccess": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

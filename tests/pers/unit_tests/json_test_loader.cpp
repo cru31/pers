@@ -1,256 +1,378 @@
 #include "json_test_loader.h"
-#include "test_handlers.h"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstdio>
+#include <rapidjson/document.h>
 #include <rapidjson/filereadstream.h>
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/prettywriter.h>
+#include <fstream>
+#include <cstdio>
+#include <chrono>
+#include <ctime>
 
-namespace pers::tests::json {
+namespace pers::tests {
 
-bool JsonTestLoader::loadFromFile(const std::string& filePath) {
+using namespace rapidjson;
+
+bool JsonTestLoader::loadTestTypes(const std::string& filePath, 
+                                   std::vector<TestTypeDefinition>& outTestTypes) {
     FILE* fp = std::fopen(filePath.c_str(), "rb");
     if (!fp) {
-        std::cerr << "Failed to open JSON file: " << filePath << std::endl;
         return false;
     }
     
     char readBuffer[65536];
-    rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+    FileReadStream is(fp, readBuffer, sizeof(readBuffer));
     
-    _document.ParseStream(is);
+    Document doc;
+    doc.ParseStream(is);
     std::fclose(fp);
     
-    if (_document.HasParseError()) {
-        std::cerr << "JSON parse error at offset " << _document.GetErrorOffset() << std::endl;
+    if (doc.HasParseError()) {
         return false;
     }
     
-    // Parse metadata
-    if (_document.HasMember("metadata") && _document["metadata"].IsObject()) {
-        const auto& metadata = _document["metadata"];
+    // Parse test types
+    if (!doc.HasMember("testTypes") || !doc["testTypes"].IsArray()) {
+        return false;
+    }
+    
+    const auto& testTypes = doc["testTypes"];
+    for (SizeType i = 0; i < testTypes.Size(); i++) {
+        const auto& testTypeObj = testTypes[i];
         
-        if (metadata.HasMember("version") && metadata["version"].IsString()) {
-            _metadata.version = metadata["version"].GetString();
+        TestTypeDefinition testType;
+        
+        if (testTypeObj.HasMember("category") && testTypeObj["category"].IsString()) {
+            testType.category = testTypeObj["category"].GetString();
         }
-        if (metadata.HasMember("date") && metadata["date"].IsString()) {
-            _metadata.date = metadata["date"].GetString();
+        
+        if (testTypeObj.HasMember("testType") && testTypeObj["testType"].IsString()) {
+            testType.testType = testTypeObj["testType"].GetString();
         }
-        if (metadata.HasMember("total_tests") && metadata["total_tests"].IsInt()) {
-            _metadata.totalTests = metadata["total_tests"].GetInt();
+        
+        if (testTypeObj.HasMember("handlerClass") && testTypeObj["handlerClass"].IsString()) {
+            testType.handlerClass = testTypeObj["handlerClass"].GetString();
         }
-        if (metadata.HasMember("categories") && metadata["categories"].IsArray()) {
-            const auto& categories = metadata["categories"];
-            for (rapidjson::SizeType i = 0; i < categories.Size(); i++) {
-                if (categories[i].IsString()) {
-                    _metadata.categories.push_back(categories[i].GetString());
-                }
+        
+        // Parse variations
+        if (testTypeObj.HasMember("variations") && testTypeObj["variations"].IsArray()) {
+            const auto& variations = testTypeObj["variations"];
+            for (SizeType j = 0; j < variations.Size(); j++) {
+                testType.variations.push_back(parseVariation(&variations[j]));
             }
         }
-    }
-    
-    // Parse test cases
-    if (_document.HasMember("test_cases") && _document["test_cases"].IsArray()) {
-        const auto& testCases = _document["test_cases"];
-        for (rapidjson::SizeType i = 0; i < testCases.Size(); i++) {
-            if (testCases[i].IsObject()) {
-                JsonTestCase testCase = parseTestCase(testCases[i]);
-                _testCases.push_back(testCase);
-            }
-        }
-    }
-    
-    // Parse test suites
-    if (_document.HasMember("test_suites") && _document["test_suites"].IsObject()) {
-        const auto& suites = _document["test_suites"];
-        for (auto it = suites.MemberBegin(); it != suites.MemberEnd(); ++it) {
-            std::string suiteName = it->name.GetString();
-            std::vector<std::string> testIds;
-            
-            if (it->value.IsArray()) {
-                const auto& ids = it->value;
-                for (rapidjson::SizeType i = 0; i < ids.Size(); i++) {
-                    if (ids[i].IsString()) {
-                        testIds.push_back(ids[i].GetString());
-                    }
-                }
-            } else if (it->value.IsString() && std::string(it->value.GetString()) == "all") {
-                // Special case for "all"
-                for (const auto& tc : _testCases) {
-                    testIds.push_back(tc.id);
-                }
-            }
-            
-            _testSuites[suiteName] = testIds;
-        }
+        
+        outTestTypes.push_back(testType);
     }
     
     return true;
 }
 
-JsonTestCase JsonTestLoader::parseTestCase(const rapidjson::Value& value) {
-    JsonTestCase testCase;
+TestVariation JsonTestLoader::parseVariation(const void* jsonObj) {
+    const Value& obj = *static_cast<const Value*>(jsonObj);
+    TestVariation variation;
     
-    if (value.HasMember("id") && value["id"].IsString()) {
-        testCase.id = value["id"].GetString();
+    if (obj.HasMember("id") && obj["id"].IsInt()) {
+        variation.id = obj["id"].GetInt();
     }
     
-    if (value.HasMember("category") && value["category"].IsString()) {
-        testCase.category = value["category"].GetString();
+    if (obj.HasMember("variationName") && obj["variationName"].IsString()) {
+        variation.variationName = obj["variationName"].GetString();
     }
     
-    if (value.HasMember("test_type") && value["test_type"].IsString()) {
-        testCase.testType = value["test_type"].GetString();
+    if (obj.HasMember("options") && obj["options"].IsObject()) {
+        variation.options = parseOptions(&obj["options"]);
     }
     
-    if (value.HasMember("input") && value["input"].IsObject()) {
-        const auto& input = value["input"];
-        
-        // Check for type field
-        if (input.HasMember("type") && input["type"].IsString()) {
-            testCase.inputValues["type"] = input["type"].GetString();
+    if (obj.HasMember("expectedBehavior") && obj["expectedBehavior"].IsObject()) {
+        variation.expectedBehavior = parseExpectedBehavior(&obj["expectedBehavior"]);
+    }
+    
+    return variation;
+}
+
+ExpectedBehavior JsonTestLoader::parseExpectedBehavior(const void* jsonObj) {
+    const Value& obj = *static_cast<const Value*>(jsonObj);
+    ExpectedBehavior behavior;
+    
+    if (obj.HasMember("shouldSucceed") && obj["shouldSucceed"].IsBool()) {
+        behavior.shouldSucceed = obj["shouldSucceed"].GetBool();
+    }
+    
+    if (obj.HasMember("returnValue") && obj["returnValue"].IsString()) {
+        behavior.returnValue = obj["returnValue"].GetString();
+    }
+    
+    if (obj.HasMember("errorCode") && obj["errorCode"].IsString()) {
+        behavior.errorCode = obj["errorCode"].GetString();
+    }
+    
+    // Parse properties
+    if (obj.HasMember("properties") && obj["properties"].IsObject()) {
+        const auto& props = obj["properties"];
+        for (auto it = props.MemberBegin(); it != props.MemberEnd(); ++it) {
+            const std::string key = it->name.GetString();
+            const auto& value = it->value;
+            
+            if (value.IsBool()) {
+                behavior.properties[key] = value.GetBool();
+            } else if (value.IsInt()) {
+                behavior.properties[key] = value.GetInt();
+            } else if (value.IsUint()) {
+                behavior.properties[key] = value.GetUint();
+            } else if (value.IsInt64()) {
+                behavior.properties[key] = value.GetInt64();
+            } else if (value.IsUint64()) {
+                behavior.properties[key] = value.GetUint64();
+            } else if (value.IsDouble()) {
+                behavior.properties[key] = value.GetDouble();
+            } else if (value.IsString()) {
+                behavior.properties[key] = std::string(value.GetString());
+            }
         }
+    }
+    
+    // Parse numeric checks
+    if (obj.HasMember("numericChecks") && obj["numericChecks"].IsObject()) {
+        const auto& checks = obj["numericChecks"];
+        for (auto it = checks.MemberBegin(); it != checks.MemberEnd(); ++it) {
+            if (it->value.IsString()) {
+                behavior.numericChecks[it->name.GetString()] = it->value.GetString();
+            }
+        }
+    }
+    
+    // Parse error message contains
+    if (obj.HasMember("errorMessageContains") && obj["errorMessageContains"].IsArray()) {
+        const auto& messages = obj["errorMessageContains"];
+        for (SizeType i = 0; i < messages.Size(); i++) {
+            if (messages[i].IsString()) {
+                behavior.errorMessageContains.push_back(messages[i].GetString());
+            }
+        }
+    }
+    
+    return behavior;
+}
+
+std::unordered_map<std::string, std::any> JsonTestLoader::parseOptions(const void* jsonObj) {
+    const Value& obj = *static_cast<const Value*>(jsonObj);
+    std::unordered_map<std::string, std::any> options;
+    
+    for (auto it = obj.MemberBegin(); it != obj.MemberEnd(); ++it) {
+        const std::string key = it->name.GetString();
+        const auto& value = it->value;
         
-        // Parse options for option-based tests
-        if (input.HasMember("options") && input["options"].IsObject()) {
-            const auto& options = input["options"];
-            for (auto it = options.MemberBegin(); it != options.MemberEnd(); ++it) {
-                std::string key = it->name.GetString();
-                std::string val;
-                
-                if (it->value.IsString()) {
-                    val = it->value.GetString();
-                } else if (it->value.IsInt()) {
-                    val = std::to_string(it->value.GetInt());
-                } else if (it->value.IsBool()) {
-                    val = it->value.GetBool() ? "true" : "false";
-                } else if (it->value.IsNull()) {
-                    val = "null";
-                } else if (it->value.IsArray()) {
-                    // Handle array values
-                    std::stringstream ss;
-                    ss << "[";
-                    for (rapidjson::SizeType i = 0; i < it->value.Size(); i++) {
-                        if (i > 0) ss << ",";
-                        if (it->value[i].IsString()) {
-                            ss << "\"" << it->value[i].GetString() << "\"";
-                        }
+        if (value.IsBool()) {
+            options[key] = value.GetBool();
+        } else if (value.IsInt()) {
+            options[key] = value.GetInt();
+        } else if (value.IsUint()) {
+            options[key] = static_cast<size_t>(value.GetUint());
+        } else if (value.IsInt64()) {
+            options[key] = value.GetInt64();
+        } else if (value.IsUint64()) {
+            options[key] = static_cast<size_t>(value.GetUint64());
+        } else if (value.IsDouble()) {
+            options[key] = value.GetDouble();
+        } else if (value.IsString()) {
+            options[key] = std::string(value.GetString());
+        } else if (value.IsObject()) {
+            // For nested objects, store as string (JSON representation)
+            StringBuffer buffer;
+            Writer<StringBuffer> writer(buffer);
+            value.Accept(writer);
+            options[key] = std::string(buffer.GetString());
+        }
+    }
+    
+    return options;
+}
+
+bool JsonTestLoader::saveTestResults(const std::string& filePath,
+                                     const std::vector<TestTypeDefinition>& testTypes,
+                                     const std::vector<std::vector<TestResult>>& results,
+                                     const std::string& testCaseJsonPath) {
+    Document doc;
+    doc.SetObject();
+    auto& allocator = doc.GetAllocator();
+    
+    // Calculate summary statistics
+    int totalTests = 0;
+    int passed = 0;
+    int failed = 0;
+    int testNotImplemented = 0;  // Test handler not implemented
+    int engineFeatureNYI = 0;     // Engine feature not yet implemented (TodoOrDie)
+    int skipped = 0;
+    double totalTime = 0.0;
+    
+    for (size_t i = 0; i < testTypes.size(); i++) {
+        const auto& testType = testTypes[i];
+        const auto& typeResults = i < results.size() ? results[i] : std::vector<TestResult>();
+        
+        for (size_t j = 0; j < testType.variations.size(); j++) {
+            const auto& result = j < typeResults.size() ? typeResults[j] : TestResult();
+            totalTests++;
+            
+            // Check for test not implemented
+            if (result.actualBehavior.find("Test Not Implemented") != std::string::npos ||
+                result.failureReason.find("No test handler") != std::string::npos) {
+                testNotImplemented++;
+            } else if (result.actualBehavior.find("SKIP") != std::string::npos) {
+                skipped++;
+            } else if (result.passed) {
+                passed++;
+            } else {
+                // Check for TodoOrDie logs to detect engine NYI
+                bool hasTodoOrDie = false;
+                for (const auto& log : result.logMessages) {
+                    if (log.find("[TODO_OR_DIE]") != std::string::npos ||
+                        log.find("[TODO!]") != std::string::npos) {
+                        hasTodoOrDie = true;
+                        break;
                     }
-                    ss << "]";
-                    val = ss.str();
                 }
                 
-                testCase.inputValues[key] = val;
+                if (hasTodoOrDie) {
+                    engineFeatureNYI++;
+                } else {
+                    failed++;
+                }
+            }
+            
+            // Add execution time (from actualProperties if available)
+            if (result.actualProperties.count("executionTime")) {
+                totalTime += std::any_cast<double>(result.actualProperties.at("executionTime"));
             }
         }
+    }
+    
+    double passRate = totalTests > 0 ? (100.0 * passed / totalTests) : 0.0;
+    
+    // Add metadata with proper statistics
+    Value metadata(kObjectType);
+    
+    // Get current timestamp
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    char timeStr[100];
+    std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", std::localtime(&time_t));
+    
+    metadata.AddMember("timestamp", Value().SetString(timeStr, allocator), allocator);
+    metadata.AddMember("total_tests", totalTests, allocator);
+    metadata.AddMember("passed", passed, allocator);
+    metadata.AddMember("failed", failed, allocator);
+    metadata.AddMember("skipped", skipped, allocator);
+    metadata.AddMember("test_not_implemented", testNotImplemented, allocator);
+    metadata.AddMember("engine_feature_nyi", engineFeatureNYI, allocator);
+    metadata.AddMember("pass_rate", passRate, allocator);
+    metadata.AddMember("total_time_ms", totalTime, allocator);
+    
+    // Add test case JSON path
+    if (!testCaseJsonPath.empty()) {
+        metadata.AddMember("test_case_json", Value().SetString(testCaseJsonPath.c_str(), allocator), allocator);
+    }
+    
+    doc.AddMember("metadata", metadata, allocator);
+    
+    // Add detailed results
+    Value resultsArray(kArrayType);
+    
+    for (size_t i = 0; i < testTypes.size(); i++) {
+        const auto& testType = testTypes[i];
+        const auto& typeResults = i < results.size() ? results[i] : std::vector<TestResult>();
         
-        // Parse values for regular tests
-        if (input.HasMember("values") && input["values"].IsObject()) {
-            const auto& values = input["values"];
-            for (auto it = values.MemberBegin(); it != values.MemberEnd(); ++it) {
-                std::string key = it->name.GetString();
-                std::string val;
-                
-                if (it->value.IsString()) {
-                    val = it->value.GetString();
-                } else if (it->value.IsInt()) {
-                    val = std::to_string(it->value.GetInt());
-                } else if (it->value.IsBool()) {
-                    val = it->value.GetBool() ? "true" : "false";
-                } else if (it->value.IsNull()) {
-                    val = "null";
-                } else if (it->value.IsArray()) {
-                    // Handle array values
-                    std::stringstream ss;
-                    ss << "[";
-                    for (rapidjson::SizeType i = 0; i < it->value.Size(); i++) {
-                        if (i > 0) ss << ",";
-                        if (it->value[i].IsString()) {
-                            ss << "\"" << it->value[i].GetString() << "\"";
-                        }
+        for (size_t j = 0; j < testType.variations.size(); j++) {
+            const auto& variation = testType.variations[j];
+            const auto& result = j < typeResults.size() ? typeResults[j] : TestResult();
+            
+            Value resultObj(kObjectType);
+            
+            // Format ID with leading zeros
+            char idStr[10];
+            std::snprintf(idStr, sizeof(idStr), "%03d", variation.id);
+            resultObj.AddMember("id", Value().SetString(idStr, allocator), allocator);
+            
+            resultObj.AddMember("category", Value().SetString(testType.category.c_str(), allocator), allocator);
+            resultObj.AddMember("test_type", Value().SetString(testType.testType.c_str(), allocator), allocator);
+            
+            // Build input string from options
+            std::string inputStr = "type=" + testType.testType;
+            for (const auto& [key, value] : variation.options) {
+                inputStr += ", " + key + "=";
+                try {
+                    if (value.type() == typeid(std::string)) {
+                        inputStr += std::any_cast<std::string>(value);
+                    } else if (value.type() == typeid(int)) {
+                        inputStr += std::to_string(std::any_cast<int>(value));
+                    } else if (value.type() == typeid(size_t)) {
+                        inputStr += std::to_string(std::any_cast<size_t>(value));
+                    } else if (value.type() == typeid(double)) {
+                        inputStr += std::to_string(std::any_cast<double>(value));
+                    } else if (value.type() == typeid(bool)) {
+                        inputStr += std::any_cast<bool>(value) ? "true" : "false";
                     }
-                    ss << "]";
-                    val = ss.str();
-                }
-                
-                testCase.inputValues[key] = val;
-            }
-        }
-    }
-    
-    if (value.HasMember("expected_result") && value["expected_result"].IsString()) {
-        testCase.expectedResult = value["expected_result"].GetString();
-    }
-    
-    if (value.HasMember("expected_callstack") && value["expected_callstack"].IsArray()) {
-        const auto& callstack = value["expected_callstack"];
-        for (rapidjson::SizeType i = 0; i < callstack.Size(); i++) {
-            if (callstack[i].IsString()) {
-                testCase.expectedCallstack.push_back(callstack[i].GetString());
-            }
-        }
-    }
-    
-    if (value.HasMember("timeout_ms") && value["timeout_ms"].IsInt()) {
-        testCase.timeoutMs = value["timeout_ms"].GetInt();
-    }
-    
-    if (value.HasMember("enabled") && value["enabled"].IsBool()) {
-        testCase.enabled = value["enabled"].GetBool();
-    }
-    
-    if (value.HasMember("dependencies") && value["dependencies"].IsArray()) {
-        const auto& deps = value["dependencies"];
-        for (rapidjson::SizeType i = 0; i < deps.Size(); i++) {
-            if (deps[i].IsString()) {
-                testCase.dependencies.push_back(deps[i].GetString());
-            }
-        }
-    }
-    
-    if (value.HasMember("reason") && value["reason"].IsString()) {
-        testCase.reason = value["reason"].GetString();
-    }
-    
-    return testCase;
-}
-
-std::vector<JsonTestCase> JsonTestLoader::getTestsByCategory(const std::string& category) const {
-    std::vector<JsonTestCase> result;
-    for (const auto& test : _testCases) {
-        if (test.category == category) {
-            result.push_back(test);
-        }
-    }
-    return result;
-}
-
-std::vector<JsonTestCase> JsonTestLoader::getTestSuite(const std::string& suiteName) const {
-    std::vector<JsonTestCase> result;
-    
-    auto it = _testSuites.find(suiteName);
-    if (it != _testSuites.end()) {
-        for (const auto& testId : it->second) {
-            for (const auto& test : _testCases) {
-                if (test.id == testId) {
-                    result.push_back(test);
-                    break;
+                } catch (...) {
+                    inputStr += "unknown";
                 }
             }
+            resultObj.AddMember("input", Value().SetString(inputStr.c_str(), allocator), allocator);
+            
+            // Expected result from variation
+            std::string expectedResult = variation.expectedBehavior.returnValue;
+            if (expectedResult.empty()) {
+                expectedResult = variation.expectedBehavior.shouldSucceed ? "Success" : "Failure";
+            }
+            resultObj.AddMember("expected_result", Value().SetString(expectedResult.c_str(), allocator), allocator);
+            
+            // Actual result
+            resultObj.AddMember("actual_result", Value().SetString(result.actualBehavior.c_str(), allocator), allocator);
+            
+            // Add expected callstack (empty for now)
+            Value expectedCallstack(kArrayType);
+            resultObj.AddMember("expected_callstack", expectedCallstack, allocator);
+            
+            // Add actual callstack (empty for now)
+            Value actualCallstack(kArrayType);
+            resultObj.AddMember("actual_callstack", actualCallstack, allocator);
+            
+            resultObj.AddMember("passed", result.passed, allocator);
+            resultObj.AddMember("failure_reason", Value().SetString(result.failureReason.c_str(), allocator), allocator);
+            
+            // Add execution time
+            double execTime = 0.0;
+            if (result.actualProperties.count("executionTime")) {
+                execTime = std::any_cast<double>(result.actualProperties.at("executionTime"));
+            }
+            resultObj.AddMember("execution_time_ms", execTime, allocator);
+            resultObj.AddMember("timestamp", Value().SetString(timeStr, allocator), allocator);
+            
+            // Add log messages from test result
+            Value logMessages(kArrayType);
+            for (const auto& log : result.logMessages) {
+                logMessages.PushBack(Value().SetString(log.c_str(), allocator), allocator);
+            }
+            resultObj.AddMember("log_messages", logMessages, allocator);
+            
+            resultsArray.PushBack(resultObj, allocator);
         }
     }
     
-    return result;
+    doc.AddMember("results", resultsArray, allocator);
+    
+    // Write to file
+    FILE* fp = std::fopen(filePath.c_str(), "wb");
+    if (!fp) {
+        return false;
+    }
+    
+    char writeBuffer[65536];
+    FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
+    PrettyWriter<FileWriteStream> writer(os);
+    doc.Accept(writer);
+    std::fclose(fp);
+    
+    return true;
 }
 
-bool JsonTestLoader::executeOptionBasedTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
-    // All option-based tests are now handled by TestHandlerRegistry
-    return TestHandlerRegistry::Instance().executeTest(testCase, actualResult, failureReason);
-}
-
-bool JsonTestLoader::executeTest(const JsonTestCase& testCase, std::string& actualResult, std::string& failureReason) {
-    // Use the TestHandlerRegistry to execute tests
-    return TestHandlerRegistry::Instance().executeTest(testCase, actualResult, failureReason);
-}
-
-} // namespace pers::tests::json
+} // namespace pers::tests
