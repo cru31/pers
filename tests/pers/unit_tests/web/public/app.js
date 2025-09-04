@@ -103,9 +103,9 @@ function sortResults(column) {
                 aVal = a.category || '';
                 bVal = b.category || '';
                 break;
-            case 'test_type':
-                aVal = a.test_type || '';
-                bVal = b.test_type || '';
+            case 'testType':
+                aVal = a.testType || '';
+                bVal = b.testType || '';
                 break;
             case 'status':
                 // Sort by status priority: passed, failed, na, nyi
@@ -238,7 +238,7 @@ function displayResults() {
         row.innerHTML = `
             <td><strong>${result.id}</strong></td>
             <td>${result.category || '-'}</td>
-            <td>${result.test_type || '-'}</td>
+            <td>${result.testType || '-'}</td>
             <td>${badgeHtml}</td>
             <td>${result.execution_time_ms ? result.execution_time_ms.toFixed(2) : '-'}</td>
             <td>${truncate(result.expected_result, 30)}</td>
@@ -415,7 +415,7 @@ function filterResults() {
             const searchableText = [
                 result.id,
                 result.category,
-                result.test_type,
+                result.testType,
                 result.input,
                 result.expected_result,
                 result.actual_result
@@ -471,7 +471,7 @@ function createFullLogsView() {
             result.log_messages.forEach(log => {
                 allLogs.push({
                     testId: result.id,
-                    testType: result.test_type,
+                    testType: result.testType,
                     category: result.category,
                     passed: result.passed,
                     log: log,
@@ -669,7 +669,7 @@ function showTestModal(testResult) {
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
     
-    modalTitle.textContent = `Test ${testResult.id}: ${testResult.test_type}`;
+    modalTitle.textContent = `Test ${testResult.id}: ${testResult.testType}`;
     
     // Parse input parameters
     let inputHtml = '';

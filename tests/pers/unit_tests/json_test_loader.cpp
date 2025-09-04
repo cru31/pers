@@ -314,7 +314,7 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
             resultObj.AddMember("id", Value().SetString(variation.combinedId.c_str(), allocator), allocator);
             
             resultObj.AddMember("category", Value().SetString(testType.category.c_str(), allocator), allocator);
-            resultObj.AddMember("test_type", Value().SetString(testType.testType.c_str(), allocator), allocator);
+            resultObj.AddMember("testType", Value().SetString(testType.testType.c_str(), allocator), allocator);
             
             // Build input string from options
             std::string inputStr = "type=" + testType.testType;
