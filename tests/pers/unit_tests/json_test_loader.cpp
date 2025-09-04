@@ -10,6 +10,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <functional>
 
 namespace pers::tests {
 
@@ -117,12 +118,12 @@ ExpectedBehavior JsonTestLoader::parseExpectedBehavior(const void* jsonObj) {
     const Value& obj = *static_cast<const Value*>(jsonObj);
     ExpectedBehavior behavior;
     
-    if (obj.HasMember("shouldSucceed") && obj["shouldSucceed"].IsBool()) {
-        behavior.shouldSucceed = obj["shouldSucceed"].GetBool();
-    }
-    
+    // Parse returnValue - required field now
     if (obj.HasMember("returnValue") && obj["returnValue"].IsString()) {
         behavior.returnValue = obj["returnValue"].GetString();
+    } else if (obj.HasMember("shouldSucceed") && obj["shouldSucceed"].IsBool()) {
+        // Legacy support: convert shouldSucceed to returnValue
+        behavior.returnValue = obj["shouldSucceed"].GetBool() ? "not_null" : "nullptr";
     }
     
     if (obj.HasMember("errorCode") && obj["errorCode"].IsString()) {
@@ -199,12 +200,43 @@ std::unordered_map<std::string, std::any> JsonTestLoader::parseOptions(const voi
             options[key] = value.GetDouble();
         } else if (value.IsString()) {
             options[key] = std::string(value.GetString());
+        } else if (value.IsArray()) {
+            // Handle arrays - store as vector of strings for now
+            std::vector<std::string> arrayValues;
+            for (SizeType i = 0; i < value.Size(); i++) {
+                if (value[i].IsString()) {
+                    arrayValues.push_back(value[i].GetString());
+                } else if (value[i].IsInt()) {
+                    arrayValues.push_back(std::to_string(value[i].GetInt()));
+                } else if (value[i].IsDouble()) {
+                    arrayValues.push_back(std::to_string(value[i].GetDouble()));
+                }
+            }
+            options[key] = arrayValues;
         } else if (value.IsObject()) {
-            // For nested objects, store as string (JSON representation)
-            StringBuffer buffer;
-            Writer<StringBuffer> writer(buffer);
-            value.Accept(writer);
-            options[key] = std::string(buffer.GetString());
+            // For nested objects, parse recursively
+            std::unordered_map<std::string, std::any> nestedMap;
+            for (auto nestedIt = value.MemberBegin(); nestedIt != value.MemberEnd(); ++nestedIt) {
+                const std::string nestedKey = nestedIt->name.GetString();
+                const auto& nestedValue = nestedIt->value;
+                
+                if (nestedValue.IsBool()) {
+                    nestedMap[nestedKey] = nestedValue.GetBool();
+                } else if (nestedValue.IsInt()) {
+                    nestedMap[nestedKey] = nestedValue.GetInt();
+                } else if (nestedValue.IsUint()) {
+                    nestedMap[nestedKey] = static_cast<size_t>(nestedValue.GetUint());
+                } else if (nestedValue.IsInt64()) {
+                    nestedMap[nestedKey] = nestedValue.GetInt64();
+                } else if (nestedValue.IsUint64()) {
+                    nestedMap[nestedKey] = static_cast<size_t>(nestedValue.GetUint64());
+                } else if (nestedValue.IsDouble()) {
+                    nestedMap[nestedKey] = nestedValue.GetDouble();
+                } else if (nestedValue.IsString()) {
+                    nestedMap[nestedKey] = std::string(nestedValue.GetString());
+                }
+            }
+            options[key] = nestedMap;
         }
     }
     
@@ -316,7 +348,57 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
             resultObj.AddMember("category", Value().SetString(testType.category.c_str(), allocator), allocator);
             resultObj.AddMember("testType", Value().SetString(testType.testType.c_str(), allocator), allocator);
             
-            // Build input string from options
+            // Helper lambda to convert std::any to JSON Value
+            std::function<void(Value&, const std::any&)> anyToValue = [&](Value& target, const std::any& value) {
+                try {
+                    if (value.type() == typeid(std::string)) {
+                        target.SetString(std::any_cast<std::string>(value).c_str(), allocator);
+                    } else if (value.type() == typeid(int)) {
+                        target.SetInt(std::any_cast<int>(value));
+                    } else if (value.type() == typeid(size_t)) {
+                        target.SetUint64(static_cast<uint64_t>(std::any_cast<size_t>(value)));
+                    } else if (value.type() == typeid(double)) {
+                        target.SetDouble(std::any_cast<double>(value));
+                    } else if (value.type() == typeid(bool)) {
+                        target.SetBool(std::any_cast<bool>(value));
+                    } else if (value.type() == typeid(std::vector<std::string>)) {
+                        target.SetArray();
+                        const auto& vec = std::any_cast<std::vector<std::string>>(value);
+                        for (const auto& str : vec) {
+                            Value strVal;
+                            strVal.SetString(str.c_str(), allocator);
+                            target.PushBack(strVal, allocator);
+                        }
+                    } else if (value.type() == typeid(std::unordered_map<std::string, std::any>)) {
+                        target.SetObject();
+                        const auto& map = std::any_cast<std::unordered_map<std::string, std::any>>(value);
+                        for (const auto& [key, val] : map) {
+                            Value keyVal;
+                            keyVal.SetString(key.c_str(), allocator);
+                            Value valVal;
+                            anyToValue(valVal, val);
+                            target.AddMember(keyVal, valVal, allocator);
+                        }
+                    } else {
+                        target.SetNull();
+                    }
+                } catch (...) {
+                    target.SetNull();
+                }
+            };
+            
+            // Add input_parameters as a proper JSON object
+            Value inputParams(kObjectType);
+            for (const auto& [key, value] : variation.options) {
+                Value keyVal;
+                keyVal.SetString(key.c_str(), allocator);
+                Value valVal;
+                anyToValue(valVal, value);
+                inputParams.AddMember(keyVal, valVal, allocator);
+            }
+            resultObj.AddMember("input_parameters", inputParams, allocator);
+            
+            // Build input string from options (keep for compatibility)
             std::string inputStr = "type=" + testType.testType;
             for (const auto& [key, value] : variation.options) {
                 inputStr += ", " + key + "=";
@@ -331,6 +413,16 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
                         inputStr += std::to_string(std::any_cast<double>(value));
                     } else if (value.type() == typeid(bool)) {
                         inputStr += std::any_cast<bool>(value) ? "true" : "false";
+                    } else if (value.type() == typeid(std::vector<std::string>)) {
+                        const auto& vec = std::any_cast<std::vector<std::string>>(value);
+                        inputStr += "[";
+                        for (size_t i = 0; i < vec.size(); i++) {
+                            if (i > 0) inputStr += ", ";
+                            inputStr += vec[i];
+                        }
+                        inputStr += "]";
+                    } else if (value.type() == typeid(std::unordered_map<std::string, std::any>)) {
+                        inputStr += "{object}";
                     }
                 } catch (...) {
                     inputStr += "unknown";
@@ -341,7 +433,7 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
             // Expected result from variation
             std::string expectedResult = variation.expectedBehavior.returnValue;
             if (expectedResult.empty()) {
-                expectedResult = variation.expectedBehavior.shouldSucceed ? "Success" : "Failure";
+                expectedResult = "not_specified";
             }
             resultObj.AddMember("expected_result", Value().SetString(expectedResult.c_str(), allocator), allocator);
             
@@ -373,6 +465,19 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
                 logMessages.PushBack(Value().SetString(log.c_str(), allocator), allocator);
             }
             resultObj.AddMember("log_messages", logMessages, allocator);
+            
+            // Add actual properties if available
+            if (!result.actualProperties.empty()) {
+                Value actualProps(kObjectType);
+                for (const auto& [key, value] : result.actualProperties) {
+                    Value keyVal;
+                    keyVal.SetString(key.c_str(), allocator);
+                    Value valVal;
+                    anyToValue(valVal, value);
+                    actualProps.AddMember(keyVal, valVal, allocator);
+                }
+                resultObj.AddMember("actual_properties", actualProps, allocator);
+            }
             
             resultsArray.PushBack(resultObj, allocator);
         }

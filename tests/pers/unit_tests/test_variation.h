@@ -9,9 +9,8 @@ namespace pers::tests {
 
 // Expected behavior for test validation
 struct ExpectedBehavior {
-    // Basic expectations
-    bool shouldSucceed = true;
-    std::string returnValue; // "not_null", "nullptr", or specific value
+    // Expected return value: "not_null", "nullptr", "true", "false", or specific value
+    std::string returnValue;
     
     // Property validations
     std::unordered_map<std::string, std::any> properties;

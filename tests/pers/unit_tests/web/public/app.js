@@ -254,15 +254,23 @@ function displayResults() {
         const detailCell = document.createElement('td');
         detailCell.colSpan = 7;
         
-        // Parse input parameters
+        // Parse input parameters - use input_parameters if available, otherwise fall back to input string
         let inputHtml = '';
-        if (result.input) {
+        if (result.input_parameters) {
+            inputHtml = formatInputParameters(result.input_parameters);
+        } else if (result.input) {
             const params = parseInput(result.input);
             inputHtml = '<div class="input-params">';
             for (const [key, value] of Object.entries(params)) {
                 inputHtml += `<div class="param-item"><strong>${key}:</strong> ${value}</div>`;
             }
             inputHtml += '</div>';
+        }
+        
+        // Format actual properties for display
+        let actualPropsHtml = '';
+        if (result.actual_properties) {
+            actualPropsHtml = formatInputParameters(result.actual_properties);
         }
         
         detailCell.innerHTML = `
@@ -275,6 +283,11 @@ function displayResults() {
                 
                 <h4>Actual Result</h4>
                 <pre>${result.actual_result || 'N/A'}</pre>
+                
+                ${actualPropsHtml ? `
+                    <h4>Actual Properties</h4>
+                    ${actualPropsHtml}
+                ` : ''}
                 
                 ${result.failure_reason ? `
                     <h4>Failure Reason</h4>
@@ -336,6 +349,43 @@ function parseInput(input) {
     });
     
     return params;
+}
+
+// Format input parameters from JSON object
+function formatInputParameters(params) {
+    if (!params || typeof params !== 'object') return '';
+    
+    let html = '<div class="input-params">';
+    
+    for (const [key, value] of Object.entries(params)) {
+        if (value === null || value === undefined) {
+            html += `<div class="param-item"><strong>${key}:</strong> <em>null</em></div>`;
+        } else if (Array.isArray(value)) {
+            // Format arrays with one item per line
+            let arrayContent = `<div class="param-item"><strong>${key}:</strong>`;
+            value.forEach(item => {
+                arrayContent += `<br>&nbsp;&nbsp;&nbsp;&nbsp;- ${item}`;
+            });
+            arrayContent += '</div>';
+            html += arrayContent;
+        } else if (typeof value === 'object') {
+            // Format nested objects with indentation in a single box
+            let objContent = `<div class="param-item"><strong>${key}:</strong>`;
+            const entries = Object.entries(value);
+            entries.forEach(([k, v]) => {
+                objContent += `<br>&nbsp;&nbsp;&nbsp;&nbsp;<strong>${k}:</strong> ${v}`;
+            });
+            objContent += '</div>';
+            html += objContent;
+        } else if (typeof value === 'boolean') {
+            html += `<div class="param-item"><strong>${key}:</strong> <span class="bool-value">${value}</span></div>`;
+        } else {
+            html += `<div class="param-item"><strong>${key}:</strong> <span class="value">${value}</span></div>`;
+        }
+    }
+    
+    html += '</div>';
+    return html;
 }
 
 // Truncate long strings
@@ -605,7 +655,19 @@ function createFullLogsView() {
         // Generate test details content
         const status = entry.passed ? '<span style="color: #48bb78">PASSED</span>' : '<span style="color: #f56565">FAILED</span>';
         let inputHtml = '';
-        if (entry.result.input) {
+        if (entry.result.input_parameters) {
+            inputHtml = '<div class="inline-params">';
+            for (const [key, value] of Object.entries(entry.result.input_parameters)) {
+                let valueStr = value;
+                if (Array.isArray(value)) {
+                    valueStr = '[' + value.join(', ') + ']';
+                } else if (typeof value === 'object' && value !== null) {
+                    valueStr = '{' + Object.entries(value).map(([k, v]) => `${k}: ${v}`).join(', ') + '}';
+                }
+                inputHtml += `<span class="param-inline"><strong>${key}:</strong> ${valueStr}</span>`;
+            }
+            inputHtml += '</div>';
+        } else if (entry.result.input) {
             const params = parseInput(entry.result.input);
             inputHtml = '<div class="inline-params">';
             for (const [key, value] of Object.entries(params)) {
@@ -671,9 +733,11 @@ function showTestModal(testResult) {
     
     modalTitle.textContent = `Test ${testResult.id}: ${testResult.testType}`;
     
-    // Parse input parameters
+    // Parse input parameters - use input_parameters if available
     let inputHtml = '';
-    if (testResult.input) {
+    if (testResult.input_parameters) {
+        inputHtml = formatInputParameters(testResult.input_parameters);
+    } else if (testResult.input) {
         const params = parseInput(testResult.input);
         inputHtml = '<div class="input-params">';
         for (const [key, value] of Object.entries(params)) {

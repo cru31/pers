@@ -113,8 +113,8 @@ JsonTestCase JsonTestLoader::parseTestCase(const rapidjson::Value& value) {
         testCase.category = value["category"].GetString();
     }
     
-    if (value.HasMember("test_type") && value["test_type"].IsString()) {
-        testCase.testType = value["test_type"].GetString();
+    if (value.HasMember("testType") && value["testType"].IsString()) {
+        testCase.testType = value["testType"].GetString();
     }
     
     if (value.HasMember("input") && value["input"].IsObject()) {

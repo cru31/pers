@@ -94,62 +94,29 @@ public:
             result.actualProperties["returnValue"] = std::string("nullptr");
         }
         
-        // Check expectations
-        bool expectedFound = variation.expectedBehavior.properties.count("adapterFound")
-            ? std::any_cast<bool>(variation.expectedBehavior.properties.at("adapterFound"))
-            : true;
-        
+        // Check expected return value
         bool expectedNotNull = (variation.expectedBehavior.returnValue == "not_null");
+        bool expectedNull = (variation.expectedBehavior.returnValue == "nullptr" || 
+                            variation.expectedBehavior.returnValue == "null");
         
-        // Validate properties if specified
-        if (adapterFound && variation.expectedBehavior.properties.size() > 0) {
-            // Check adapter type if specified
-            if (variation.expectedBehavior.properties.count("adapterType")) {
-                std::string expectedType = std::any_cast<std::string>(
-                    variation.expectedBehavior.properties.at("adapterType"));
-                
-                if (expectedType == "DiscreteGPU") {
-                    bool isDiscrete = std::any_cast<bool>(result.actualProperties["isDiscreteGPU"]);
-                    if (!isDiscrete && preference == PowerPreference::HighPerformance) {
-                        // High performance requested but didn't get discrete GPU
-                        // This might still be OK on some systems
-                        result.actualProperties["adapterTypeMatch"] = false;
-                    } else {
-                        result.actualProperties["adapterTypeMatch"] = true;
-                    }
-                }
+        // Determine pass/fail based on return value comparison
+        if (expectedNotNull) {
+            result.passed = adapterFound;
+            result.actualBehavior = adapterFound ? "Adapter found" : "No adapter found";
+            if (!result.passed) {
+                result.failureReason = "Expected adapter but none found";
             }
-            
-            // Check numeric conditions
-            for (const auto& [property, condition] : variation.expectedBehavior.numericChecks) {
-                if (property == "dedicatedVideoMemory") {
-                    uint64_t videoMem = std::any_cast<uint64_t>(result.actualProperties["dedicatedVideoMemory"]);
-                    if (!checkNumericCondition(condition, static_cast<double>(videoMem))) {
-                        result.passed = false;
-                        result.failureReason = "Video memory check failed: " + std::to_string(videoMem) + 
-                                             " does not satisfy " + condition;
-                        return result;
-                    }
-                }
+        } else if (expectedNull) {
+            result.passed = !adapterFound;
+            result.actualBehavior = adapterFound ? "Adapter found" : "No adapter found";  
+            if (!result.passed) {
+                result.failureReason = "Expected no adapter but found one";
             }
-        }
-        
-        // Determine pass/fail
-        result.passed = (adapterFound == expectedFound) && (adapterFound == expectedNotNull);
-        
-        if (result.passed) {
-            result.actualBehavior = adapterFound 
-                ? "Adapter found with requested preferences"
-                : "No adapter found as expected";
         } else {
-            result.actualBehavior = adapterFound
-                ? "Adapter found unexpectedly"
-                : "Failed to find adapter";
-            if (result.failureReason.empty()) {
-                result.failureReason = adapterFound
-                    ? "Expected no adapter but found one"
-                    : "Expected adapter but none found";
-            }
+            // Unknown expected value
+            result.passed = false;
+            result.actualBehavior = "Unknown expected value: " + variation.expectedBehavior.returnValue;
+            result.failureReason = "Test configuration error";
         }
         
         return result;

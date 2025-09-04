@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "description": "Configuration file - not a test case file",
+  "settings": {
+    "maxTestTimeout": 60000,
+    "parallelExecution": false,
+    "logLevel": "debug"
+  }
+}

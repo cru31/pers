@@ -20,7 +20,7 @@
             "requiredLimits": {}
           },
           "expectedBehavior": {
-            "shouldSucceed": true,
+            "returnValue": "not_null",
             "properties": {
               "hasDefaultQueue": true,
               "supportsBasicOperations": true
@@ -35,7 +35,7 @@
             "requiredLimits": {}
           },
           "expectedBehavior": {
-            "shouldSucceed": true,
+            "returnValue": "not_null",
             "properties": {
               "hasTimestampQuery": true
             }
@@ -49,7 +49,7 @@
             "requiredLimits": {}
           },
           "expectedBehavior": {
-            "shouldSucceed": true,
+            "returnValue": "not_null",
             "properties": {
               "hasTextureCompressionBC": true
             }
@@ -66,7 +66,7 @@
             }
           },
           "expectedBehavior": {
-            "shouldSucceed": true,
+            "returnValue": "not_null",
             "properties": {
               "maxBindGroups": 8,
               "maxStorageBufferBindingSize": 134217728

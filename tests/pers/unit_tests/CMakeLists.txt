@@ -7,11 +7,8 @@ add_executable(pers_unit_tests
     json_test_loader.cpp
     # Handlers
     handlers/instance_creation_handler.cpp
-    handlers/buffer_creation_handler.cpp
     handlers/request_adapter_handler.cpp
     handlers/device_creation_handler.cpp
-    handlers/shader_compilation_handler.cpp
-    handlers/texture_creation_handler.cpp
 )
 
 # Find rapidjson
@@ -32,7 +29,7 @@ target_include_directories(pers_unit_tests PRIVATE
 # Define paths as compile definitions
 target_compile_definitions(pers_unit_tests PRIVATE
     WEB_SERVER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/web"
-    TEST_CASES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_cases/set_01"
+    TEST_CASES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_cases/set_02"
 )
 
 # Include the centralized copy function

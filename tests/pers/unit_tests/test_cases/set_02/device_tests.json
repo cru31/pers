@@ -1,0 +1,568 @@
+{
+  "fileType": "test_cases",
+  "fileId": "dev",
+  "metadata": {
+    "version": "1.0",
+    "category": "Device Management",
+    "description": "Comprehensive tests for WebGPU logical device creation with various features and limits"
+  },
+  "testTypes": [
+    {
+      "category": "Device Management",
+      "testType": "Device Creation",
+      "handlerClass": "DeviceCreationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Basic Device - No Features No Limits",
+          "options": {},
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Device With Validation Enabled",
+          "options": {
+            "enableValidation": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Device With Debug Name",
+          "options": {
+            "debugName": "TestDevice"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Device With Long Debug Name",
+          "options": {
+            "debugName": "[LONG_STRING_1024]"
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 5,
+          "variationName": "Device With Timestamp Query",
+          "options": {
+            "requiredFeatures": ["timestamp-query"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 6,
+          "variationName": "Device With Depth Clip Control",
+          "options": {
+            "requiredFeatures": ["depth-clip-control"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 7,
+          "variationName": "Device With Depth32Float Stencil8",
+          "options": {
+            "requiredFeatures": ["depth32float-stencil8"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 8,
+          "variationName": "Device With Texture Compression BC",
+          "options": {
+            "requiredFeatures": ["texture-compression-bc"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 9,
+          "variationName": "Device With Texture Compression ETC2",
+          "options": {
+            "requiredFeatures": ["texture-compression-etc2"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 10,
+          "variationName": "Device With Texture Compression ASTC",
+          "options": {
+            "requiredFeatures": ["texture-compression-astc"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 11,
+          "variationName": "Device With All Texture Compressions",
+          "options": {
+            "requiredFeatures": [
+              "texture-compression-bc",
+              "texture-compression-etc2",
+              "texture-compression-astc"
+            ]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 12,
+          "variationName": "Device With Indirect First Instance",
+          "options": {
+            "requiredFeatures": ["indirect-first-instance"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 13,
+          "variationName": "Device With Shader F16",
+          "options": {
+            "requiredFeatures": ["shader-f16"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 14,
+          "variationName": "Device With RG11B10Ufloat Renderable",
+          "options": {
+            "requiredFeatures": ["rg11b10ufloat-renderable"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 15,
+          "variationName": "Device With BGRA8Unorm Storage",
+          "options": {
+            "requiredFeatures": ["bgra8unorm-storage"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 16,
+          "variationName": "Device With Float32 Filterable",
+          "options": {
+            "requiredFeatures": ["float32-filterable"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 17,
+          "variationName": "Device With Pipeline Statistics Query",
+          "options": {
+            "requiredFeatures": ["pipeline-statistics-query"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 18,
+          "variationName": "Device With Advanced Graphics Features",
+          "options": {
+            "requiredFeatures": [
+              "indirect-first-instance",
+              "shader-f16",
+              "rg11b10ufloat-renderable",
+              "float32-filterable"
+            ]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 19,
+          "variationName": "Device With All Features",
+          "options": {
+            "requiredFeatures": [
+              "depth-clip-control",
+              "depth32float-stencil8",
+              "timestamp-query",
+              "texture-compression-bc",
+              "texture-compression-etc2",
+              "texture-compression-astc",
+              "indirect-first-instance",
+              "shader-f16",
+              "rg11b10ufloat-renderable",
+              "bgra8unorm-storage",
+              "float32-filterable"
+            ]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 20,
+          "variationName": "Device With Minimal Texture Limits",
+          "options": {
+            "requiredLimits": {
+              "maxTextureDimension1D": 1024,
+              "maxTextureDimension2D": 1024,
+              "maxTextureDimension3D": 256
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 21,
+          "variationName": "Device With Moderate Texture Limits",
+          "options": {
+            "requiredLimits": {
+              "maxTextureDimension1D": 4096,
+              "maxTextureDimension2D": 4096,
+              "maxTextureDimension3D": 1024,
+              "maxTextureArrayLayers": 256
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 22,
+          "variationName": "Device With High Texture Limits",
+          "options": {
+            "requiredLimits": {
+              "maxTextureDimension1D": 8192,
+              "maxTextureDimension2D": 8192,
+              "maxTextureDimension3D": 2048,
+              "maxTextureArrayLayers": 2048
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 23,
+          "variationName": "Device With Bind Group Limits",
+          "options": {
+            "requiredLimits": {
+              "maxBindGroups": 4,
+              "maxBindingsPerBindGroup": 640
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 24,
+          "variationName": "Device With Dynamic Buffer Limits",
+          "options": {
+            "requiredLimits": {
+              "maxDynamicUniformBuffersPerPipelineLayout": 8,
+              "maxDynamicStorageBuffersPerPipelineLayout": 4
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 25,
+          "variationName": "Device With Shader Stage Resource Limits",
+          "options": {
+            "requiredLimits": {
+              "maxSampledTexturesPerShaderStage": 16,
+              "maxSamplersPerShaderStage": 16,
+              "maxStorageBuffersPerShaderStage": 8,
+              "maxStorageTexturesPerShaderStage": 8,
+              "maxUniformBuffersPerShaderStage": 12
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 26,
+          "variationName": "Device With Buffer Size Limits",
+          "options": {
+            "requiredLimits": {
+              "maxUniformBufferBindingSize": 65536,
+              "maxStorageBufferBindingSize": 134217728
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 27,
+          "variationName": "Device With Vertex Input Limits",
+          "options": {
+            "requiredLimits": {
+              "maxVertexBuffers": 8,
+              "maxVertexAttributes": 16,
+              "maxVertexBufferArrayStride": 2048
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 28,
+          "variationName": "Device With Inter-Stage Variable Limits",
+          "options": {
+            "requiredLimits": {
+              "maxInterStageShaderVariables": 16
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 29,
+          "variationName": "Device With Compute Workgroup Size Limits",
+          "options": {
+            "requiredLimits": {
+              "maxComputeWorkgroupSizeX": 256,
+              "maxComputeWorkgroupSizeY": 256,
+              "maxComputeWorkgroupSizeZ": 64
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 30,
+          "variationName": "Device With Compute Workgroup Storage",
+          "options": {
+            "requiredLimits": {
+              "maxComputeWorkgroupStorageSize": 16384,
+              "maxComputeInvocationsPerWorkgroup": 256,
+              "maxComputeWorkgroupsPerDimension": 65535
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 31,
+          "variationName": "Device With Combined Basic Features and Limits",
+          "options": {
+            "requiredFeatures": ["timestamp-query"],
+            "requiredLimits": {
+              "maxBindGroups": 4,
+              "maxTextureDimension2D": 4096
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 32,
+          "variationName": "Device With Combined Texture Features and Limits",
+          "options": {
+            "requiredFeatures": ["texture-compression-bc"],
+            "requiredLimits": {
+              "maxTextureDimension2D": 8192,
+              "maxTextureArrayLayers": 256
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 33,
+          "variationName": "Device With Combined Compute Features and Limits",
+          "options": {
+            "requiredFeatures": ["shader-f16"],
+            "requiredLimits": {
+              "maxComputeWorkgroupSizeX": 256,
+              "maxComputeWorkgroupStorageSize": 16384
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 34,
+          "variationName": "Device With Validation and Features",
+          "options": {
+            "enableValidation": true,
+            "requiredFeatures": ["depth-clip-control", "timestamp-query"]
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 35,
+          "variationName": "Device With Debug Name and Limits",
+          "options": {
+            "debugName": "HighPerformanceDevice",
+            "requiredLimits": {
+              "maxBindGroups": 4,
+              "maxStorageBufferBindingSize": 134217728
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 36,
+          "variationName": "Device With All Options Basic",
+          "options": {
+            "enableValidation": false,
+            "debugName": "BasicDevice",
+            "requiredFeatures": ["timestamp-query"],
+            "requiredLimits": {
+              "maxBindGroups": 2,
+              "maxTextureDimension2D": 2048
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 37,
+          "variationName": "Device With All Options Advanced",
+          "options": {
+            "enableValidation": true,
+            "debugName": "AdvancedDevice",
+            "requiredFeatures": [
+              "depth-clip-control",
+              "timestamp-query",
+              "texture-compression-bc",
+              "shader-f16"
+            ],
+            "requiredLimits": {
+              "maxBindGroups": 4,
+              "maxTextureDimension2D": 8192,
+              "maxStorageBufferBindingSize": 134217728,
+              "maxSampledTexturesPerShaderStage": 16,
+              "maxComputeWorkgroupSizeX": 256
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 38,
+          "variationName": "Device With Empty Features Array",
+          "options": {
+            "requiredFeatures": []
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 39,
+          "variationName": "Device With Empty Limits Object",
+          "options": {
+            "requiredLimits": {}
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 40,
+          "variationName": "Device With Empty String Debug Name",
+          "options": {
+            "debugName": ""
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        },
+        {
+          "id": 41,
+          "variationName": "Device Maximum Stress Test",
+          "options": {
+            "enableValidation": true,
+            "debugName": "MaxStressTestDevice",
+            "requiredFeatures": [
+              "depth-clip-control",
+              "depth32float-stencil8",
+              "timestamp-query",
+              "texture-compression-bc",
+              "texture-compression-etc2",
+              "texture-compression-astc",
+              "indirect-first-instance",
+              "shader-f16",
+              "rg11b10ufloat-renderable",
+              "bgra8unorm-storage",
+              "float32-filterable"
+            ],
+            "requiredLimits": {
+              "maxTextureDimension1D": 8192,
+              "maxTextureDimension2D": 8192,
+              "maxTextureDimension3D": 2048,
+              "maxTextureArrayLayers": 2048,
+              "maxBindGroups": 4,
+              "maxBindingsPerBindGroup": 1000,
+              "maxDynamicUniformBuffersPerPipelineLayout": 8,
+              "maxDynamicStorageBuffersPerPipelineLayout": 4,
+              "maxSampledTexturesPerShaderStage": 16,
+              "maxSamplersPerShaderStage": 16,
+              "maxStorageBuffersPerShaderStage": 8,
+              "maxStorageTexturesPerShaderStage": 8,
+              "maxUniformBuffersPerShaderStage": 12,
+              "maxUniformBufferBindingSize": 65536,
+              "maxStorageBufferBindingSize": 134217728,
+              "maxVertexBuffers": 8,
+              "maxVertexAttributes": 16,
+              "maxVertexBufferArrayStride": 2048,
+              "maxInterStageShaderVariables": 16,
+              "maxComputeWorkgroupStorageSize": 16384,
+              "maxComputeInvocationsPerWorkgroup": 256,
+              "maxComputeWorkgroupSizeX": 256,
+              "maxComputeWorkgroupSizeY": 256,
+              "maxComputeWorkgroupSizeZ": 64,
+              "maxComputeWorkgroupsPerDimension": 65535
+            }
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null"
+          }
+        }
+      ]
+    }
+  ]
+}
