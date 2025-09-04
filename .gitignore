@@ -79,7 +79,10 @@ build.ninja
 # Backup files and directories
 backup/
 *.bak
+*.backup
 *~
 *.swp
 tests/pers/unit_tests/test_case_data/
 tests/pers/unit_tests/web/node_modules/
+tests/pers/unit_tests/web/*/data/
+.package-lock.json
