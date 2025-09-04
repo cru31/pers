@@ -32,7 +32,7 @@
     {
       "id": "INST_001",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Validation Enabled",
+      "testType": "Instance Creation - Validation Enabled",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -48,7 +48,7 @@
     {
       "id": "INST_002",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Validation Disabled",
+      "testType": "Instance Creation - Validation Disabled",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -64,7 +64,7 @@
     {
       "id": "INST_003",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Empty Application Name",
+      "testType": "Instance Creation - Empty Application Name",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -80,7 +80,7 @@
     {
       "id": "INST_004",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Very Long Application Name",
+      "testType": "Instance Creation - Very Long Application Name",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -96,7 +96,7 @@
     {
       "id": "INST_005",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Special Characters in Name",
+      "testType": "Instance Creation - Special Characters in Name",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -112,7 +112,7 @@
     {
       "id": "INST_006",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Unicode Name",
+      "testType": "Instance Creation - Unicode Name",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -128,7 +128,7 @@
     {
       "id": "INST_007",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Null Engine Name",
+      "testType": "Instance Creation - Null Engine Name",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -144,7 +144,7 @@
     {
       "id": "INST_008",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Debug Build",
+      "testType": "Instance Creation - Debug Build",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -161,7 +161,7 @@
     {
       "id": "INST_009",
       "category": "Instance Management",
-      "test_type": "Instance Creation - Release Build",
+      "testType": "Instance Creation - Release Build",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -178,7 +178,7 @@
     {
       "id": "INST_010",
       "category": "Instance Management",
-      "test_type": "Instance Double Creation",
+      "testType": "Instance Double Creation",
       "input": {
         "type": "InstanceDesc",
         "values": {
@@ -194,7 +194,7 @@
     {
       "id": "PHYS_001",
       "category": "Physical Device",
-      "test_type": "Request Physical Device - High Performance",
+      "testType": "Request Physical Device - High Performance",
       "input": {
         "type": "PhysicalDeviceOptions",
         "values": {
@@ -210,7 +210,7 @@
     {
       "id": "PHYS_002",
       "category": "Physical Device",
-      "test_type": "Request Physical Device - Low Power",
+      "testType": "Request Physical Device - Low Power",
       "input": {
         "type": "PhysicalDeviceOptions",
         "values": {
@@ -226,7 +226,7 @@
     {
       "id": "PHYS_003",
       "category": "Physical Device",
-      "test_type": "Request Physical Device - Default",
+      "testType": "Request Physical Device - Default",
       "input": {
         "type": "PhysicalDeviceOptions",
         "values": {
@@ -242,7 +242,7 @@
     {
       "id": "PHYS_004",
       "category": "Physical Device",
-      "test_type": "Request Physical Device - Fallback",
+      "testType": "Request Physical Device - Fallback",
       "input": {
         "type": "PhysicalDeviceOptions",
         "values": {
@@ -258,7 +258,7 @@
     {
       "id": "PHYS_005",
       "category": "Physical Device",
-      "test_type": "Query Adapter Features",
+      "testType": "Query Adapter Features",
       "input": {
         "type": "AdapterQuery",
         "values": {
@@ -272,7 +272,7 @@
     {
       "id": "PHYS_006",
       "category": "Physical Device",
-      "test_type": "Query Adapter Limits",
+      "testType": "Query Adapter Limits",
       "input": {
         "type": "AdapterQuery",
         "values": {
@@ -286,7 +286,7 @@
     {
       "id": "PHYS_007",
       "category": "Physical Device",
-      "test_type": "Query Adapter Properties",
+      "testType": "Query Adapter Properties",
       "input": {
         "type": "AdapterQuery",
         "values": {
@@ -300,7 +300,7 @@
     {
       "id": "PHYS_008",
       "category": "Physical Device",
-      "test_type": "Check Discrete GPU",
+      "testType": "Check Discrete GPU",
       "input": {
         "type": "AdapterQuery",
         "values": {
@@ -314,7 +314,7 @@
     {
       "id": "PHYS_009",
       "category": "Physical Device",
-      "test_type": "Get Vendor ID",
+      "testType": "Get Vendor ID",
       "input": {
         "type": "AdapterQuery",
         "values": {
@@ -328,7 +328,7 @@
     {
       "id": "PHYS_010",
       "category": "Physical Device",
-      "test_type": "Get Device ID",
+      "testType": "Get Device ID",
       "input": {
         "type": "AdapterQuery",
         "values": {
@@ -342,7 +342,7 @@
     {
       "id": "DEV_001",
       "category": "Logical Device",
-      "test_type": "Create Device - No Features",
+      "testType": "Create Device - No Features",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -358,7 +358,7 @@
     {
       "id": "DEV_002",
       "category": "Logical Device",
-      "test_type": "Create Device - Timestamp Query",
+      "testType": "Create Device - Timestamp Query",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -374,7 +374,7 @@
     {
       "id": "DEV_003",
       "category": "Logical Device",
-      "test_type": "Create Device - Depth Clip Control",
+      "testType": "Create Device - Depth Clip Control",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -390,7 +390,7 @@
     {
       "id": "DEV_004",
       "category": "Logical Device",
-      "test_type": "Create Device - Texture Compression BC",
+      "testType": "Create Device - Texture Compression BC",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -406,7 +406,7 @@
     {
       "id": "DEV_005",
       "category": "Logical Device",
-      "test_type": "Create Device - Multiple Features",
+      "testType": "Create Device - Multiple Features",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -422,7 +422,7 @@
     {
       "id": "DEV_006",
       "category": "Logical Device",
-      "test_type": "Create Device - Max Texture 2D Limit",
+      "testType": "Create Device - Max Texture 2D Limit",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -440,7 +440,7 @@
     {
       "id": "DEV_007",
       "category": "Logical Device",
-      "test_type": "Create Device - Max Buffer Size",
+      "testType": "Create Device - Max Buffer Size",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -458,7 +458,7 @@
     {
       "id": "DEV_008",
       "category": "Logical Device",
-      "test_type": "Create Device - Max Bind Groups",
+      "testType": "Create Device - Max Bind Groups",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -476,7 +476,7 @@
     {
       "id": "DEV_009",
       "category": "Logical Device",
-      "test_type": "Create Device - Max Compute Workgroup Size",
+      "testType": "Create Device - Max Compute Workgroup Size",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -496,7 +496,7 @@
     {
       "id": "DEV_010",
       "category": "Logical Device",
-      "test_type": "Create Device - Invalid Feature",
+      "testType": "Create Device - Invalid Feature",
       "input": {
         "type": "DeviceDesc",
         "values": {
@@ -512,7 +512,7 @@
     {
       "id": "QUEUE_001",
       "category": "Queue Operations",
-      "test_type": "Get Default Queue",
+      "testType": "Get Default Queue",
       "input": {
         "type": "QueueRequest",
         "values": {
@@ -526,7 +526,7 @@
     {
       "id": "QUEUE_002",
       "category": "Queue Operations",
-      "test_type": "Submit Empty Command Buffer",
+      "testType": "Submit Empty Command Buffer",
       "input": {
         "type": "QueueSubmit",
         "values": {
@@ -540,7 +540,7 @@
     {
       "id": "QUEUE_003",
       "category": "Queue Operations",
-      "test_type": "Submit Single Command Buffer",
+      "testType": "Submit Single Command Buffer",
       "input": {
         "type": "QueueSubmit",
         "values": {
@@ -554,7 +554,7 @@
     {
       "id": "QUEUE_004",
       "category": "Queue Operations",
-      "test_type": "Submit Multiple Command Buffers",
+      "testType": "Submit Multiple Command Buffers",
       "input": {
         "type": "QueueSubmit",
         "values": {
@@ -568,7 +568,7 @@
     {
       "id": "QUEUE_005",
       "category": "Queue Operations",
-      "test_type": "Write Buffer - 256 Bytes",
+      "testType": "Write Buffer - 256 Bytes",
       "input": {
         "type": "QueueWriteBuffer",
         "values": {
@@ -584,7 +584,7 @@
     {
       "id": "QUEUE_006",
       "category": "Queue Operations",
-      "test_type": "Write Buffer - 1KB",
+      "testType": "Write Buffer - 1KB",
       "input": {
         "type": "QueueWriteBuffer",
         "values": {
@@ -600,7 +600,7 @@
     {
       "id": "QUEUE_007",
       "category": "Queue Operations",
-      "test_type": "Write Buffer - 64KB",
+      "testType": "Write Buffer - 64KB",
       "input": {
         "type": "QueueWriteBuffer",
         "values": {
@@ -616,7 +616,7 @@
     {
       "id": "QUEUE_008",
       "category": "Queue Operations",
-      "test_type": "Write Buffer - 1MB",
+      "testType": "Write Buffer - 1MB",
       "input": {
         "type": "QueueWriteBuffer",
         "values": {
@@ -632,7 +632,7 @@
     {
       "id": "QUEUE_009",
       "category": "Queue Operations",
-      "test_type": "Write Buffer - 16MB",
+      "testType": "Write Buffer - 16MB",
       "input": {
         "type": "QueueWriteBuffer",
         "values": {
@@ -648,7 +648,7 @@
     {
       "id": "QUEUE_010",
       "category": "Queue Operations",
-      "test_type": "Write Buffer - With Offset",
+      "testType": "Write Buffer - With Offset",
       "input": {
         "type": "QueueWriteBuffer",
         "values": {
@@ -664,7 +664,7 @@
     {
       "id": "CMD_001",
       "category": "Command Encoding",
-      "test_type": "Create Command Encoder",
+      "testType": "Create Command Encoder",
       "input": {
         "type": "CommandEncoderDesc",
         "values": {
@@ -678,7 +678,7 @@
     {
       "id": "CMD_002",
       "category": "Command Encoding",
-      "test_type": "Finish Empty Command Buffer",
+      "testType": "Finish Empty Command Buffer",
       "input": {
         "type": "CommandEncoderFinish",
         "values": {
@@ -692,7 +692,7 @@
     {
       "id": "CMD_003",
       "category": "Command Encoding",
-      "test_type": "Copy Buffer to Buffer - 1KB",
+      "testType": "Copy Buffer to Buffer - 1KB",
       "input": {
         "type": "CommandCopyBuffer",
         "values": {
@@ -710,7 +710,7 @@
     {
       "id": "CMD_004",
       "category": "Command Encoding",
-      "test_type": "Copy Buffer to Buffer - Partial",
+      "testType": "Copy Buffer to Buffer - Partial",
       "input": {
         "type": "CommandCopyBuffer",
         "values": {
@@ -728,7 +728,7 @@
     {
       "id": "CMD_005",
       "category": "Command Encoding",
-      "test_type": "Copy Buffer to Texture - 2D",
+      "testType": "Copy Buffer to Texture - 2D",
       "input": {
         "type": "CommandCopyBufferToTexture",
         "values": {
@@ -745,7 +745,7 @@
     {
       "id": "CMD_006",
       "category": "Command Encoding",
-      "test_type": "Copy Texture to Buffer",
+      "testType": "Copy Texture to Buffer",
       "input": {
         "type": "CommandCopyTextureToBuffer",
         "values": {
@@ -762,7 +762,7 @@
     {
       "id": "CMD_007",
       "category": "Command Encoding",
-      "test_type": "Copy Texture to Texture",
+      "testType": "Copy Texture to Texture",
       "input": {
         "type": "CommandCopyTextureToTexture",
         "values": {
@@ -780,7 +780,7 @@
     {
       "id": "CMD_008",
       "category": "Command Encoding",
-      "test_type": "Clear Buffer",
+      "testType": "Clear Buffer",
       "input": {
         "type": "CommandClearBuffer",
         "values": {
@@ -796,7 +796,7 @@
     {
       "id": "CMD_009",
       "category": "Command Encoding",
-      "test_type": "Push Debug Group",
+      "testType": "Push Debug Group",
       "input": {
         "type": "CommandPushDebugGroup",
         "values": {
@@ -810,7 +810,7 @@
     {
       "id": "CMD_010",
       "category": "Command Encoding",
-      "test_type": "Pop Debug Group",
+      "testType": "Pop Debug Group",
       "input": {
         "type": "CommandPopDebugGroup",
         "values": {}
@@ -822,7 +822,7 @@
     {
       "id": "BUF_001",
       "category": "Buffer Management",
-      "test_type": "Create Vertex Buffer - 256B",
+      "testType": "Create Vertex Buffer - 256B",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -839,7 +839,7 @@
     {
       "id": "BUF_002",
       "category": "Buffer Management",
-      "test_type": "Create Vertex Buffer - 1KB",
+      "testType": "Create Vertex Buffer - 1KB",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -856,7 +856,7 @@
     {
       "id": "BUF_003",
       "category": "Buffer Management",
-      "test_type": "Create Vertex Buffer - 64KB",
+      "testType": "Create Vertex Buffer - 64KB",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -873,7 +873,7 @@
     {
       "id": "BUF_004",
       "category": "Buffer Management",
-      "test_type": "Create Vertex Buffer - 1MB",
+      "testType": "Create Vertex Buffer - 1MB",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -890,7 +890,7 @@
     {
       "id": "BUF_005",
       "category": "Buffer Management",
-      "test_type": "Create Index Buffer - 16bit",
+      "testType": "Create Index Buffer - 16bit",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -907,7 +907,7 @@
     {
       "id": "BUF_006",
       "category": "Buffer Management",
-      "test_type": "Create Index Buffer - 32bit",
+      "testType": "Create Index Buffer - 32bit",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -924,7 +924,7 @@
     {
       "id": "BUF_007",
       "category": "Buffer Management",
-      "test_type": "Create Uniform Buffer - 64B",
+      "testType": "Create Uniform Buffer - 64B",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -941,7 +941,7 @@
     {
       "id": "BUF_008",
       "category": "Buffer Management",
-      "test_type": "Create Uniform Buffer - 256B",
+      "testType": "Create Uniform Buffer - 256B",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -958,7 +958,7 @@
     {
       "id": "BUF_009",
       "category": "Buffer Management",
-      "test_type": "Create Uniform Buffer - 16KB",
+      "testType": "Create Uniform Buffer - 16KB",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -975,7 +975,7 @@
     {
       "id": "BUF_010",
       "category": "Buffer Management",
-      "test_type": "Create Storage Buffer - 1KB",
+      "testType": "Create Storage Buffer - 1KB",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -992,7 +992,7 @@
     {
       "id": "BUF_011",
       "category": "Buffer Management",
-      "test_type": "Create Storage Buffer - 1MB",
+      "testType": "Create Storage Buffer - 1MB",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -1009,7 +1009,7 @@
     {
       "id": "BUF_012",
       "category": "Buffer Management",
-      "test_type": "Create Storage Buffer - 16MB",
+      "testType": "Create Storage Buffer - 16MB",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -1026,7 +1026,7 @@
     {
       "id": "BUF_013",
       "category": "Buffer Management",
-      "test_type": "Create Multi-Use Buffer - Vertex+Copy",
+      "testType": "Create Multi-Use Buffer - Vertex+Copy",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -1043,7 +1043,7 @@
     {
       "id": "BUF_014",
       "category": "Buffer Management",
-      "test_type": "Create Mapped Buffer - Write",
+      "testType": "Create Mapped Buffer - Write",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -1060,7 +1060,7 @@
     {
       "id": "BUF_015",
       "category": "Buffer Management",
-      "test_type": "Create Mapped Buffer - Read",
+      "testType": "Create Mapped Buffer - Read",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -1077,7 +1077,7 @@
     {
       "id": "BUF_016",
       "category": "Buffer Management",
-      "test_type": "Map Buffer for Reading",
+      "testType": "Map Buffer for Reading",
       "input": {
         "type": "BufferMap",
         "values": {
@@ -1094,7 +1094,7 @@
     {
       "id": "BUF_017",
       "category": "Buffer Management",
-      "test_type": "Map Buffer for Writing",
+      "testType": "Map Buffer for Writing",
       "input": {
         "type": "BufferMap",
         "values": {
@@ -1111,7 +1111,7 @@
     {
       "id": "BUF_018",
       "category": "Buffer Management",
-      "test_type": "Map Buffer Partial",
+      "testType": "Map Buffer Partial",
       "input": {
         "type": "BufferMap",
         "values": {
@@ -1128,7 +1128,7 @@
     {
       "id": "BUF_019",
       "category": "Buffer Management",
-      "test_type": "Unmap Buffer",
+      "testType": "Unmap Buffer",
       "input": {
         "type": "BufferUnmap",
         "values": {}
@@ -1140,7 +1140,7 @@
     {
       "id": "BUF_020",
       "category": "Buffer Management",
-      "test_type": "Create Zero-Size Buffer",
+      "testType": "Create Zero-Size Buffer",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -1157,7 +1157,7 @@
     {
       "id": "TEX_001",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 1x1",
+      "testType": "Create 2D Texture - 1x1",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1177,7 +1177,7 @@
     {
       "id": "TEX_002",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 64x64",
+      "testType": "Create 2D Texture - 64x64",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1197,7 +1197,7 @@
     {
       "id": "TEX_003",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 256x256",
+      "testType": "Create 2D Texture - 256x256",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1217,7 +1217,7 @@
     {
       "id": "TEX_004",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 512x512",
+      "testType": "Create 2D Texture - 512x512",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1237,7 +1237,7 @@
     {
       "id": "TEX_005",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 1024x1024",
+      "testType": "Create 2D Texture - 1024x1024",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1257,7 +1257,7 @@
     {
       "id": "TEX_006",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 2048x2048",
+      "testType": "Create 2D Texture - 2048x2048",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1277,7 +1277,7 @@
     {
       "id": "TEX_007",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 4096x4096",
+      "testType": "Create 2D Texture - 4096x4096",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1297,7 +1297,7 @@
     {
       "id": "TEX_008",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - HD Resolution",
+      "testType": "Create 2D Texture - HD Resolution",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1317,7 +1317,7 @@
     {
       "id": "TEX_009",
       "category": "Texture Management",
-      "test_type": "Create 2D Texture - 4K Resolution",
+      "testType": "Create 2D Texture - 4K Resolution",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1337,7 +1337,7 @@
     {
       "id": "TEX_010",
       "category": "Texture Management",
-      "test_type": "Create Depth Texture - 16bit",
+      "testType": "Create Depth Texture - 16bit",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1357,7 +1357,7 @@
     {
       "id": "TEX_011",
       "category": "Texture Management",
-      "test_type": "Create Depth Texture - 24bit",
+      "testType": "Create Depth Texture - 24bit",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1377,7 +1377,7 @@
     {
       "id": "TEX_012",
       "category": "Texture Management",
-      "test_type": "Create Depth Texture - 32bit",
+      "testType": "Create Depth Texture - 32bit",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1397,7 +1397,7 @@
     {
       "id": "TEX_013",
       "category": "Texture Management",
-      "test_type": "Create Depth-Stencil Texture",
+      "testType": "Create Depth-Stencil Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1417,7 +1417,7 @@
     {
       "id": "TEX_014",
       "category": "Texture Management",
-      "test_type": "Create Texture with 2 Mip Levels",
+      "testType": "Create Texture with 2 Mip Levels",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1437,7 +1437,7 @@
     {
       "id": "TEX_015",
       "category": "Texture Management",
-      "test_type": "Create Texture with Full Mip Chain",
+      "testType": "Create Texture with Full Mip Chain",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1457,7 +1457,7 @@
     {
       "id": "TEX_016",
       "category": "Texture Management",
-      "test_type": "Create 3D Texture - 32x32x32",
+      "testType": "Create 3D Texture - 32x32x32",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1477,7 +1477,7 @@
     {
       "id": "TEX_017",
       "category": "Texture Management",
-      "test_type": "Create 3D Texture - 128x128x128",
+      "testType": "Create 3D Texture - 128x128x128",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1497,7 +1497,7 @@
     {
       "id": "TEX_018",
       "category": "Texture Management",
-      "test_type": "Create 3D Texture - 256x256x256",
+      "testType": "Create 3D Texture - 256x256x256",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1517,7 +1517,7 @@
     {
       "id": "TEX_019",
       "category": "Texture Management",
-      "test_type": "Create Texture Array - 6 Layers",
+      "testType": "Create Texture Array - 6 Layers",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1537,7 +1537,7 @@
     {
       "id": "TEX_020",
       "category": "Texture Management",
-      "test_type": "Create Texture Array - 32 Layers",
+      "testType": "Create Texture Array - 32 Layers",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1557,7 +1557,7 @@
     {
       "id": "TEX_021",
       "category": "Texture Management",
-      "test_type": "Create MSAA Texture - 2x",
+      "testType": "Create MSAA Texture - 2x",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1577,7 +1577,7 @@
     {
       "id": "TEX_022",
       "category": "Texture Management",
-      "test_type": "Create MSAA Texture - 4x",
+      "testType": "Create MSAA Texture - 4x",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1597,7 +1597,7 @@
     {
       "id": "TEX_023",
       "category": "Texture Management",
-      "test_type": "Create MSAA Texture - 8x",
+      "testType": "Create MSAA Texture - 8x",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1617,7 +1617,7 @@
     {
       "id": "TEX_024",
       "category": "Texture Management",
-      "test_type": "Create R8 Texture",
+      "testType": "Create R8 Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1637,7 +1637,7 @@
     {
       "id": "TEX_025",
       "category": "Texture Management",
-      "test_type": "Create RG8 Texture",
+      "testType": "Create RG8 Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1657,7 +1657,7 @@
     {
       "id": "TEX_026",
       "category": "Texture Management",
-      "test_type": "Create RGBA16Float Texture",
+      "testType": "Create RGBA16Float Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1677,7 +1677,7 @@
     {
       "id": "TEX_027",
       "category": "Texture Management",
-      "test_type": "Create RGBA32Float Texture",
+      "testType": "Create RGBA32Float Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1697,7 +1697,7 @@
     {
       "id": "TEX_028",
       "category": "Texture Management",
-      "test_type": "Create BGRA8Unorm Texture",
+      "testType": "Create BGRA8Unorm Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1717,7 +1717,7 @@
     {
       "id": "TEX_029",
       "category": "Texture Management",
-      "test_type": "Create sRGB Texture",
+      "testType": "Create sRGB Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1737,7 +1737,7 @@
     {
       "id": "TEX_030",
       "category": "Texture Management",
-      "test_type": "Create BC1 Compressed Texture",
+      "testType": "Create BC1 Compressed Texture",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -1757,7 +1757,7 @@
     {
       "id": "SHADER_001",
       "category": "Shader Compilation",
-      "test_type": "Compile Empty Vertex Shader",
+      "testType": "Compile Empty Vertex Shader",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1772,7 +1772,7 @@
     {
       "id": "SHADER_002",
       "category": "Shader Compilation",
-      "test_type": "Compile Empty Fragment Shader",
+      "testType": "Compile Empty Fragment Shader",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1787,7 +1787,7 @@
     {
       "id": "SHADER_003",
       "category": "Shader Compilation",
-      "test_type": "Compile Triangle Vertex Shader",
+      "testType": "Compile Triangle Vertex Shader",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1802,7 +1802,7 @@
     {
       "id": "SHADER_004",
       "category": "Shader Compilation",
-      "test_type": "Compile Color Fragment Shader",
+      "testType": "Compile Color Fragment Shader",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1817,7 +1817,7 @@
     {
       "id": "SHADER_005",
       "category": "Shader Compilation",
-      "test_type": "Compile Vertex Shader with Attributes",
+      "testType": "Compile Vertex Shader with Attributes",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1832,7 +1832,7 @@
     {
       "id": "SHADER_006",
       "category": "Shader Compilation",
-      "test_type": "Compile Vertex Shader with MVP",
+      "testType": "Compile Vertex Shader with MVP",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1847,7 +1847,7 @@
     {
       "id": "SHADER_007",
       "category": "Shader Compilation",
-      "test_type": "Compile Fragment Shader with Texture",
+      "testType": "Compile Fragment Shader with Texture",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1862,7 +1862,7 @@
     {
       "id": "SHADER_008",
       "category": "Shader Compilation",
-      "test_type": "Compile Compute Shader - Simple",
+      "testType": "Compile Compute Shader - Simple",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1877,7 +1877,7 @@
     {
       "id": "SHADER_009",
       "category": "Shader Compilation",
-      "test_type": "Compile Compute Shader with Storage",
+      "testType": "Compile Compute Shader with Storage",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1892,7 +1892,7 @@
     {
       "id": "SHADER_010",
       "category": "Shader Compilation",
-      "test_type": "Compile Invalid Shader",
+      "testType": "Compile Invalid Shader",
       "input": {
         "type": "ShaderModuleDesc",
         "values": {
@@ -1907,7 +1907,7 @@
     {
       "id": "PIPE_001",
       "category": "Pipeline Creation",
-      "test_type": "Create Basic Render Pipeline",
+      "testType": "Create Basic Render Pipeline",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -1926,7 +1926,7 @@
     {
       "id": "PIPE_002",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline - No Culling",
+      "testType": "Create Pipeline - No Culling",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -1945,7 +1945,7 @@
     {
       "id": "PIPE_003",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline - Front Culling",
+      "testType": "Create Pipeline - Front Culling",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -1964,7 +1964,7 @@
     {
       "id": "PIPE_004",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline - Line List",
+      "testType": "Create Pipeline - Line List",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -1983,7 +1983,7 @@
     {
       "id": "PIPE_005",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline - Point List",
+      "testType": "Create Pipeline - Point List",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2002,7 +2002,7 @@
     {
       "id": "PIPE_006",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Vertex Buffer",
+      "testType": "Create Pipeline with Vertex Buffer",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2034,7 +2034,7 @@
     {
       "id": "PIPE_007",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Instance Buffer",
+      "testType": "Create Pipeline with Instance Buffer",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2059,7 +2059,7 @@
     {
       "id": "PIPE_008",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Depth Test",
+      "testType": "Create Pipeline with Depth Test",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2078,7 +2078,7 @@
     {
       "id": "PIPE_009",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Stencil Test",
+      "testType": "Create Pipeline with Stencil Test",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2101,7 +2101,7 @@
     {
       "id": "PIPE_010",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Alpha Blending",
+      "testType": "Create Pipeline with Alpha Blending",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2131,7 +2131,7 @@
     {
       "id": "PIPE_011",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Additive Blending",
+      "testType": "Create Pipeline with Additive Blending",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2161,7 +2161,7 @@
     {
       "id": "PIPE_012",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Color Mask",
+      "testType": "Create Pipeline with Color Mask",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2179,7 +2179,7 @@
     {
       "id": "PIPE_013",
       "category": "Pipeline Creation",
-      "test_type": "Create Compute Pipeline",
+      "testType": "Create Compute Pipeline",
       "input": {
         "type": "ComputePipelineDesc",
         "values": {
@@ -2195,7 +2195,7 @@
     {
       "id": "PIPE_014",
       "category": "Pipeline Creation",
-      "test_type": "Create Compute Pipeline with Layout",
+      "testType": "Create Compute Pipeline with Layout",
       "input": {
         "type": "ComputePipelineDesc",
         "values": {
@@ -2212,7 +2212,7 @@
     {
       "id": "PIPE_015",
       "category": "Pipeline Creation",
-      "test_type": "Create Pipeline with Multiple Targets",
+      "testType": "Create Pipeline with Multiple Targets",
       "input": {
         "type": "RenderPipelineDesc",
         "values": {
@@ -2236,7 +2236,7 @@
     {
       "id": "RENDER_001",
       "category": "RenderPass Operations",
-      "test_type": "Begin RenderPass - Clear Black",
+      "testType": "Begin RenderPass - Clear Black",
       "input": {
         "type": "RenderPassDesc",
         "values": {
@@ -2255,7 +2255,7 @@
     {
       "id": "RENDER_002",
       "category": "RenderPass Operations",
-      "test_type": "Begin RenderPass - Clear Red",
+      "testType": "Begin RenderPass - Clear Red",
       "input": {
         "type": "RenderPassDesc",
         "values": {
@@ -2274,7 +2274,7 @@
     {
       "id": "RENDER_003",
       "category": "RenderPass Operations",
-      "test_type": "Begin RenderPass - Load Previous",
+      "testType": "Begin RenderPass - Load Previous",
       "input": {
         "type": "RenderPassDesc",
         "values": {
@@ -2292,7 +2292,7 @@
     {
       "id": "RENDER_004",
       "category": "RenderPass Operations",
-      "test_type": "Begin RenderPass with Depth",
+      "testType": "Begin RenderPass with Depth",
       "input": {
         "type": "RenderPassDesc",
         "values": {
@@ -2317,7 +2317,7 @@
     {
       "id": "RENDER_005",
       "category": "RenderPass Operations",
-      "test_type": "Begin RenderPass with Stencil",
+      "testType": "Begin RenderPass with Stencil",
       "input": {
         "type": "RenderPassDesc",
         "values": {
@@ -2345,7 +2345,7 @@
     {
       "id": "RENDER_006",
       "category": "RenderPass Operations",
-      "test_type": "End RenderPass",
+      "testType": "End RenderPass",
       "input": {
         "type": "RenderPassEnd",
         "values": {}
@@ -2357,7 +2357,7 @@
     {
       "id": "RENDER_007",
       "category": "RenderPass Operations",
-      "test_type": "Set Pipeline in RenderPass",
+      "testType": "Set Pipeline in RenderPass",
       "input": {
         "type": "RenderPassSetPipeline",
         "values": {
@@ -2371,7 +2371,7 @@
     {
       "id": "RENDER_008",
       "category": "RenderPass Operations",
-      "test_type": "Set Bind Group in RenderPass",
+      "testType": "Set Bind Group in RenderPass",
       "input": {
         "type": "RenderPassSetBindGroup",
         "values": {
@@ -2386,7 +2386,7 @@
     {
       "id": "RENDER_009",
       "category": "RenderPass Operations",
-      "test_type": "Set Vertex Buffer",
+      "testType": "Set Vertex Buffer",
       "input": {
         "type": "RenderPassSetVertexBuffer",
         "values": {
@@ -2403,7 +2403,7 @@
     {
       "id": "RENDER_010",
       "category": "RenderPass Operations",
-      "test_type": "Set Index Buffer - 16bit",
+      "testType": "Set Index Buffer - 16bit",
       "input": {
         "type": "RenderPassSetIndexBuffer",
         "values": {
@@ -2420,7 +2420,7 @@
     {
       "id": "RENDER_011",
       "category": "RenderPass Operations",
-      "test_type": "Set Index Buffer - 32bit",
+      "testType": "Set Index Buffer - 32bit",
       "input": {
         "type": "RenderPassSetIndexBuffer",
         "values": {
@@ -2437,7 +2437,7 @@
     {
       "id": "RENDER_012",
       "category": "RenderPass Operations",
-      "test_type": "Draw - 3 Vertices",
+      "testType": "Draw - 3 Vertices",
       "input": {
         "type": "RenderPassDraw",
         "values": {
@@ -2454,7 +2454,7 @@
     {
       "id": "RENDER_013",
       "category": "RenderPass Operations",
-      "test_type": "Draw - 1000 Vertices",
+      "testType": "Draw - 1000 Vertices",
       "input": {
         "type": "RenderPassDraw",
         "values": {
@@ -2471,7 +2471,7 @@
     {
       "id": "RENDER_014",
       "category": "RenderPass Operations",
-      "test_type": "Draw Indexed - 6 Indices",
+      "testType": "Draw Indexed - 6 Indices",
       "input": {
         "type": "RenderPassDrawIndexed",
         "values": {
@@ -2489,7 +2489,7 @@
     {
       "id": "RENDER_015",
       "category": "RenderPass Operations",
-      "test_type": "Draw Instanced - 100 Instances",
+      "testType": "Draw Instanced - 100 Instances",
       "input": {
         "type": "RenderPassDraw",
         "values": {
@@ -2506,7 +2506,7 @@
     {
       "id": "COMPUTE_001",
       "category": "Compute Operations",
-      "test_type": "Begin Compute Pass",
+      "testType": "Begin Compute Pass",
       "input": {
         "type": "ComputePassDesc",
         "values": {
@@ -2520,7 +2520,7 @@
     {
       "id": "COMPUTE_002",
       "category": "Compute Operations",
-      "test_type": "End Compute Pass",
+      "testType": "End Compute Pass",
       "input": {
         "type": "ComputePassEnd",
         "values": {}
@@ -2532,7 +2532,7 @@
     {
       "id": "COMPUTE_003",
       "category": "Compute Operations",
-      "test_type": "Set Compute Pipeline",
+      "testType": "Set Compute Pipeline",
       "input": {
         "type": "ComputePassSetPipeline",
         "values": {
@@ -2546,7 +2546,7 @@
     {
       "id": "COMPUTE_004",
       "category": "Compute Operations",
-      "test_type": "Set Compute Bind Group",
+      "testType": "Set Compute Bind Group",
       "input": {
         "type": "ComputePassSetBindGroup",
         "values": {
@@ -2561,7 +2561,7 @@
     {
       "id": "COMPUTE_005",
       "category": "Compute Operations",
-      "test_type": "Dispatch - 1x1x1",
+      "testType": "Dispatch - 1x1x1",
       "input": {
         "type": "ComputePassDispatch",
         "values": {
@@ -2577,7 +2577,7 @@
     {
       "id": "COMPUTE_006",
       "category": "Compute Operations",
-      "test_type": "Dispatch - 32x1x1",
+      "testType": "Dispatch - 32x1x1",
       "input": {
         "type": "ComputePassDispatch",
         "values": {
@@ -2593,7 +2593,7 @@
     {
       "id": "COMPUTE_007",
       "category": "Compute Operations",
-      "test_type": "Dispatch - 256x256x1",
+      "testType": "Dispatch - 256x256x1",
       "input": {
         "type": "ComputePassDispatch",
         "values": {
@@ -2609,7 +2609,7 @@
     {
       "id": "COMPUTE_008",
       "category": "Compute Operations",
-      "test_type": "Dispatch Indirect",
+      "testType": "Dispatch Indirect",
       "input": {
         "type": "ComputePassDispatchIndirect",
         "values": {
@@ -2624,7 +2624,7 @@
     {
       "id": "COMPUTE_009",
       "category": "Compute Operations",
-      "test_type": "Insert Debug Marker",
+      "testType": "Insert Debug Marker",
       "input": {
         "type": "ComputePassInsertDebugMarker",
         "values": {
@@ -2638,7 +2638,7 @@
     {
       "id": "COMPUTE_010",
       "category": "Compute Operations",
-      "test_type": "Write Timestamp",
+      "testType": "Write Timestamp",
       "input": {
         "type": "ComputePassWriteTimestamp",
         "values": {
@@ -2653,7 +2653,7 @@
     {
       "id": "SYNC_001",
       "category": "Synchronization",
-      "test_type": "Create Query Set - Timestamp",
+      "testType": "Create Query Set - Timestamp",
       "input": {
         "type": "QuerySetDesc",
         "values": {
@@ -2669,7 +2669,7 @@
     {
       "id": "SYNC_002",
       "category": "Synchronization",
-      "test_type": "Create Query Set - Occlusion",
+      "testType": "Create Query Set - Occlusion",
       "input": {
         "type": "QuerySetDesc",
         "values": {
@@ -2685,7 +2685,7 @@
     {
       "id": "SYNC_003",
       "category": "Synchronization",
-      "test_type": "Resolve Query Set",
+      "testType": "Resolve Query Set",
       "input": {
         "type": "CommandResolveQuerySet",
         "values": {
@@ -2703,7 +2703,7 @@
     {
       "id": "SYNC_004",
       "category": "Synchronization",
-      "test_type": "Queue On Submitted Work Done",
+      "testType": "Queue On Submitted Work Done",
       "input": {
         "type": "QueueOnSubmittedWorkDone",
         "values": {}
@@ -2715,7 +2715,7 @@
     {
       "id": "SYNC_005",
       "category": "Synchronization",
-      "test_type": "Device Poll",
+      "testType": "Device Poll",
       "input": {
         "type": "DevicePoll",
         "values": {
@@ -2729,7 +2729,7 @@
     {
       "id": "SWAP_001",
       "category": "SwapChain Management",
-      "test_type": "Create SwapChain - 800x600",
+      "testType": "Create SwapChain - 800x600",
       "input": {
         "type": "SwapChainDesc",
         "values": {
@@ -2747,7 +2747,7 @@
     {
       "id": "SWAP_002",
       "category": "SwapChain Management",
-      "test_type": "Create SwapChain - 1920x1080",
+      "testType": "Create SwapChain - 1920x1080",
       "input": {
         "type": "SwapChainDesc",
         "values": {
@@ -2765,7 +2765,7 @@
     {
       "id": "SWAP_003",
       "category": "SwapChain Management",
-      "test_type": "Create SwapChain - Immediate Mode",
+      "testType": "Create SwapChain - Immediate Mode",
       "input": {
         "type": "SwapChainDesc",
         "values": {
@@ -2783,7 +2783,7 @@
     {
       "id": "SWAP_004",
       "category": "SwapChain Management",
-      "test_type": "Create SwapChain - Mailbox Mode",
+      "testType": "Create SwapChain - Mailbox Mode",
       "input": {
         "type": "SwapChainDesc",
         "values": {
@@ -2801,7 +2801,7 @@
     {
       "id": "SWAP_005",
       "category": "SwapChain Management",
-      "test_type": "Get Current Texture View",
+      "testType": "Get Current Texture View",
       "input": {
         "type": "SwapChainGetCurrentTextureView",
         "values": {}
@@ -2813,7 +2813,7 @@
     {
       "id": "SWAP_006",
       "category": "SwapChain Management",
-      "test_type": "Present SwapChain",
+      "testType": "Present SwapChain",
       "input": {
         "type": "SwapChainPresent",
         "values": {}
@@ -2825,7 +2825,7 @@
     {
       "id": "SWAP_007",
       "category": "SwapChain Management",
-      "test_type": "Resize SwapChain",
+      "testType": "Resize SwapChain",
       "input": {
         "type": "SwapChainResize",
         "values": {
@@ -2840,7 +2840,7 @@
     {
       "id": "BIND_001",
       "category": "Resource Binding",
-      "test_type": "Create Bind Group Layout - Uniform",
+      "testType": "Create Bind Group Layout - Uniform",
       "input": {
         "type": "BindGroupLayoutDesc",
         "values": {
@@ -2863,7 +2863,7 @@
     {
       "id": "BIND_002",
       "category": "Resource Binding",
-      "test_type": "Create Bind Group - Uniform",
+      "testType": "Create Bind Group - Uniform",
       "input": {
         "type": "BindGroupDesc",
         "values": {
@@ -2884,7 +2884,7 @@
     {
       "id": "BIND_003",
       "category": "Resource Binding",
-      "test_type": "Create Bind Group Layout - Storage",
+      "testType": "Create Bind Group Layout - Storage",
       "input": {
         "type": "BindGroupLayoutDesc",
         "values": {
@@ -2907,7 +2907,7 @@
     {
       "id": "BIND_004",
       "category": "Resource Binding",
-      "test_type": "Create Bind Group Layout - Texture",
+      "testType": "Create Bind Group Layout - Texture",
       "input": {
         "type": "BindGroupLayoutDesc",
         "values": {
@@ -2930,7 +2930,7 @@
     {
       "id": "BIND_005",
       "category": "Resource Binding",
-      "test_type": "Create Bind Group Layout - Sampler",
+      "testType": "Create Bind Group Layout - Sampler",
       "input": {
         "type": "BindGroupLayoutDesc",
         "values": {
@@ -2951,7 +2951,7 @@
     {
       "id": "BIND_006",
       "category": "Resource Binding",
-      "test_type": "Create Pipeline Layout",
+      "testType": "Create Pipeline Layout",
       "input": {
         "type": "PipelineLayoutDesc",
         "values": {
@@ -2966,7 +2966,7 @@
     {
       "id": "MEM_001",
       "category": "Memory Management",
-      "test_type": "Allocate 100 Small Buffers",
+      "testType": "Allocate 100 Small Buffers",
       "input": {
         "type": "StressTest",
         "values": {
@@ -2982,7 +2982,7 @@
     {
       "id": "MEM_002",
       "category": "Memory Management",
-      "test_type": "Allocate 1000 Small Buffers",
+      "testType": "Allocate 1000 Small Buffers",
       "input": {
         "type": "StressTest",
         "values": {
@@ -2998,7 +2998,7 @@
     {
       "id": "MEM_003",
       "category": "Memory Management",
-      "test_type": "Allocate 100 Large Buffers",
+      "testType": "Allocate 100 Large Buffers",
       "input": {
         "type": "StressTest",
         "values": {
@@ -3014,7 +3014,7 @@
     {
       "id": "MEM_004",
       "category": "Memory Management",
-      "test_type": "Allocate 100 Textures",
+      "testType": "Allocate 100 Textures",
       "input": {
         "type": "StressTest",
         "values": {
@@ -3030,7 +3030,7 @@
     {
       "id": "MEM_005",
       "category": "Memory Management",
-      "test_type": "Memory Pressure Test",
+      "testType": "Memory Pressure Test",
       "input": {
         "type": "StressTest",
         "values": {
@@ -3047,7 +3047,7 @@
     {
       "id": "ERR_001",
       "category": "Error Recovery",
-      "test_type": "Buffer Overflow Write",
+      "testType": "Buffer Overflow Write",
       "input": {
         "type": "BufferWrite",
         "values": {
@@ -3062,7 +3062,7 @@
     {
       "id": "ERR_002",
       "category": "Error Recovery",
-      "test_type": "Invalid Buffer Mapping",
+      "testType": "Invalid Buffer Mapping",
       "input": {
         "type": "BufferMap",
         "values": {
@@ -3079,7 +3079,7 @@
     {
       "id": "ERR_003",
       "category": "Error Recovery",
-      "test_type": "Invalid Texture Format",
+      "testType": "Invalid Texture Format",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -3096,7 +3096,7 @@
     {
       "id": "ERR_004",
       "category": "Error Recovery",
-      "test_type": "Pipeline State Mismatch",
+      "testType": "Pipeline State Mismatch",
       "input": {
         "type": "PipelineStateMismatch",
         "values": {
@@ -3111,7 +3111,7 @@
     {
       "id": "ERR_005",
       "category": "Error Recovery",
-      "test_type": "Out of Memory",
+      "testType": "Out of Memory",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -3126,7 +3126,7 @@
     {
       "id": "PERF_001",
       "category": "Performance",
-      "test_type": "Rapid Buffer Creation - 1000",
+      "testType": "Rapid Buffer Creation - 1000",
       "input": {
         "type": "PerformanceTest",
         "values": {
@@ -3142,7 +3142,7 @@
     {
       "id": "PERF_002",
       "category": "Performance",
-      "test_type": "Rapid Buffer Creation - 10000",
+      "testType": "Rapid Buffer Creation - 10000",
       "input": {
         "type": "PerformanceTest",
         "values": {
@@ -3158,7 +3158,7 @@
     {
       "id": "PERF_003",
       "category": "Performance",
-      "test_type": "Rapid Texture Creation - 100",
+      "testType": "Rapid Texture Creation - 100",
       "input": {
         "type": "PerformanceTest",
         "values": {
@@ -3174,7 +3174,7 @@
     {
       "id": "PERF_004",
       "category": "Performance",
-      "test_type": "Rapid Command Encoding",
+      "testType": "Rapid Command Encoding",
       "input": {
         "type": "PerformanceTest",
         "values": {
@@ -3189,7 +3189,7 @@
     {
       "id": "PERF_005",
       "category": "Performance",
-      "test_type": "Rapid Draw Calls",
+      "testType": "Rapid Draw Calls",
       "input": {
         "type": "PerformanceTest",
         "values": {
@@ -3204,7 +3204,7 @@
     {
       "id": "VAL_001",
       "category": "Validation",
-      "test_type": "Invalid Buffer Usage - MapRead+MapWrite",
+      "testType": "Invalid Buffer Usage - MapRead+MapWrite",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -3219,7 +3219,7 @@
     {
       "id": "VAL_002",
       "category": "Validation",
-      "test_type": "Invalid Texture Size - 0x0",
+      "testType": "Invalid Texture Size - 0x0",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -3236,7 +3236,7 @@
     {
       "id": "VAL_003",
       "category": "Validation",
-      "test_type": "Invalid Mip Level Count",
+      "testType": "Invalid Mip Level Count",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -3254,7 +3254,7 @@
     {
       "id": "VAL_004",
       "category": "Validation",
-      "test_type": "Invalid Sample Count",
+      "testType": "Invalid Sample Count",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -3272,7 +3272,7 @@
     {
       "id": "VAL_005",
       "category": "Validation",
-      "test_type": "Bind Group Layout Mismatch",
+      "testType": "Bind Group Layout Mismatch",
       "input": {
         "type": "BindGroupDesc",
         "values": {
@@ -3290,7 +3290,7 @@
     {
       "id": "COMPAT_001",
       "category": "Compatibility",
-      "test_type": "Check Timestamp Query Support",
+      "testType": "Check Timestamp Query Support",
       "input": {
         "type": "FeatureQuery",
         "values": {
@@ -3304,7 +3304,7 @@
     {
       "id": "COMPAT_002",
       "category": "Compatibility",
-      "test_type": "Check BC Compression Support",
+      "testType": "Check BC Compression Support",
       "input": {
         "type": "FeatureQuery",
         "values": {
@@ -3318,7 +3318,7 @@
     {
       "id": "COMPAT_003",
       "category": "Compatibility",
-      "test_type": "Check F16 Support",
+      "testType": "Check F16 Support",
       "input": {
         "type": "FeatureQuery",
         "values": {
@@ -3332,7 +3332,7 @@
     {
       "id": "COMPAT_004",
       "category": "Compatibility",
-      "test_type": "Check Max Texture Size",
+      "testType": "Check Max Texture Size",
       "input": {
         "type": "LimitQuery",
         "values": {
@@ -3346,7 +3346,7 @@
     {
       "id": "COMPAT_005",
       "category": "Compatibility",
-      "test_type": "Check Max Buffer Size",
+      "testType": "Check Max Buffer Size",
       "input": {
         "type": "LimitQuery",
         "values": {
@@ -3360,7 +3360,7 @@
     {
       "id": "STRESS_001",
       "category": "Stress Testing",
-      "test_type": "Maximum Texture Size",
+      "testType": "Maximum Texture Size",
       "input": {
         "type": "TextureDesc",
         "values": {
@@ -3377,7 +3377,7 @@
     {
       "id": "STRESS_002",
       "category": "Stress Testing",
-      "test_type": "Maximum Buffer Size",
+      "testType": "Maximum Buffer Size",
       "input": {
         "type": "BufferDesc",
         "values": {
@@ -3392,7 +3392,7 @@
     {
       "id": "STRESS_003",
       "category": "Stress Testing",
-      "test_type": "Maximum Bind Groups",
+      "testType": "Maximum Bind Groups",
       "input": {
         "type": "StressTest",
         "values": {
@@ -3407,7 +3407,7 @@
     {
       "id": "STRESS_004",
       "category": "Stress Testing",
-      "test_type": "Rapid Context Switching",
+      "testType": "Rapid Context Switching",
       "input": {
         "type": "StressTest",
         "values": {
@@ -3422,7 +3422,7 @@
     {
       "id": "STRESS_005",
       "category": "Stress Testing",
-      "test_type": "Concurrent Resource Creation",
+      "testType": "Concurrent Resource Creation",
       "input": {
         "type": "StressTest",
         "values": {

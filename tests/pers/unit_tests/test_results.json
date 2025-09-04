@@ -14,7 +14,7 @@
         {
             "id": "001",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=true, applicationName=Pers Unit Test, engineName=Pers Graphics Engine",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -38,7 +38,7 @@
         {
             "id": "002",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=false, applicationName=Pers Unit Test, engineName=Pers Graphics Engine",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -60,7 +60,7 @@
         {
             "id": "003",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=true, applicationName=, engineName=Pers Graphics Engine",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -84,7 +84,7 @@
         {
             "id": "004",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=true, applicationName=[LONG_STRING_1024], engineName=Pers Graphics Engine",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -108,7 +108,7 @@
         {
             "id": "005",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=true, applicationName=Test@App#$%^&*(), engineName=Pers Graphics Engine",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -132,7 +132,7 @@
         {
             "id": "006",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=true, applicationName=ãƒ†ã‚¹ãƒˆã‚¢ãƒ—ãƒªðŸ˜€, engineName=Pers Graphics Engine",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -156,7 +156,7 @@
         {
             "id": "007",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=true, applicationName=Test App, engineName=",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -180,7 +180,7 @@
         {
             "id": "008",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=false, applicationName=, engineName=",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -202,7 +202,7 @@
         {
             "id": "009",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=true, applicationName=App v1.0, engineName=Engine v2.3",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -226,7 +226,7 @@
         {
             "id": "010",
             "category": "Instance Management",
-            "test_type": "Instance Creation",
+            "testType": "Instance Creation",
             "input": "type=Instance Creation, enableValidation=false, applicationName=[LONG_STRING_1024], engineName=[LONG_STRING_1024]",
             "expected_result": "not_null",
             "actual_result": "Instance created",
@@ -248,7 +248,7 @@
         {
             "id": "011",
             "category": "Physical Device",
-            "test_type": "Request Adapter",
+            "testType": "Request Adapter",
             "input": "type=Request Adapter, powerPreference=HighPerformance, forceFallback=false",
             "expected_result": "not_null",
             "actual_result": "",
@@ -276,7 +276,7 @@
         {
             "id": "012",
             "category": "Physical Device",
-            "test_type": "Request Adapter",
+            "testType": "Request Adapter",
             "input": "type=Request Adapter, powerPreference=LowPower, forceFallback=false",
             "expected_result": "not_null",
             "actual_result": "Adapter found with requested preferences",
@@ -298,7 +298,7 @@
         {
             "id": "013",
             "category": "Physical Device",
-            "test_type": "Request Adapter",
+            "testType": "Request Adapter",
             "input": "type=Request Adapter, powerPreference=Undefined, forceFallback=false",
             "expected_result": "not_null",
             "actual_result": "Adapter found with requested preferences",
@@ -310,7 +310,7 @@
             "timestamp": "2025-09-04 01:19:38",
             "log_messages": [
                 "[INFO] [WebGPUInstance] Adapter obtained successfully",
-                "[INFO] [WebGPUInstance] Adapter device: NVIDIA GeForce RTX 3090€éÃïÌ",
+                "[INFO] [WebGPUInstance] Adapter device: NVIDIA GeForce RTX 3090ï¿½ï¿½ï¿½ï¿½ï¿½",
                 "[INFO] [WebGPUInstance] Adapter description: 560.94",
                 "[INFO] [WebGPUPhysicalDevice] Adapter info queried successfully",
                 "[INFO] [WebGPUPhysicalDevice] Created with adapter",
@@ -320,7 +320,7 @@
         {
             "id": "014",
             "category": "Physical Device",
-            "test_type": "Request Adapter",
+            "testType": "Request Adapter",
             "input": "type=Request Adapter, powerPreference=Undefined, forceFallback=true",
             "expected_result": "not_null",
             "actual_result": "Failed to find adapter",
@@ -338,7 +338,7 @@
         {
             "id": "015",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=0, usage=Vertex, mappedAtCreation=false",
             "expected_result": "nullptr",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -375,7 +375,7 @@
         {
             "id": "016",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=256, usage=Vertex, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -392,7 +392,7 @@
         {
             "id": "017",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=256, usage=Index, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -409,7 +409,7 @@
         {
             "id": "018",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=256, usage=Uniform, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -426,7 +426,7 @@
         {
             "id": "019",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=1024, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -443,7 +443,7 @@
         {
             "id": "020",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=256, usage=CopySrc, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -460,7 +460,7 @@
         {
             "id": "021",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=256, usage=CopyDst, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -477,7 +477,7 @@
         {
             "id": "022",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=512, usage=Vertex, mappedAtCreation=true",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -494,7 +494,7 @@
         {
             "id": "023",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=65536, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -511,7 +511,7 @@
         {
             "id": "024",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=1048576, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -528,7 +528,7 @@
         {
             "id": "025",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=16777216, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -545,7 +545,7 @@
         {
             "id": "026",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=268435456, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -562,7 +562,7 @@
         {
             "id": "027",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=1, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -579,7 +579,7 @@
         {
             "id": "028",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=4, usage=Uniform, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -596,7 +596,7 @@
         {
             "id": "029",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=16, usage=Uniform, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -613,7 +613,7 @@
         {
             "id": "030",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=1024, usage=MapWrite, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -630,7 +630,7 @@
         {
             "id": "031",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=1024, usage=MapRead, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -647,7 +647,7 @@
         {
             "id": "032",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=17, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -664,7 +664,7 @@
         {
             "id": "033",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=255, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -681,7 +681,7 @@
         {
             "id": "034",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=257, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -698,7 +698,7 @@
         {
             "id": "035",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=512, usage=Vertex, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -715,7 +715,7 @@
         {
             "id": "036",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=2048, usage=Index, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -732,7 +732,7 @@
         {
             "id": "037",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=4096, usage=Uniform, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -749,7 +749,7 @@
         {
             "id": "038",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=8192, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -766,7 +766,7 @@
         {
             "id": "039",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=16384, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -783,7 +783,7 @@
         {
             "id": "040",
             "category": "Buffer Management",
-            "test_type": "Buffer Creation",
+            "testType": "Buffer Creation",
             "input": "type=Buffer Creation, size=32768, usage=Storage, mappedAtCreation=false",
             "expected_result": "not_null",
             "actual_result": "Buffer creation failed as expected for zero size",
@@ -800,7 +800,7 @@
         {
             "id": "041",
             "category": "Device Management",
-            "test_type": "Device Creation",
+            "testType": "Device Creation",
             "input": "type=Device Creation, enableValidation=false",
             "expected_result": "not_null",
             "actual_result": "Device created successfully",
@@ -834,7 +834,7 @@
         {
             "id": "042",
             "category": "Device Management",
-            "test_type": "Device Creation",
+            "testType": "Device Creation",
             "input": "type=Device Creation, enableValidation=true",
             "expected_result": "not_null",
             "actual_result": "Device created successfully",
@@ -856,7 +856,7 @@
         {
             "id": "043",
             "category": "Device Management",
-            "test_type": "Device Creation",
+            "testType": "Device Creation",
             "input": "type=Device Creation, enableValidation=false, debugName=Test Device",
             "expected_result": "not_null",
             "actual_result": "Device created successfully",
@@ -878,7 +878,7 @@
         {
             "id": "044",
             "category": "Device Management",
-            "test_type": "Device Creation",
+            "testType": "Device Creation",
             "input": "type=Device Creation, enableValidation=false, debugName=",
             "expected_result": "not_null",
             "actual_result": "Device created successfully",
@@ -900,7 +900,7 @@
         {
             "id": "045",
             "category": "Device Management",
-            "test_type": "Device Creation",
+            "testType": "Device Creation",
             "input": "type=Device Creation, enableValidation=false, debugName=[LONG_STRING_1024]",
             "expected_result": "not_null",
             "actual_result": "Device created successfully",
@@ -922,7 +922,7 @@
         {
             "id": "046",
             "category": "Shader Management",
-            "test_type": "Shader Compilation",
+            "testType": "Shader Compilation",
             "input": "type=Shader Compilation, shaderCode=@vertex fn main() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0, 0.0, 0.0, 1.0); }, stage=vertex",
             "expected_result": "not_null",
             "actual_result": "Shader compiled successfully",
@@ -959,7 +959,7 @@
         {
             "id": "047",
             "category": "Shader Management",
-            "test_type": "Shader Compilation",
+            "testType": "Shader Compilation",
             "input": "type=Shader Compilation, stage=fragment, shaderCode=@fragment fn main() -> @location(0) vec4<f32> { return vec4<f32>(1.0, 0.0, 0.0, 1.0); }",
             "expected_result": "not_null",
             "actual_result": "Shader compiled successfully",
@@ -976,7 +976,7 @@
         {
             "id": "048",
             "category": "Shader Management",
-            "test_type": "Shader Compilation",
+            "testType": "Shader Compilation",
             "input": "type=Shader Compilation, shaderCode=@vertex fn main() { invalid syntax }, stage=vertex",
             "expected_result": "nullptr",
             "actual_result": "Shader compiled unexpectedly",
@@ -994,7 +994,7 @@
         {
             "id": "049",
             "category": "Shader Management",
-            "test_type": "Shader Compilation",
+            "testType": "Shader Compilation",
             "input": "type=Shader Compilation, stage=vertex, shaderCode=",
             "expected_result": "nullptr",
             "actual_result": "Shader compiled unexpectedly",
@@ -1011,7 +1011,7 @@
         {
             "id": "050",
             "category": "Shader Management",
-            "test_type": "Shader Compilation",
+            "testType": "Shader Compilation",
             "input": "type=Shader Compilation, shaderCode=@compute @workgroup_size(1) fn main() { }, stage=compute",
             "expected_result": "not_null",
             "actual_result": "Shader compiled successfully",
@@ -1028,7 +1028,7 @@
         {
             "id": "051",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RGBA8Unorm, depth=1, height=256, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1065,7 +1065,7 @@
         {
             "id": "052",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=1, height=1, depth=1, format=RGBA8Unorm, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1082,7 +1082,7 @@
         {
             "id": "053",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=512, format=RGBA8Unorm, depth=1, height=512, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1099,7 +1099,7 @@
         {
             "id": "054",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=1024, height=1024, depth=1, format=RGBA8Unorm, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1116,7 +1116,7 @@
         {
             "id": "055",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=2048, format=RGBA8Unorm, depth=1, height=2048, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1133,7 +1133,7 @@
         {
             "id": "056",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=4096, format=RGBA8Unorm, depth=1, height=4096, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1150,7 +1150,7 @@
         {
             "id": "057",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=128, depth=1, format=RGBA8Unorm, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1167,7 +1167,7 @@
         {
             "id": "058",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=128, height=256, depth=1, format=RGBA8Unorm, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1184,7 +1184,7 @@
         {
             "id": "059",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=R8Unorm, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1201,7 +1201,7 @@
         {
             "id": "060",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RG8Unorm, depth=1, height=256, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1218,7 +1218,7 @@
         {
             "id": "061",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=BGRA8Unorm, depth=1, height=256, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1235,7 +1235,7 @@
         {
             "id": "062",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=R32Float, depth=1, height=256, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1252,7 +1252,7 @@
         {
             "id": "063",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RG32Float, depth=1, height=256, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1269,7 +1269,7 @@
         {
             "id": "064",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=RGBA32Float, dimension=2D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1286,7 +1286,7 @@
         {
             "id": "065",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=Depth24Plus, dimension=2D, usage=RenderAttachment",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1303,7 +1303,7 @@
         {
             "id": "066",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=Depth32Float, dimension=2D, usage=RenderAttachment",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1320,7 +1320,7 @@
         {
             "id": "067",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=RGBA8Unorm, dimension=2D, usage=RenderAttachment",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1337,7 +1337,7 @@
         {
             "id": "068",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=RGBA8Unorm, dimension=2D, usage=StorageBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1354,7 +1354,7 @@
         {
             "id": "069",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=RGBA8Unorm, dimension=2D, usage=CopySrc",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1371,7 +1371,7 @@
         {
             "id": "070",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RGBA8Unorm, depth=1, height=256, dimension=2D, usage=CopyDst",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1388,7 +1388,7 @@
         {
             "id": "071",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=64, format=RGBA8Unorm, depth=64, height=64, dimension=3D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1405,7 +1405,7 @@
         {
             "id": "072",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=128, format=RGBA8Unorm, depth=128, height=128, dimension=3D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1422,7 +1422,7 @@
         {
             "id": "073",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=64, format=RGBA8Unorm, depth=32, height=128, dimension=3D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1439,7 +1439,7 @@
         {
             "id": "074",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RGBA8Unorm, depth=1, height=1, dimension=1D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1456,7 +1456,7 @@
         {
             "id": "075",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=1024, format=RGBA8Unorm, depth=1, height=1, dimension=1D, usage=TextureBinding",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1473,7 +1473,7 @@
         {
             "id": "076",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RGBA8Unorm, depth=1, height=256, usage=TextureBinding, arrayLayers=4, dimension=2D",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1490,7 +1490,7 @@
         {
             "id": "077",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RGBA8Unorm, depth=1, height=256, usage=TextureBinding, arrayLayers=16, dimension=2D",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1507,7 +1507,7 @@
         {
             "id": "078",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, format=RGBA8Unorm, depth=1, height=256, usage=TextureBinding, arrayLayers=6, dimension=2D",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1524,7 +1524,7 @@
         {
             "id": "079",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=RGBA8Unorm, mipLevelCount=2, usage=TextureBinding, dimension=2D",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1541,7 +1541,7 @@
         {
             "id": "080",
             "category": "Texture Management",
-            "test_type": "Texture Creation",
+            "testType": "Texture Creation",
             "input": "type=Texture Creation, width=256, height=256, depth=1, format=RGBA8Unorm, mipLevelCount=9, usage=TextureBinding, dimension=2D",
             "expected_result": "not_null",
             "actual_result": "Failed to create texture",
@@ -1558,7 +1558,7 @@
         {
             "id": "081",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, vertexShader=basic_vertex, cullMode=None, fragmentShader=basic_fragment, topology=TriangleList",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1573,7 +1573,7 @@
         {
             "id": "082",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, cullMode=Back, vertexShader=basic_vertex, fragmentShader=basic_fragment, topology=TriangleList",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1588,7 +1588,7 @@
         {
             "id": "083",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, vertexShader=basic_vertex, cullMode=Front, fragmentShader=basic_fragment, topology=TriangleList",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1603,7 +1603,7 @@
         {
             "id": "084",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, cullMode=None, vertexShader=basic_vertex, fragmentShader=basic_fragment, topology=LineStrip",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1618,7 +1618,7 @@
         {
             "id": "085",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, vertexShader=basic_vertex, cullMode=None, fragmentShader=basic_fragment, topology=LineList",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1633,7 +1633,7 @@
         {
             "id": "086",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, vertexShader=basic_vertex, cullMode=None, fragmentShader=basic_fragment, topology=PointList",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1648,7 +1648,7 @@
         {
             "id": "087",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, cullMode=None, vertexShader=basic_vertex, fragmentShader=basic_fragment, topology=TriangleStrip",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1663,7 +1663,7 @@
         {
             "id": "088",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, depthTest=true, vertexShader=basic_vertex, fragmentShader=basic_fragment, topology=TriangleList, depthCompare=Less",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1678,7 +1678,7 @@
         {
             "id": "089",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, depthTest=true, vertexShader=basic_vertex, fragmentShader=basic_fragment, topology=TriangleList, depthWrite=true",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1693,7 +1693,7 @@
         {
             "id": "090",
             "category": "Pipeline Management",
-            "test_type": "Render Pipeline Creation",
+            "testType": "Render Pipeline Creation",
             "input": "type=Render Pipeline Creation, vertexShader=basic_vertex, fragmentShader=basic_fragment, topology=TriangleList, stencilTest=true",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1708,7 +1708,7 @@
         {
             "id": "091",
             "category": "Command Encoding",
-            "test_type": "Command Encoder Creation",
+            "testType": "Command Encoder Creation",
             "input": "type=Command Encoder Creation, label=Basic Encoder",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1723,7 +1723,7 @@
         {
             "id": "092",
             "category": "Command Encoding",
-            "test_type": "Command Encoder Creation",
+            "testType": "Command Encoder Creation",
             "input": "type=Command Encoder Creation, label=",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1738,7 +1738,7 @@
         {
             "id": "093",
             "category": "Command Encoding",
-            "test_type": "Command Encoder Creation",
+            "testType": "Command Encoder Creation",
             "input": "type=Command Encoder Creation, label=[LONG_STRING_1024]",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1753,7 +1753,7 @@
         {
             "id": "094",
             "category": "Render Pass",
-            "test_type": "Render Pass Creation",
+            "testType": "Render Pass Creation",
             "input": "type=Render Pass Creation, colorAttachmentCount=1, hasDepthStencil=false",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1768,7 +1768,7 @@
         {
             "id": "095",
             "category": "Render Pass",
-            "test_type": "Render Pass Creation",
+            "testType": "Render Pass Creation",
             "input": "type=Render Pass Creation, colorAttachmentCount=1, hasDepthStencil=true, clearDepth=1.000000",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1783,7 +1783,7 @@
         {
             "id": "096",
             "category": "Render Pass",
-            "test_type": "Render Pass Creation",
+            "testType": "Render Pass Creation",
             "input": "type=Render Pass Creation, colorAttachmentCount=4, hasDepthStencil=false",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1798,7 +1798,7 @@
         {
             "id": "097",
             "category": "Render Pass",
-            "test_type": "Render Pass Creation",
+            "testType": "Render Pass Creation",
             "input": "type=Render Pass Creation, colorAttachmentCount=1, hasDepthStencil=true, clearStencil=0",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1813,7 +1813,7 @@
         {
             "id": "098",
             "category": "Render Pass",
-            "test_type": "Render Pass Creation",
+            "testType": "Render Pass Creation",
             "input": "type=Render Pass Creation, colorAttachmentCount=0, hasDepthStencil=true",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1828,7 +1828,7 @@
         {
             "id": "099",
             "category": "Queue Operations",
-            "test_type": "Queue Submit",
+            "testType": "Queue Submit",
             "input": "type=Queue Submit, commandCount=0",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -1843,7 +1843,7 @@
         {
             "id": "100",
             "category": "Queue Operations",
-            "test_type": "Queue Submit",
+            "testType": "Queue Submit",
             "input": "type=Queue Submit, commandCount=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -1858,7 +1858,7 @@
         {
             "id": "101",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, magFilter=Linear, mipmapFilter=Linear",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1873,7 +1873,7 @@
         {
             "id": "102",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Nearest, magFilter=Nearest, mipmapFilter=Nearest",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1888,7 +1888,7 @@
         {
             "id": "103",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, magFilter=Linear, addressModeV=ClampToEdge, addressModeU=ClampToEdge",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1903,7 +1903,7 @@
         {
             "id": "104",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, addressModeV=Repeat, magFilter=Linear, addressModeU=Repeat",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1918,7 +1918,7 @@
         {
             "id": "105",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, magFilter=Linear, addressModeV=MirrorRepeat, addressModeU=MirrorRepeat",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1933,7 +1933,7 @@
         {
             "id": "106",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, maxAnisotropy=1, magFilter=Linear",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1948,7 +1948,7 @@
         {
             "id": "107",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, maxAnisotropy=16, minFilter=Linear, magFilter=Linear",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1963,7 +1963,7 @@
         {
             "id": "108",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, magFilter=Linear, compare=Less",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1978,7 +1978,7 @@
         {
             "id": "109",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, magFilter=Linear, lodMinClamp=0.000000, lodMaxClamp=10.000000",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -1993,7 +1993,7 @@
         {
             "id": "110",
             "category": "Sampler Management",
-            "test_type": "Sampler Creation",
+            "testType": "Sampler Creation",
             "input": "type=Sampler Creation, minFilter=Linear, magFilter=Nearest, mipmapFilter=Linear",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2008,7 +2008,7 @@
         {
             "id": "111",
             "category": "Bind Group",
-            "test_type": "Bind Group Creation",
+            "testType": "Bind Group Creation",
             "input": "type=Bind Group Creation, entryCount=1, entryType=buffer",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2023,7 +2023,7 @@
         {
             "id": "112",
             "category": "Bind Group",
-            "test_type": "Bind Group Creation",
+            "testType": "Bind Group Creation",
             "input": "type=Bind Group Creation, entryCount=1, entryType=texture",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2038,7 +2038,7 @@
         {
             "id": "113",
             "category": "Bind Group",
-            "test_type": "Bind Group Creation",
+            "testType": "Bind Group Creation",
             "input": "type=Bind Group Creation, entryCount=1, entryType=sampler",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2053,7 +2053,7 @@
         {
             "id": "114",
             "category": "Bind Group",
-            "test_type": "Bind Group Creation",
+            "testType": "Bind Group Creation",
             "input": "type=Bind Group Creation, entryCount=4, entryType=mixed",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2068,7 +2068,7 @@
         {
             "id": "115",
             "category": "Bind Group",
-            "test_type": "Bind Group Creation",
+            "testType": "Bind Group Creation",
             "input": "type=Bind Group Creation, entryCount=0, entryType=none",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2083,7 +2083,7 @@
         {
             "id": "116",
             "category": "Bind Group Layout",
-            "test_type": "Bind Group Layout Creation",
+            "testType": "Bind Group Layout Creation",
             "input": "type=Bind Group Layout Creation, binding=0, visibility=Vertex, bufferType=Uniform",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2098,7 +2098,7 @@
         {
             "id": "117",
             "category": "Bind Group Layout",
-            "test_type": "Bind Group Layout Creation",
+            "testType": "Bind Group Layout Creation",
             "input": "type=Bind Group Layout Creation, binding=0, visibility=Fragment, bufferType=Storage",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2113,7 +2113,7 @@
         {
             "id": "118",
             "category": "Bind Group Layout",
-            "test_type": "Bind Group Layout Creation",
+            "testType": "Bind Group Layout Creation",
             "input": "type=Bind Group Layout Creation, binding=0, visibility=Fragment, textureType=Float",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2128,7 +2128,7 @@
         {
             "id": "119",
             "category": "Bind Group Layout",
-            "test_type": "Bind Group Layout Creation",
+            "testType": "Bind Group Layout Creation",
             "input": "type=Bind Group Layout Creation, binding=0, visibility=Fragment, samplerType=Filtering",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2143,7 +2143,7 @@
         {
             "id": "120",
             "category": "Bind Group Layout",
-            "test_type": "Bind Group Layout Creation",
+            "testType": "Bind Group Layout Creation",
             "input": "type=Bind Group Layout Creation, binding=0, visibility=VertexFragment, bufferType=Uniform",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2158,7 +2158,7 @@
         {
             "id": "121",
             "category": "Pipeline Layout",
-            "test_type": "Pipeline Layout Creation",
+            "testType": "Pipeline Layout Creation",
             "input": "type=Pipeline Layout Creation, bindGroupLayoutCount=1",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2173,7 +2173,7 @@
         {
             "id": "122",
             "category": "Pipeline Layout",
-            "test_type": "Pipeline Layout Creation",
+            "testType": "Pipeline Layout Creation",
             "input": "type=Pipeline Layout Creation, bindGroupLayoutCount=4",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2188,7 +2188,7 @@
         {
             "id": "123",
             "category": "Pipeline Layout",
-            "test_type": "Pipeline Layout Creation",
+            "testType": "Pipeline Layout Creation",
             "input": "type=Pipeline Layout Creation, bindGroupLayoutCount=0",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2203,7 +2203,7 @@
         {
             "id": "124",
             "category": "Compute Pipeline",
-            "test_type": "Compute Pipeline Creation",
+            "testType": "Compute Pipeline Creation",
             "input": "type=Compute Pipeline Creation, entryPoint=main, computeShader=basic_compute",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2218,7 +2218,7 @@
         {
             "id": "125",
             "category": "Compute Pipeline",
-            "test_type": "Compute Pipeline Creation",
+            "testType": "Compute Pipeline Creation",
             "input": "type=Compute Pipeline Creation, computeShader=compute_with_buffers, entryPoint=main, hasLayout=true",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2233,7 +2233,7 @@
         {
             "id": "126",
             "category": "Query Set",
-            "test_type": "Query Set Creation",
+            "testType": "Query Set Creation",
             "input": "type=Query Set Creation, type=Occlusion, count=256",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2248,7 +2248,7 @@
         {
             "id": "127",
             "category": "Query Set",
-            "test_type": "Query Set Creation",
+            "testType": "Query Set Creation",
             "input": "type=Query Set Creation, type=Timestamp, count=256",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2263,7 +2263,7 @@
         {
             "id": "128",
             "category": "Texture View",
-            "test_type": "Texture View Creation",
+            "testType": "Texture View Creation",
             "input": "type=Texture View Creation, dimension=2D, format=RGBA8Unorm, baseMipLevel=0, mipLevelCount=1",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2278,7 +2278,7 @@
         {
             "id": "129",
             "category": "Texture View",
-            "test_type": "Texture View Creation",
+            "testType": "Texture View Creation",
             "input": "type=Texture View Creation, dimension=Cube, arrayLayerCount=6, format=RGBA8Unorm, baseArrayLayer=0",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2293,7 +2293,7 @@
         {
             "id": "130",
             "category": "Texture View",
-            "test_type": "Texture View Creation",
+            "testType": "Texture View Creation",
             "input": "type=Texture View Creation, dimension=2D, format=RGBA8Unorm, arrayLayerCount=1, baseArrayLayer=2",
             "expected_result": "not_null",
             "actual_result": "NYI - Handler not implemented",
@@ -2308,7 +2308,7 @@
         {
             "id": "131",
             "category": "Buffer Operations",
-            "test_type": "Buffer Map",
+            "testType": "Buffer Map",
             "input": "type=Buffer Map, size=1024, mapMode=Write",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2323,7 +2323,7 @@
         {
             "id": "132",
             "category": "Buffer Operations",
-            "test_type": "Buffer Map",
+            "testType": "Buffer Map",
             "input": "type=Buffer Map, size=1024, mapMode=Read",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2338,7 +2338,7 @@
         {
             "id": "133",
             "category": "Buffer Operations",
-            "test_type": "Buffer Map",
+            "testType": "Buffer Map",
             "input": "type=Buffer Map, size=1024, mapMode=Write, offset=256, length=512",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2353,7 +2353,7 @@
         {
             "id": "134",
             "category": "Buffer Operations",
-            "test_type": "Buffer Map",
+            "testType": "Buffer Map",
             "input": "type=Buffer Map, size=1024, mapMode=Read, offset=128, length=256",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2368,7 +2368,7 @@
         {
             "id": "135",
             "category": "Buffer Operations",
-            "test_type": "Buffer Map",
+            "testType": "Buffer Map",
             "input": "type=Buffer Map, size=4096, mapMode=Write, offset=0, length=4096",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2383,7 +2383,7 @@
         {
             "id": "136",
             "category": "Buffer Operations",
-            "test_type": "Buffer Copy",
+            "testType": "Buffer Copy",
             "input": "type=Buffer Copy, srcSize=256, dstSize=256, copySize=256",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2398,7 +2398,7 @@
         {
             "id": "137",
             "category": "Buffer Operations",
-            "test_type": "Buffer Copy",
+            "testType": "Buffer Copy",
             "input": "type=Buffer Copy, srcSize=1024, copySize=256, dstSize=1024, srcOffset=128, dstOffset=512",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2413,7 +2413,7 @@
         {
             "id": "138",
             "category": "Buffer Operations",
-            "test_type": "Buffer Copy",
+            "testType": "Buffer Copy",
             "input": "type=Buffer Copy, srcSize=1024, textureWidth=16, textureHeight=16, bytesPerRow=64",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2428,7 +2428,7 @@
         {
             "id": "139",
             "category": "Buffer Operations",
-            "test_type": "Buffer Copy",
+            "testType": "Buffer Copy",
             "input": "type=Buffer Copy, textureWidth=16, textureHeight=16, dstSize=1024, bytesPerRow=64",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2443,7 +2443,7 @@
         {
             "id": "140",
             "category": "Buffer Operations",
-            "test_type": "Buffer Copy",
+            "testType": "Buffer Copy",
             "input": "type=Buffer Copy, srcWidth=256, srcHeight=256, dstWidth=256, dstHeight=256",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2458,7 +2458,7 @@
         {
             "id": "141",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, vertexCount=3, instanceCount=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2473,7 +2473,7 @@
         {
             "id": "142",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, vertexCount=6, instanceCount=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2488,7 +2488,7 @@
         {
             "id": "143",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, indexCount=6, instanceCount=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2503,7 +2503,7 @@
         {
             "id": "144",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, vertexCount=3, instanceCount=100",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2518,7 +2518,7 @@
         {
             "id": "145",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, indexCount=6, instanceCount=50",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2533,7 +2533,7 @@
         {
             "id": "146",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, indirectBuffer=true, offset=0",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2548,7 +2548,7 @@
         {
             "id": "147",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, indirectBuffer=true, offset=0, indexed=true",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2563,7 +2563,7 @@
         {
             "id": "148",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, vertexCount=3, instanceCount=1, firstVertex=10",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2578,7 +2578,7 @@
         {
             "id": "149",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, firstInstance=5, vertexCount=3, instanceCount=10",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2593,7 +2593,7 @@
         {
             "id": "150",
             "category": "Draw Operations",
-            "test_type": "Draw Commands",
+            "testType": "Draw Commands",
             "input": "type=Draw Commands, vertexCount=0, instanceCount=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2608,7 +2608,7 @@
         {
             "id": "151",
             "category": "Compute Operations",
-            "test_type": "Dispatch Commands",
+            "testType": "Dispatch Commands",
             "input": "type=Dispatch Commands, workgroupsX=1, workgroupsY=1, workgroupsZ=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2623,7 +2623,7 @@
         {
             "id": "152",
             "category": "Compute Operations",
-            "test_type": "Dispatch Commands",
+            "testType": "Dispatch Commands",
             "input": "type=Dispatch Commands, workgroupsX=64, workgroupsY=1, workgroupsZ=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2638,7 +2638,7 @@
         {
             "id": "153",
             "category": "Compute Operations",
-            "test_type": "Dispatch Commands",
+            "testType": "Dispatch Commands",
             "input": "type=Dispatch Commands, workgroupsX=16, workgroupsY=16, workgroupsZ=1",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2653,7 +2653,7 @@
         {
             "id": "154",
             "category": "Compute Operations",
-            "test_type": "Dispatch Commands",
+            "testType": "Dispatch Commands",
             "input": "type=Dispatch Commands, workgroupsX=8, workgroupsY=8, workgroupsZ=8",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2668,7 +2668,7 @@
         {
             "id": "155",
             "category": "Compute Operations",
-            "test_type": "Dispatch Commands",
+            "testType": "Dispatch Commands",
             "input": "type=Dispatch Commands, indirectBuffer=true, offset=0",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2683,7 +2683,7 @@
         {
             "id": "156",
             "category": "Vertex Input",
-            "test_type": "Vertex Buffer Setup",
+            "testType": "Vertex Buffer Setup",
             "input": "type=Vertex Buffer Setup, bufferCount=1, stride=12",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2698,7 +2698,7 @@
         {
             "id": "157",
             "category": "Vertex Input",
-            "test_type": "Vertex Buffer Setup",
+            "testType": "Vertex Buffer Setup",
             "input": "type=Vertex Buffer Setup, bufferCount=4, stride=12",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2713,7 +2713,7 @@
         {
             "id": "158",
             "category": "Vertex Input",
-            "test_type": "Vertex Buffer Setup",
+            "testType": "Vertex Buffer Setup",
             "input": "type=Vertex Buffer Setup, bufferCount=1, stride=32, interleaved=true",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2728,7 +2728,7 @@
         {
             "id": "159",
             "category": "Vertex Input",
-            "test_type": "Vertex Buffer Setup",
+            "testType": "Vertex Buffer Setup",
             "input": "type=Vertex Buffer Setup, bufferCount=3, interleaved=false, stride=12",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2743,7 +2743,7 @@
         {
             "id": "160",
             "category": "Vertex Input",
-            "test_type": "Vertex Buffer Setup",
+            "testType": "Vertex Buffer Setup",
             "input": "type=Vertex Buffer Setup, bufferCount=1, stride=256",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2758,7 +2758,7 @@
         {
             "id": "161",
             "category": "Index Buffer",
-            "test_type": "Index Buffer Setup",
+            "testType": "Index Buffer Setup",
             "input": "type=Index Buffer Setup, indexFormat=Uint16, indexCount=6",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2773,7 +2773,7 @@
         {
             "id": "162",
             "category": "Index Buffer",
-            "test_type": "Index Buffer Setup",
+            "testType": "Index Buffer Setup",
             "input": "type=Index Buffer Setup, indexFormat=Uint32, indexCount=6",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2788,7 +2788,7 @@
         {
             "id": "163",
             "category": "Index Buffer",
-            "test_type": "Index Buffer Setup",
+            "testType": "Index Buffer Setup",
             "input": "type=Index Buffer Setup, indexFormat=Uint32, indexCount=65536",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2803,7 +2803,7 @@
         {
             "id": "164",
             "category": "Index Buffer",
-            "test_type": "Index Buffer Setup",
+            "testType": "Index Buffer Setup",
             "input": "type=Index Buffer Setup, indexFormat=Uint16, indexCount=3",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
@@ -2818,7 +2818,7 @@
         {
             "id": "165",
             "category": "Index Buffer",
-            "test_type": "Index Buffer Setup",
+            "testType": "Index Buffer Setup",
             "input": "type=Index Buffer Setup, indexFormat=Uint16, indexCount=6, offset=12",
             "expected_result": "success",
             "actual_result": "NYI - Handler not implemented",
