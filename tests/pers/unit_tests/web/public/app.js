@@ -154,8 +154,15 @@ function getStatusPriority(result) {
         return 3; // NA (Test NYI)
     } else if (result.passed) {
         return 0; // Passed
-    } else if (result.log_messages && result.log_messages.some(log => 
-               log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'))) {
+    } else if (result.log_messages && result.log_messages.some(log => {
+               // Handle both string and object formats
+               if (typeof log === 'string') {
+                   return log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]');
+               } else if (typeof log === 'object' && log.level) {
+                   return log.level === 'TODO_OR_DIE';
+               }
+               return false;
+           })) {
         return 2; // Engine NYI
     } else {
         return 1; // Failed
@@ -227,8 +234,15 @@ function displayResults() {
         }
         
         // Check NYI independently (can coexist with pass/fail/na)
-        if (result.log_messages && result.log_messages.some(log => 
-                   log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'))) {
+        if (result.log_messages && result.log_messages.some(log => {
+                   // Handle both string and object formats
+                   if (typeof log === 'string') {
+                       return log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]');
+                   } else if (typeof log === 'object' && log.level) {
+                       return log.level === 'TODO_OR_DIE';
+                   }
+                   return false;
+               })) {
             badges.push({ status: 'nyi', text: 'NYI' });
         }
         
@@ -308,7 +322,7 @@ function displayResults() {
                 
                 ${result.log_messages && result.log_messages.length > 0 ? `
                     <h4>Engine Log Messages (${result.log_messages.length} entries)</h4>
-                    <div class="log-messages">${formatLogMessages(result.log_messages)}</div>
+                    <div class="log-messages">${formatLogMessages(result.log_messages, index, 0)}</div>
                 ` : ''}
                 
                 <h4>Execution Details</h4>
@@ -405,7 +419,7 @@ function truncate(str, length) {
 }
 
 // Format log messages with color coding and clickable paths
-function formatLogMessages(logs) {
+function formatLogMessages(logs, testIndex, variationIndex) {
     if (!logs || logs.length === 0) return '<div class="no-logs">No logs captured</div>';
     
     return logs.map((log, logIndex) => {
@@ -414,35 +428,65 @@ function formatLogMessages(logs) {
         
         // New format: "[LEVEL] [Category] [fullpath:line function] message"
         // Example: "[INFO] [WebGPUInstance] [D:\path\to\file.cpp:105 namespace::class::function] Created successfully"
-        const newFormatMatch = log.match(/^(\[[^\]]+\])\s*(\[[^\]]+\])\s*\[([^:\]]+(?::[^:\]]+)?):(\d+)\s+([^\]]+)\]\s*(.*)$/);
-        
-        if (newFormatMatch) {
-            const level = newFormatMatch[1];
-            const category = newFormatMatch[2];
-            const filePath = newFormatMatch[3];
-            const lineNumber = newFormatMatch[4];
-            const functionName = newFormatMatch[5];
-            const message = newFormatMatch[6];
+        // Check if log is object or string
+        let newFormatMatch = null;
+        if (typeof log === 'object' && log !== null) {
+            // New structured format
+            const timestamp = log.timestamp || '';
+            const level = log.level || 'UNKNOWN';
+            const category = log.category || '';
+            const message = log.message || '';
             
-            // Extract just the filename from the path
-            const fileName = filePath.split(/[\/\\]/).pop();
+            // Store source info if available
+            if (log.file || log.function) {
+                const fileName = log.file ? log.file.split(/[\/\\]/).pop() : '';
+                sourceInfo = {
+                    fileName: fileName,
+                    filePath: log.file || '',
+                    lineNumber: log.line || 0,
+                    functionName: log.function || ''
+                };
+            }
             
-            // Store source info for expandable section
-            sourceInfo = {
-                fileName,
-                filePath,
-                lineNumber,
-                functionName
-            };
+            // Build log HTML without timestamp (will be added separately)
+            logHtml = `[${level}] <span class="log-category">[${category}]</span> ${message}`;
             
-            // Build log without source info (will be added as expandable)
-            logHtml = `${level} ${category} ${message}`;
-        } else {
-            logHtml = log;
+            // Store timestamp separately for later use
+            sourceInfo = sourceInfo || {};
+            sourceInfo.timestamp = timestamp;
+            
+        } else if (typeof log === 'string') {
+            newFormatMatch = log.match(/^(\[[^\]]+\])\s*(\[[^\]]+\])\s*\[([^:\]]+(?::[^:\]]+)?):(\d+)\s+([^\]]+)\]\s*(.*)$/);
+            
+            if (newFormatMatch) {
+                const level = newFormatMatch[1];
+                const category = newFormatMatch[2];
+                const filePath = newFormatMatch[3];
+                const lineNumber = newFormatMatch[4];
+                const functionName = newFormatMatch[5];
+                const message = newFormatMatch[6];
+                
+                // Extract just the filename from the path
+                const fileName = filePath.split(/[\/\\]/).pop();
+                
+                // Store source info for expandable section
+                sourceInfo = {
+                    fileName,
+                    filePath,
+                    lineNumber,
+                    functionName
+                };
+                
+                // Build log without source info (will be added as expandable)
+                logHtml = `${level} ${category} ${message}`;
+            } else {
+                // String log without special format
+                logHtml = log;
+            }
         }
         
         // Parse log level and structure the output
-        const levelMatch = logHtml.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]\s*(.*)$/);
+        const levelMatch = (typeof logHtml === 'string') ? logHtml.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]\s*(.*)$/) : null;
         if (levelMatch) {
             const level = levelMatch[1];
             const restOfLog = levelMatch[2];
@@ -464,14 +508,21 @@ function formatLogMessages(logs) {
         }
         
         // Create expandable log entry with source info
-        const logId = `log-${Date.now()}-${logIndex}`;
+        const logId = `log-${testIndex}-${variationIndex}-${logIndex}`;
         let html = '<div class="log-line-wrapper">';
-        html += `<div class="log-line ${sourceInfo ? 'clickable-log' : ''}" ${sourceInfo ? `onclick="toggleLogSource('${logId}')"` : ''}>${logHtml}</div>`;
+        
+        // Add timestamp if available
+        let fullLogHtml = logHtml;
+        if (sourceInfo && sourceInfo.timestamp) {
+            fullLogHtml = `<span class="log-timestamp">${sourceInfo.timestamp}</span> ${logHtml}`;
+        }
+        
+        html += `<div class="log-line ${sourceInfo ? 'clickable-log' : ''}" ${sourceInfo ? `onclick="toggleLogSource('${logId}')"` : ''}>${fullLogHtml}</div>`;
         
         if (sourceInfo) {
             html += `<div id="${logId}" class="log-source-details" style="display: none;">`;
             html += `<div class="source-detail"><span class="source-label">File:</span> `;
-            html += `<a href="#" class="source-path-link" data-path="${sourceInfo.filePath}" data-line="${sourceInfo.lineNumber}">${sourceInfo.fileName}</a></div>`;
+            html += `<a href="#" class="source-path-link" data-path="${sourceInfo.filePath}" data-line="${sourceInfo.lineNumber}">${sourceInfo.filePath}</a></div>`;
             html += `<div class="source-detail"><span class="source-label">Line:</span> ${sourceInfo.lineNumber}</div>`;
             html += `<div class="source-detail"><span class="source-label">Function:</span> ${sourceInfo.functionName}</div>`;
             html += '</div>';
@@ -518,8 +569,15 @@ function filterResults() {
             if (statusFilter === 'na') {
                 hasSelectedStatus = result.actual_result && result.actual_result.includes('Test Not Implemented');
             } else if (statusFilter === 'nyi') {
-                hasSelectedStatus = result.log_messages && result.log_messages.some(log => 
-                                   log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]'));
+                hasSelectedStatus = result.log_messages && result.log_messages.some(log => {
+                                   // Handle both string and object formats
+                                   if (typeof log === 'string') {
+                                       return log.includes('[TODO_OR_DIE]') || log.includes('[TODO_OR_DIE ]');
+                                   } else if (typeof log === 'object' && log.level) {
+                                       return log.level === 'TODO_OR_DIE';
+                                   }
+                                   return false;
+                               });
             } else if (statusFilter === 'passed') {
                 hasSelectedStatus = result.passed && (!result.actual_result || !result.actual_result.includes('N/A'));
             } else if (statusFilter === 'failed') {
@@ -587,62 +645,78 @@ function createFullLogsView() {
         let logLine = '';
         let logFunction = '';
         let logClass = '';
+        let timestamp = '';
         
-        // Extract log level
-        const levelMatch = entry.log.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]\s*/);
-        if (levelMatch) {
-            logLevel = levelMatch[1];
-            logDiv.dataset.logLevel = logLevel; // Store for filtering
-            
-            // Extract rest of the log after level
-            const afterLevel = entry.log.substring(levelMatch[0].length);
-            
-            // Parse category, message and source location
-            // New format: "[Category] [fullpath:line function] message"
-            // The path may contain drive letter and backslashes on Windows
-            const newSourceMatch = afterLevel.match(/^(\[[^\]]+\])\s*\[([^:\]]+(?::[^:\]]+)?):(\d+)\s+([^\]]+)\]\s*(.*)$/);
-            if (newSourceMatch) {
-                logCategory = newSourceMatch[1].replace(/[\[\]]/g, '').trim();
-                logFile = newSourceMatch[2].trim();
-                logLine = newSourceMatch[3];
-                logFunction = newSourceMatch[4].trim();
-                logMessage = newSourceMatch[5].trim();
-            } else {
-                // Try old format: "Category: Message (FilePath:LineNumber)"
-                const oldSourceMatch = afterLevel.match(/^([^:]+):\s+(.*)\s+\(([^)]+)\)$/);
-                if (oldSourceMatch) {
-                    logCategory = oldSourceMatch[1].trim();
-                    logMessage = oldSourceMatch[2].trim();
-                    const sourceInfo = oldSourceMatch[3];
-                    
-                    // Split the source info to get file path and line number
-                    const lastColon = sourceInfo.lastIndexOf(':');
-                    if (lastColon !== -1) {
-                        logFile = sourceInfo.substring(0, lastColon);
-                        logLine = sourceInfo.substring(lastColon + 1);
-                    } else {
-                        logFile = sourceInfo;
-                    }
-                    logFunction = 'N/A'; // Old format doesn't have function
+        // Check if log is object or string
+        if (typeof entry.log === 'object' && entry.log !== null) {
+            // New structured format
+            timestamp = entry.log.timestamp || '';
+            logLevel = entry.log.level || 'UNKNOWN';
+            logCategory = entry.log.category || '';
+            logMessage = entry.log.message || '';
+            logFile = entry.log.file || '';
+            logLine = entry.log.line || '';
+            logFunction = entry.log.function || '';
+        } else if (typeof entry.log === 'string') {
+            // Extract log level from string
+            const levelMatch = entry.log.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]\s*/);
+            if (levelMatch) {
+                logLevel = levelMatch[1];
+                logDiv.dataset.logLevel = logLevel; // Store for filtering
+                
+                // Extract rest of the log after level
+                const afterLevel = entry.log.substring(levelMatch[0].length);
+                
+                // Parse category, message and source location
+                // New format: "[Category] [fullpath:line function] message"
+                // The path may contain drive letter and backslashes on Windows
+                const newSourceMatch = afterLevel.match(/^(\[[^\]]+\])\s*\[([^:\]]+(?::[^:\]]+)?):(\d+)\s+([^\]]+)\]\s*(.*)$/);
+                if (newSourceMatch) {
+                    logCategory = newSourceMatch[1].replace(/[\[\]]/g, '').trim();
+                    logFile = newSourceMatch[2].trim();
+                    logLine = newSourceMatch[3];
+                    logFunction = newSourceMatch[4].trim();
+                    logMessage = newSourceMatch[5].trim();
                 } else {
-                    logMessage = afterLevel;
-                    logFunction = 'N/A';
+                    // Try old format: "Category: Message (FilePath:LineNumber)"
+                    const oldSourceMatch = afterLevel.match(/^([^:]+):\s+(.*)\s+\(([^)]+)\)$/);
+                    if (oldSourceMatch) {
+                        logCategory = oldSourceMatch[1].trim();
+                        logMessage = oldSourceMatch[2].trim();
+                        const sourceInfo = oldSourceMatch[3];
+                        
+                        // Split the source info to get file path and line number
+                        const lastColon = sourceInfo.lastIndexOf(':');
+                        if (lastColon !== -1) {
+                            logFile = sourceInfo.substring(0, lastColon);
+                            logLine = sourceInfo.substring(lastColon + 1);
+                        } else {
+                            logFile = sourceInfo;
+                        }
+                        logFunction = 'N/A'; // Old format doesn't have function
+                    } else {
+                        logMessage = afterLevel;
+                        logFunction = 'N/A';
+                    }
                 }
             }
-            
-            // Map to CSS class
-            const levelClassMap = {
-                'TRACE': 'log-trace',
-                'DEBUG': 'log-debug',
-                'INFO': 'log-info',
-                'TODO_SOMEDAY': 'log-todo-someday',
-                'WARNING': 'log-warning',
-                'TODO_OR_DIE': 'log-todo-or-die',
-                'ERROR': 'log-error',
-                'CRITICAL': 'log-critical'
-            };
-            logClass = levelClassMap[logLevel] || '';
         }
+        
+        // Map to CSS class
+        const levelClassMap = {
+            'TRACE': 'log-trace',
+            'DEBUG': 'log-debug',
+            'INFO': 'log-info',
+            'TODO_SOMEDAY': 'log-todo-someday',
+            'WARNING': 'log-warning',
+            'TODO_OR_DIE': 'log-todo-or-die',
+            'ERROR': 'log-error',
+            'CRITICAL': 'log-critical'
+        };
+        logClass = levelClassMap[logLevel] || '';
+        
+        // Store log level for filtering
+        logDiv.dataset.logLevel = logLevel;
         
         // Apply the log level class to get the color with fixed width - truncate to 8 chars
         const truncatedLevel = (logLevel || 'INFO').length > 8 ? (logLevel || 'INFO').substring(0, 8) : (logLevel || 'INFO');
@@ -650,7 +724,8 @@ function createFullLogsView() {
         const categorySpan = logCategory ? `<span class="log-category">${escapeHtml(logCategory)}:</span>` : '';
         const messageSpan = `<span class="log-message">${escapeHtml(logMessage)}</span>`;
         
-        logDiv.innerHTML = `<span class="test-id-badge">${entry.testId}</span><span class="log-content-aligned">${levelSpan}${categorySpan} ${messageSpan}</span>`;
+        const timestampSpan = timestamp ? `<span class="log-timestamp">${timestamp}</span>` : '';
+        logDiv.innerHTML = `<span class="test-id-badge">${entry.testId}</span>${timestampSpan}<span class="log-content-aligned">${levelSpan}${categorySpan} ${messageSpan}</span>`;
         
         // Create source info container (hidden by default)
         const sourceDiv = document.createElement('div');
@@ -662,17 +737,14 @@ function createFullLogsView() {
         
         sourceDiv.innerHTML = `
             <div class="source-detail">
-                <span class="source-label">Function:</span> ${escapeHtml(logFunction || 'N/A')}
-            </div>
-            <div class="source-detail">
-                <span class="source-label">File:</span> ${escapeHtml(fileName || 'N/A')}
+                <span class="source-label">File:</span> 
+                ${logFile ? `<a href="#" class="source-path-link" data-path="${escapeHtml(logFile)}" data-line="${escapeHtml(logLine)}">${escapeHtml(logFile)}</a>` : 'N/A'}
             </div>
             <div class="source-detail">
                 <span class="source-label">Line:</span> ${escapeHtml(logLine || 'N/A')}
             </div>
             <div class="source-detail">
-                <span class="source-label">Full Path:</span> 
-                ${logFile ? `<a href="#" class="source-path-link" data-path="${escapeHtml(logFile)}" data-line="${escapeHtml(logLine)}">${escapeHtml(logFile)}</a>` : 'N/A'}
+                <span class="source-label">Function:</span> ${escapeHtml(logFunction || 'N/A')}
             </div>
         `;
         

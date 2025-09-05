@@ -741,6 +741,12 @@ td {
     vertical-align: middle;
 }
 
+.log-timestamp {
+    color: #9ca3af;
+    font-size: 12px;
+    margin-right: 15px;
+}
+
 .log-entry:hover {
     background: rgba(255, 255, 255, 0.03);
 }
@@ -776,8 +782,8 @@ td {
 }
 
 .log-category {
-    color: #a0a0a0;
-    font-weight: 500;
+    color: #8b7aa8;
+    font-weight: bold;
 }
 
 .log-message {
