@@ -70,6 +70,9 @@
                     <input type="file" id="json-file-input" accept=".json" style="display: none;">
                     <button id="load-json-btn" class="load-json-btn">Load Local JSON</button>
                     <span id="loaded-file-name" class="loaded-file-name"></span>
+                    <button id="bulk-export-btn" class="bulk-export-btn" onclick="openBulkExport()" style="display:none;">
+                        Export Selected (<span id="selected-count">0</span>)
+                    </button>
                 </div>
             </div>
 
@@ -77,6 +80,9 @@
                 <table id="results-table">
                     <thead>
                         <tr>
+                            <th class="checkbox-column">
+                                <input type="checkbox" id="select-all-checkbox" onchange="toggleAllCheckboxes()">
+                            </th>
                             <th class="sortable" data-column="id">ID <span class="sort-indicator"></span></th>
                             <th class="sortable" data-column="category">Category <span class="sort-indicator"></span></th>
                             <th class="sortable" data-column="testType">Test Type <span class="sort-indicator"></span></th>
@@ -173,6 +179,25 @@
 
         <div id="loading">Loading test results...</div>
         <div id="error" style="display: none;"></div>
+    </div>
+
+    <!-- Array Editor Modal -->
+    <div id="array-editor-modal" class="modal">
+        <div class="modal-content array-editor-modal">
+            <span class="close-modal" onclick="closeArrayEditor()">&times;</span>
+            <h2>Edit Array Parameter</h2>
+            <div class="array-editor-controls">
+                <input type="text" id="new-array-item" placeholder="Enter new item">
+                <button onclick="addArrayItem()" class="add-item-btn">Add Item</button>
+            </div>
+            <div id="array-items-list">
+                <!-- Array items will be listed here -->
+            </div>
+            <div class="array-editor-footer">
+                <button onclick="saveArrayChanges()" class="save-array-btn">Save Changes</button>
+                <button onclick="closeArrayEditor()" class="cancel-array-btn">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

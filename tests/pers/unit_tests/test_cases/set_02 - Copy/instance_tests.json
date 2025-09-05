@@ -1,0 +1,63 @@
+{
+  "fileType": "test_cases",
+  "fileId": "inst",
+  "metadata": {
+    "version": "1.0",
+    "category": "Instance Management",
+    "description": "Tests for WebGPU instance creation and configuration"
+  },
+  "testTypes": [
+    {
+      "category": "Instance Management",
+      "testType": "Instance Creation",
+      "handlerClass": "InstanceCreationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Default Instance",
+          "options": {
+            "debugEnabled": false,
+            "validationEnabled": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "isValid": true,
+              "adapterCount": ">0"
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Debug Enabled Instance",
+          "options": {
+            "debugEnabled": true,
+            "validationEnabled": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "isValid": true,
+              "debugLayerActive": true
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Validation Enabled Instance",
+          "options": {
+            "debugEnabled": false,
+            "validationEnabled": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "isValid": true,
+              "validationLayerActive": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

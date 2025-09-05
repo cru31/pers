@@ -193,13 +193,16 @@ function populateCategoryFilter() {
     });
 }
 
+// Track selected test cases
+let selectedTestCases = new Set();
+
 // Display results in table
 function displayResults() {
     const tbody = document.getElementById('results-body');
     tbody.innerHTML = '';
     
     if (filteredResults.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="no-results">No test results found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="no-results">No test results found</td></tr>';
         return;
     }
     
@@ -207,7 +210,6 @@ function displayResults() {
         // Main row
         const row = document.createElement('tr');
         row.dataset.index = index;
-        row.onclick = () => toggleDetails(index);
         
         // Determine status - can have multiple badges
         let badges = [];
@@ -236,13 +238,18 @@ function displayResults() {
         ).join(' ');
         
         row.innerHTML = `
-            <td><strong>${result.id}</strong></td>
-            <td>${result.category || '-'}</td>
-            <td>${result.testType || '-'}</td>
-            <td>${badgeHtml}</td>
-            <td>${result.execution_time_ms ? result.execution_time_ms.toFixed(2) : '-'}</td>
-            <td>${truncate(result.expected_result, 30)}</td>
-            <td>${truncate(result.actual_result, 30)}</td>
+            <td class="checkbox-column">
+                <input type="checkbox" class="test-checkbox" data-index="${index}" 
+                       onclick="event.stopPropagation(); toggleTestSelection(${index})"
+                       ${selectedTestCases.has(index) ? 'checked' : ''}>
+            </td>
+            <td onclick="toggleDetails(${index})"><strong>${result.id}</strong></td>
+            <td onclick="toggleDetails(${index})">${result.category || '-'}</td>
+            <td onclick="toggleDetails(${index})">${result.testType || '-'}</td>
+            <td onclick="toggleDetails(${index})">${badgeHtml}</td>
+            <td onclick="toggleDetails(${index})">${result.execution_time_ms ? result.execution_time_ms.toFixed(2) : '-'}</td>
+            <td onclick="toggleDetails(${index})">${truncate(result.expected_result, 30)}</td>
+            <td onclick="toggleDetails(${index})">${truncate(result.actual_result, 30)}</td>
         `;
         tbody.appendChild(row);
         
@@ -252,7 +259,7 @@ function displayResults() {
         detailRow.dataset.detailIndex = index;
         
         const detailCell = document.createElement('td');
-        detailCell.colSpan = 7;
+        detailCell.colSpan = 8;
         
         // Parse input parameters - use input_parameters if available, otherwise fall back to input string
         let inputHtml = '';
@@ -1184,3 +1191,629 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-refresh disabled to prevent closing expanded rows
     // setInterval(loadResults, 5000);
 });
+
+// Checkbox selection functions
+function toggleTestSelection(index) {
+    if (selectedTestCases.has(index)) {
+        selectedTestCases.delete(index);
+    } else {
+        selectedTestCases.add(index);
+    }
+    updateBulkExportButton();
+    updateSelectAllCheckbox();
+}
+
+function toggleAllCheckboxes() {
+    const selectAll = document.getElementById('select-all-checkbox');
+    const checkboxes = document.querySelectorAll('.test-checkbox');
+    
+    if (selectAll.checked) {
+        // Select all visible items
+        checkboxes.forEach(cb => {
+            const index = parseInt(cb.dataset.index);
+            selectedTestCases.add(index);
+            cb.checked = true;
+        });
+    } else {
+        // Deselect all
+        selectedTestCases.clear();
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+        });
+    }
+    updateBulkExportButton();
+}
+
+function updateSelectAllCheckbox() {
+    const selectAll = document.getElementById('select-all-checkbox');
+    const checkboxes = document.querySelectorAll('.test-checkbox');
+    const checkedBoxes = document.querySelectorAll('.test-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    } else if (checkedBoxes.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    } else if (checkedBoxes.length === checkboxes.length) {
+        selectAll.checked = true;
+        selectAll.indeterminate = false;
+    } else {
+        selectAll.checked = false;
+        selectAll.indeterminate = true;
+    }
+}
+
+function updateBulkExportButton() {
+    const btn = document.getElementById('bulk-export-btn');
+    const count = selectedTestCases.size;
+    
+    if (count > 0) {
+        btn.style.display = 'inline-block';
+        document.getElementById('selected-count').textContent = count;
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+// Bulk export modal functions
+function openBulkExport() {
+    if (selectedTestCases.size === 0) return;
+    
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('bulk-export-modal');
+    if (!modal) {
+        modal = createBulkExportModal();
+    }
+    
+    // Populate with selected test cases
+    populateBulkExportModal();
+    modal.classList.add('show');
+}
+
+function createBulkExportModal() {
+    const modalHtml = `
+        <div id="bulk-export-modal" class="modal">
+            <div class="modal-content bulk-export-modal">
+                <span class="close-modal" onclick="closeBulkExportModal()">&times;</span>
+                <h2>Export Selected Test Cases</h2>
+                <div class="bulk-export-controls">
+                    <button onclick="expandAllBulkItems()" class="expand-all-btn">Expand All</button>
+                    <button onclick="collapseAllBulkItems()" class="collapse-all-btn">Collapse All</button>
+                    <button onclick="exportBulkTestCases()" class="export-btn">Export All as JSON</button>
+                    <button onclick="copyBulkToClipboard()" class="copy-btn">Copy All to Clipboard</button>
+                </div>
+                <div id="bulk-export-list">
+                    <!-- Selected test cases will be listed here -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    return document.getElementById('bulk-export-modal');
+}
+
+function populateBulkExportModal() {
+    const container = document.getElementById('bulk-export-list');
+    container.innerHTML = '';
+    
+    // Convert set to array and sort by test ID
+    const selectedArray = Array.from(selectedTestCases).sort((a, b) => {
+        const testA = filteredResults[a];
+        const testB = filteredResults[b];
+        return testA.id - testB.id;
+    });
+    
+    selectedArray.forEach(index => {
+        const result = filteredResults[index];
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'bulk-export-item';
+        itemDiv.dataset.index = index;
+        
+        // Create header (collapsed view)
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'bulk-item-header';
+        headerDiv.onclick = () => toggleBulkItemExpand(index);
+        headerDiv.innerHTML = `
+            <span class="expand-icon">▶</span>
+            <span class="test-id">Test #${result.id}</span>
+            <span class="test-category">${result.category || 'N/A'}</span>
+            <span class="test-type">${result.testType || 'N/A'}</span>
+        `;
+        
+        // Create expanded content
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'bulk-item-content';
+        contentDiv.style.display = 'none';
+        
+        // Build parameters HTML
+        let parametersHtml = '';
+        if (result.input_parameters) {
+            Object.entries(result.input_parameters).forEach(([key, value]) => {
+                let valueStr = value;
+                let isArray = Array.isArray(value);
+                if (isArray) {
+                    // Format array as comma-separated string for display
+                    valueStr = value.map(item => {
+                        if (typeof item === 'string') {
+                            return `"${item}"`;
+                        }
+                        return JSON.stringify(item);
+                    }).join(', ');
+                } else if (typeof value === 'object' && value !== null) {
+                    valueStr = JSON.stringify(value);
+                }
+                // Escape quotes for HTML attribute
+                valueStr = String(valueStr).replace(/"/g, '&quot;');
+                
+                // Add edit button for arrays
+                const editButton = isArray ? 
+                    `<button class="edit-array-btn" onclick="openArrayEditor(this.parentElement.querySelector('.param-value'), ${index}, '${key}')">Edit</button>` : '';
+                
+                parametersHtml += `
+                    <div class="param-row">
+                        <input type="text" class="param-name" value="${key}" placeholder="Parameter name">
+                        <input type="text" class="param-value" value="${valueStr}" placeholder="Parameter value" 
+                               data-is-array="${isArray}" data-param-key="${key}">
+                        ${editButton}
+                        <button class="remove-param-btn" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                `;
+            });
+        }
+        
+        contentDiv.innerHTML = `
+            <div class="bulk-item-form">
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="bulk-category-${index}" value="${result.category || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Test Type</label>
+                    <input type="text" id="bulk-test-type-${index}" value="${result.testType || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Expected Result</label>
+                    <input type="text" id="bulk-expected-${index}" value="${result.expected_result || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="bulk-description-${index}" rows="2"></textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Parameters <button onclick="addBulkParameter(${index})" class="add-param-btn">+ Add</button></label>
+                    <div id="bulk-params-${index}" class="parameters-container">
+                        ${parametersHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        itemDiv.appendChild(headerDiv);
+        itemDiv.appendChild(contentDiv);
+        container.appendChild(itemDiv);
+    });
+}
+
+function toggleBulkItemExpand(index) {
+    const item = document.querySelector(`.bulk-export-item[data-index="${index}"]`);
+    const content = item.querySelector('.bulk-item-content');
+    const icon = item.querySelector('.expand-icon');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▼';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
+    }
+}
+
+function expandAllBulkItems() {
+    document.querySelectorAll('.bulk-item-content').forEach(content => {
+        content.style.display = 'block';
+    });
+    document.querySelectorAll('.expand-icon').forEach(icon => {
+        icon.textContent = '▼';
+    });
+}
+
+function collapseAllBulkItems() {
+    document.querySelectorAll('.bulk-item-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    document.querySelectorAll('.expand-icon').forEach(icon => {
+        icon.textContent = '▶';
+    });
+}
+
+function closeBulkExportModal() {
+    const modal = document.getElementById('bulk-export-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+function addBulkParameter(index) {
+    const container = document.getElementById(`bulk-params-${index}`);
+    const paramRow = document.createElement('div');
+    paramRow.className = 'param-row';
+    paramRow.innerHTML = `
+        <input type="text" class="param-name" placeholder="Parameter name">
+        <input type="text" class="param-value" placeholder="Parameter value">
+        <button class="remove-param-btn" onclick="this.parentElement.remove()">×</button>
+    `;
+    container.appendChild(paramRow);
+}
+
+function exportBulkTestCases() {
+    const testCases = [];
+    
+    // Auto-generate IDs starting from 1
+    let autoId = 1;
+    
+    Array.from(selectedTestCases).forEach(index => {
+        const result = filteredResults[index];
+        
+        // Get values from form if item is expanded, otherwise use defaults
+        const categoryInput = document.getElementById(`bulk-category-${index}`);
+        const testTypeInput = document.getElementById(`bulk-test-type-${index}`);
+        const expectedInput = document.getElementById(`bulk-expected-${index}`);
+        const descriptionInput = document.getElementById(`bulk-description-${index}`);
+        
+        const testCase = {
+            id: autoId++,  // Auto-increment ID
+            category: categoryInput ? categoryInput.value : (result.category || ''),
+            test_type: testTypeInput ? testTypeInput.value : (result.testType || ''),
+            expected_result: expectedInput ? expectedInput.value : (result.expected_result || ''),
+            description: descriptionInput ? descriptionInput.value : '',
+            parameters: []
+        };
+        
+        // Collect parameters from the form
+        const paramsContainer = document.getElementById(`bulk-params-${index}`);
+        if (paramsContainer) {
+            const paramRows = paramsContainer.querySelectorAll('.param-row');
+            paramRows.forEach(row => {
+                const nameInput = row.querySelector('.param-name');
+                const valueInput = row.querySelector('.param-value');
+                const isArray = valueInput && valueInput.dataset.isArray === 'true';
+                
+                if (nameInput && valueInput && nameInput.value) {
+                    let value = valueInput.value.trim();
+                    
+                    if (isArray) {
+                        // Parse comma-separated array format
+                        const items = [];
+                        if (value) {
+                            const regex = /"([^"]*)"|\S+/g;
+                            let match;
+                            while ((match = regex.exec(value)) !== null) {
+                                let item = match[1] !== undefined ? match[1] : match[0];
+                                item = item.replace(/,$/, '');
+                                if (item) {
+                                    items.push(item);
+                                }
+                            }
+                        }
+                        value = items;
+                    } else {
+                        // Try to parse JSON objects
+                        try {
+                            if (value.startsWith('{')) {
+                                value = JSON.parse(value);
+                            }
+                        } catch (e) {
+                            // Keep as string if not valid JSON
+                        }
+                    }
+                    testCase.parameters.push({ name: nameInput.value, value: value });
+                }
+            });
+        } else if (result.input_parameters) {
+            // Fallback to original parameters if form not expanded
+            for (const [key, value] of Object.entries(result.input_parameters)) {
+                testCase.parameters.push({ name: key, value: value });
+            }
+        }
+        
+        testCases.push(testCase);
+    });
+    
+    // Create and download JSON file
+    const jsonContent = JSON.stringify(testCases, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test_cases_bulk_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification(`Exported ${testCases.length} test cases`);
+}
+
+function copyBulkToClipboard() {
+    const testCases = [];
+    
+    // Auto-generate IDs starting from 1
+    let autoId = 1;
+    
+    Array.from(selectedTestCases).forEach(index => {
+        const result = filteredResults[index];
+        
+        // Get values from form if item is expanded, otherwise use defaults
+        const categoryInput = document.getElementById(`bulk-category-${index}`);
+        const testTypeInput = document.getElementById(`bulk-test-type-${index}`);
+        const expectedInput = document.getElementById(`bulk-expected-${index}`);
+        const descriptionInput = document.getElementById(`bulk-description-${index}`);
+        
+        const testCase = {
+            id: autoId++,  // Auto-increment ID
+            category: categoryInput ? categoryInput.value : (result.category || ''),
+            test_type: testTypeInput ? testTypeInput.value : (result.testType || ''),
+            expected_result: expectedInput ? expectedInput.value : (result.expected_result || ''),
+            description: descriptionInput ? descriptionInput.value : '',
+            parameters: []
+        };
+        
+        // Collect parameters from the form
+        const paramsContainer = document.getElementById(`bulk-params-${index}`);
+        if (paramsContainer) {
+            const paramRows = paramsContainer.querySelectorAll('.param-row');
+            paramRows.forEach(row => {
+                const nameInput = row.querySelector('.param-name');
+                const valueInput = row.querySelector('.param-value');
+                const isArray = valueInput && valueInput.dataset.isArray === 'true';
+                
+                if (nameInput && valueInput && nameInput.value) {
+                    let value = valueInput.value.trim();
+                    
+                    if (isArray) {
+                        // Parse comma-separated array format
+                        const items = [];
+                        if (value) {
+                            const regex = /"([^"]*)"|\S+/g;
+                            let match;
+                            while ((match = regex.exec(value)) !== null) {
+                                let item = match[1] !== undefined ? match[1] : match[0];
+                                item = item.replace(/,$/, '');
+                                if (item) {
+                                    items.push(item);
+                                }
+                            }
+                        }
+                        value = items;
+                    } else {
+                        // Try to parse JSON objects
+                        try {
+                            if (value.startsWith('{')) {
+                                value = JSON.parse(value);
+                            }
+                        } catch (e) {
+                            // Keep as string if not valid JSON
+                        }
+                    }
+                    testCase.parameters.push({ name: nameInput.value, value: value });
+                }
+            });
+        } else if (result.input_parameters) {
+            // Fallback to original parameters if form not expanded
+            for (const [key, value] of Object.entries(result.input_parameters)) {
+                testCase.parameters.push({ name: key, value: value });
+            }
+        }
+        
+        testCases.push(testCase);
+    });
+    
+    const jsonContent = JSON.stringify(testCases, null, 2);
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(jsonContent)
+            .then(() => showNotification(`Copied ${testCases.length} test cases to clipboard`))
+            .catch(() => fallbackCopyBulk(jsonContent, testCases.length));
+    } else {
+        fallbackCopyBulk(jsonContent, testCases.length);
+    }
+}
+
+function fallbackCopyBulk(text, count) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.padding = '0';
+    textarea.style.border = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.boxShadow = 'none';
+    textarea.style.background = 'transparent';
+    
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showNotification(`Copied ${count} test cases to clipboard`);
+        } else {
+            showNotification('Failed to copy to clipboard', 'error');
+        }
+    } catch (err) {
+        showNotification('Failed to copy to clipboard', 'error');
+    }
+    
+    document.body.removeChild(textarea);
+}
+
+function showNotification(message, type = 'success') {
+    // Remove existing notification if any
+    const existing = document.querySelector('.notification');
+    if (existing) {
+        existing.remove();
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Array Editor Functions
+let currentArrayInput = null;
+let currentArrayItems = [];
+
+function openArrayEditor(inputElement, testIndex, paramName) {
+    currentArrayInput = inputElement;
+    
+    // Parse current array value
+    const currentValue = inputElement.value.trim();
+    try {
+        // Check if it's already JSON format
+        if (currentValue.startsWith('[')) {
+            currentArrayItems = JSON.parse(currentValue);
+        } else {
+            // Parse comma-separated format like: "item1", "item2", item3
+            currentArrayItems = [];
+            if (currentValue) {
+                // Use regex to match items, handling quoted strings
+                const regex = /"([^"]*)"|\S+/g;
+                let match;
+                while ((match = regex.exec(currentValue)) !== null) {
+                    let item = match[1] !== undefined ? match[1] : match[0];
+                    // Remove trailing comma if exists
+                    item = item.replace(/,$/, '');
+                    if (item) {
+                        currentArrayItems.push(item);
+                    }
+                }
+            }
+        }
+        
+        if (!Array.isArray(currentArrayItems)) {
+            currentArrayItems = [];
+        }
+    } catch (e) {
+        currentArrayItems = [];
+    }
+    
+    // Populate array editor
+    populateArrayEditor();
+    
+    // Show modal
+    const modal = document.getElementById('array-editor-modal');
+    modal.classList.add('show');
+}
+
+function populateArrayEditor() {
+    const container = document.getElementById('array-items-list');
+    container.innerHTML = '';
+    
+    if (currentArrayItems.length === 0) {
+        container.innerHTML = '<div class="no-items">No items in array. Add items using the form above.</div>';
+        return;
+    }
+    
+    currentArrayItems.forEach((item, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'array-item';
+        
+        let itemValue = item;
+        if (typeof item === 'object') {
+            itemValue = JSON.stringify(item);
+        }
+        
+        itemDiv.innerHTML = `
+            <span class="array-item-index">${index}:</span>
+            <input type="text" class="array-item-value" value="${String(itemValue).replace(/"/g, '&quot;')}" 
+                   onchange="updateArrayItem(${index}, this.value)">
+            <button class="remove-array-item" onclick="removeArrayItem(${index})">Remove</button>
+        `;
+        
+        container.appendChild(itemDiv);
+    });
+}
+
+function addArrayItem() {
+    const input = document.getElementById('new-array-item');
+    const value = input.value.trim();
+    
+    if (!value) {
+        showNotification('Please enter a value', 'error');
+        return;
+    }
+    
+    // Try to parse as JSON if it looks like JSON
+    let parsedValue = value;
+    try {
+        if (value.startsWith('{') || value.startsWith('[')) {
+            parsedValue = JSON.parse(value);
+        }
+    } catch (e) {
+        // Keep as string if not valid JSON
+    }
+    
+    currentArrayItems.push(parsedValue);
+    input.value = '';
+    populateArrayEditor();
+}
+
+function updateArrayItem(index, value) {
+    // Try to parse as JSON if it looks like JSON
+    let parsedValue = value;
+    try {
+        if (value.startsWith('{') || value.startsWith('[')) {
+            parsedValue = JSON.parse(value);
+        }
+    } catch (e) {
+        // Keep as string if not valid JSON
+    }
+    
+    currentArrayItems[index] = parsedValue;
+}
+
+function removeArrayItem(index) {
+    currentArrayItems.splice(index, 1);
+    populateArrayEditor();
+}
+
+function saveArrayChanges() {
+    if (currentArrayInput) {
+        // Format array as comma-separated string for display
+        const formattedValue = currentArrayItems.map(item => {
+            if (typeof item === 'string') {
+                return `"${item}"`;
+            }
+            return JSON.stringify(item);
+        }).join(', ');
+        
+        // Update the input field with formatted value
+        currentArrayInput.value = formattedValue;
+        
+        // Trigger change event to update preview if needed
+        const changeEvent = new Event('change', { bubbles: true });
+        currentArrayInput.dispatchEvent(changeEvent);
+    }
+    
+    closeArrayEditor();
+    showNotification('Array updated successfully');
+}
+
+function closeArrayEditor() {
+    const modal = document.getElementById('array-editor-modal');
+    modal.classList.remove('show');
+    currentArrayInput = null;
+    currentArrayItems = [];
+}

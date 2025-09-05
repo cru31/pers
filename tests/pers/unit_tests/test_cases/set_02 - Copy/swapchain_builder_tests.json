@@ -1,0 +1,576 @@
+{
+  "fileType": "test_cases",
+  "fileId": "swapchain",
+  "metadata": {
+    "version": "1.0",
+    "category": "SwapChain Management",
+    "description": "Tests for SwapChain Builder negotiation functionality"
+  },
+  "testTypes": [
+    {
+      "category": "SwapChain Management",
+      "testType": "SwapChain Builder Negotiation",
+      "handlerClass": "SwapChainBuilderNegotiationHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Basic Negotiation - All Supported",
+          "options": {
+            "builder_width": 800,
+            "builder_height": 600,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Format Fallback Test",
+          "options": {
+            "builder_width": 800,
+            "builder_height": 600,
+            "preferred_format": "RGBA32Float",
+            "format_fallbacks": ["RGBA16Float", "BGRA8Unorm"],
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Present Mode Fallback Test",
+          "options": {
+            "builder_width": 800,
+            "builder_height": 600,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Mailbox",
+            "present_mode_fallbacks": ["Immediate", "Fifo"],
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Alpha Mode Fallback Test",
+          "options": {
+            "builder_width": 800,
+            "builder_height": 600,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Premultiplied",
+            "alpha_mode_fallbacks": ["Opaque", "Inherit"]
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 5,
+          "variationName": "Complex Multi-Fallback Chain",
+          "options": {
+            "builder_width": 2560,
+            "builder_height": 1440,
+            "preferred_format": "R8Unorm",
+            "format_fallbacks": ["RG8Unorm", "RGBA32Float", "RGBA16Float", "RGBA8UnormSrgb", "BGRA8UnormSrgb", "RGBA8Unorm", "BGRA8Unorm"],
+            "preferred_present_mode": "Mailbox",
+            "present_mode_fallbacks": ["FifoRelaxed", "Immediate", "Fifo"],
+            "preferred_alpha_mode": "Inherit",
+            "alpha_mode_fallbacks": ["PostMultiplied", "Unpremultiplied", "Premultiplied", "Opaque"]
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 6,
+          "variationName": "4K Resolution HDR Format",
+          "options": {
+            "builder_width": 3840,
+            "builder_height": 2160,
+            "preferred_format": "RGBA16Float",
+            "format_fallbacks": ["RGBA32Float", "BGRA8UnormSrgb"],
+            "preferred_present_mode": "Mailbox",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 7,
+          "variationName": "Ultra-Wide 5K Resolution",
+          "options": {
+            "builder_width": 5120,
+            "builder_height": 1440,
+            "preferred_format": "BGRA8UnormSrgb",
+            "format_fallbacks": ["RGBA8UnormSrgb", "BGRA8Unorm", "RGBA8Unorm"],
+            "preferred_present_mode": "Immediate",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 8,
+          "variationName": "Over Maximum 8K Resolution",
+          "options": {
+            "builder_width": 7680,
+            "builder_height": 4320,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": false
+            }
+          }
+        },
+        {
+          "id": 9,
+          "variationName": "Minimum 1x1 Resolution",
+          "options": {
+            "builder_width": 1,
+            "builder_height": 1,
+            "preferred_format": "RGBA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 10,
+          "variationName": "Square 2K Resolution",
+          "options": {
+            "builder_width": 2048,
+            "builder_height": 2048,
+            "preferred_format": "RGBA8UnormSrgb",
+            "format_fallbacks": ["BGRA8UnormSrgb", "RGBA8Unorm", "BGRA8Unorm"],
+            "preferred_present_mode": "FifoRelaxed",
+            "present_mode_fallbacks": ["Fifo"],
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 11,
+          "variationName": "Portrait Mobile Resolution",
+          "options": {
+            "builder_width": 1080,
+            "builder_height": 1920,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 12,
+          "variationName": "Extreme Format Fallback Chain",
+          "options": {
+            "builder_width": 1366,
+            "builder_height": 768,
+            "preferred_format": "R8Unorm",
+            "format_fallbacks": ["RG8Unorm", "RGBA32Float", "RGBA16Float", "BGRA8UnormSrgb", "RGBA8UnormSrgb", "BGRA8Unorm", "RGBA8Unorm"],
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 13,
+          "variationName": "All Present Modes Fallback",
+          "options": {
+            "builder_width": 1600,
+            "builder_height": 900,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Mailbox",
+            "present_mode_fallbacks": ["FifoRelaxed", "Immediate", "Fifo"],
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 14,
+          "variationName": "All Alpha Modes Fallback",
+          "options": {
+            "builder_width": 1440,
+            "builder_height": 900,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Auto",
+            "alpha_mode_fallbacks": ["Inherit", "PostMultiplied", "Unpremultiplied", "Premultiplied", "Opaque"]
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 15,
+          "variationName": "Maximum Allowed 8192x8192",
+          "options": {
+            "builder_width": 8192,
+            "builder_height": 8192,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 16,
+          "variationName": "Width Exceeds Maximum",
+          "options": {
+            "builder_width": 8193,
+            "builder_height": 4320,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": false
+            }
+          }
+        },
+        {
+          "id": 17,
+          "variationName": "Height Exceeds Maximum",
+          "options": {
+            "builder_width": 7680,
+            "builder_height": 8193,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": false
+            }
+          }
+        },
+        {
+          "id": 18,
+          "variationName": "HDR Format with Fallbacks",
+          "options": {
+            "builder_width": 3840,
+            "builder_height": 2160,
+            "preferred_format": "RGBA32Float",
+            "format_fallbacks": ["RGBA16Float", "BGRA8UnormSrgb", "BGRA8Unorm"],
+            "preferred_present_mode": "Mailbox",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 19,
+          "variationName": "SRGB Format Priority",
+          "options": {
+            "builder_width": 2560,
+            "builder_height": 1080,
+            "preferred_format": "BGRA8UnormSrgb",
+            "format_fallbacks": ["RGBA8UnormSrgb", "BGRA8Unorm", "RGBA8Unorm"],
+            "preferred_present_mode": "Immediate",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 20,
+          "variationName": "Mixed All Fallbacks",
+          "options": {
+            "builder_width": 1920,
+            "builder_height": 1200,
+            "preferred_format": "RGBA32Float",
+            "format_fallbacks": ["RGBA16Float", "BGRA8UnormSrgb", "BGRA8Unorm", "RGBA8UnormSrgb", "RGBA8Unorm"],
+            "preferred_present_mode": "Mailbox",
+            "present_mode_fallbacks": ["Immediate", "FifoRelaxed", "Fifo"],
+            "preferred_alpha_mode": "Premultiplied",
+            "alpha_mode_fallbacks": ["Unpremultiplied", "Opaque", "Inherit"]
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 21,
+          "variationName": "VSync Only Modes",
+          "options": {
+            "builder_width": 1680,
+            "builder_height": 1050,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "present_mode_fallbacks": ["FifoRelaxed"],
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 22,
+          "variationName": "No-Tear Modes Only",
+          "options": {
+            "builder_width": 1024,
+            "builder_height": 768,
+            "preferred_format": "RGBA8Unorm",
+            "preferred_present_mode": "Immediate",
+            "present_mode_fallbacks": ["Mailbox"],
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 23,
+          "variationName": "Ultra-Wide 21:9 Aspect",
+          "options": {
+            "builder_width": 3440,
+            "builder_height": 1440,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Mailbox",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 24,
+          "variationName": "Super Ultra-Wide 32:9",
+          "options": {
+            "builder_width": 5120,
+            "builder_height": 1440,
+            "preferred_format": "RGBA16Float",
+            "preferred_present_mode": "Immediate",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 25,
+          "variationName": "Mobile Portrait iPhone-like",
+          "options": {
+            "builder_width": 750,
+            "builder_height": 1334,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 26,
+          "variationName": "iPad Pro Resolution",
+          "options": {
+            "builder_width": 2048,
+            "builder_height": 2732,
+            "preferred_format": "BGRA8UnormSrgb",
+            "format_fallbacks": ["BGRA8Unorm"],
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 27,
+          "variationName": "Odd Resolution 777x555",
+          "options": {
+            "builder_width": 777,
+            "builder_height": 555,
+            "preferred_format": "RGBA8Unorm",
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 28,
+          "variationName": "Prime Number Resolution",
+          "options": {
+            "builder_width": 1013,
+            "builder_height": 719,
+            "preferred_format": "BGRA8Unorm",
+            "preferred_present_mode": "Mailbox",
+            "present_mode_fallbacks": ["Immediate", "Fifo"],
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 29,
+          "variationName": "Power of Two Resolution",
+          "options": {
+            "builder_width": 4096,
+            "builder_height": 4096,
+            "preferred_format": "RGBA16Float",
+            "format_fallbacks": ["BGRA8UnormSrgb", "BGRA8Unorm"],
+            "preferred_present_mode": "Immediate",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        },
+        {
+          "id": 30,
+          "variationName": "Cinema 2.39:1 Aspect",
+          "options": {
+            "builder_width": 2390,
+            "builder_height": 1000,
+            "preferred_format": "BGRA8UnormSrgb",
+            "format_fallbacks": ["RGBA8UnormSrgb", "BGRA8Unorm"],
+            "preferred_present_mode": "Fifo",
+            "preferred_alpha_mode": "Opaque"
+          },
+          "expectedBehavior": {
+            "properties": {
+              "format_supported": true,
+              "present_mode_supported": true,
+              "alpha_mode_supported": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

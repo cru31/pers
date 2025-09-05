@@ -1,0 +1,63 @@
+{
+  "fileType": "test_cases",
+  "fileId": "adpt",
+  "metadata": {
+    "version": "1.0",
+    "category": "Adapter Management",
+    "description": "Tests for WebGPU adapter enumeration and selection"
+  },
+  "testTypes": [
+    {
+      "category": "Adapter Management",
+      "testType": "Request Adapter",
+      "handlerClass": "RequestAdapterHandler",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "High Performance Adapter",
+          "options": {
+            "powerPreference": "HighPerformance",
+            "forceFallbackAdapter": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "adapterType": "DiscreteGPU",
+              "hasFeatures": true
+            }
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Low Power Adapter",
+          "options": {
+            "powerPreference": "LowPower",
+            "forceFallbackAdapter": false
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "adapterType": "IntegratedGPU",
+              "hasFeatures": true
+            }
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Fallback Adapter",
+          "options": {
+            "powerPreference": "None",
+            "forceFallbackAdapter": true
+          },
+          "expectedBehavior": {
+            "returnValue": "not_null",
+            "properties": {
+              "adapterType": "CPU",
+              "isFallback": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
