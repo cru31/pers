@@ -410,12 +410,12 @@ function truncate(str, length) {
 function formatLogMessages(logs) {
     if (!logs || logs.length === 0) return '<div class="no-logs">No logs captured</div>';
     
-    return logs.map(log => {
-        let processedLog = log;
+    return logs.map((log, logIndex) => {
+        let logHtml = '';
+        let sourceInfo = null;
         
         // New format: "[LEVEL] [Category] [fullpath:line function] message"
         // Example: "[INFO] [WebGPUInstance] [D:\path\to\file.cpp:105 namespace::class::function] Created successfully"
-        // The path may contain drive letter and backslashes on Windows
         const newFormatMatch = log.match(/^(\[[^\]]+\])\s*(\[[^\]]+\])\s*\[([^:\]]+(?::[^:\]]+)?):(\d+)\s+([^\]]+)\]\s*(.*)$/);
         
         if (newFormatMatch) {
@@ -429,15 +429,22 @@ function formatLogMessages(logs) {
             // Extract just the filename from the path
             const fileName = filePath.split(/[\/\\]/).pop();
             
-            // Create clickable link for the source location  
-            const linkHtml = `[<a href="#" class="source-path-link" data-path="${filePath}" data-line="${lineNumber}" style="color: #667eea; text-decoration: none;">${fileName}:${lineNumber} ${functionName}</a>]`;
+            // Store source info for expandable section
+            sourceInfo = {
+                fileName,
+                filePath,
+                lineNumber,
+                functionName
+            };
             
-            // Rebuild the log with the link at the end
-            processedLog = `${level} ${category} ${message} ${linkHtml}`;
+            // Build log without source info (will be added as expandable)
+            logHtml = `${level} ${category} ${message}`;
+        } else {
+            logHtml = log;
         }
         
         // Parse log level and apply colored span
-        const levelMatch = processedLog.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/);
+        const levelMatch = logHtml.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/);
         if (levelMatch) {
             const level = levelMatch[1];
             const levelClassMap = {
@@ -453,14 +460,28 @@ function formatLogMessages(logs) {
             const logClass = levelClassMap[level] || '';
             
             // Replace the log level with a colored span
-            const coloredLog = processedLog.replace(
+            logHtml = logHtml.replace(
                 /^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/,
                 `<span class="log-level-inline ${logClass}">[${level}]</span>`
             );
-            return `<div class="log-line">${coloredLog}</div>`;
-        } else {
-            return `<div class="log-line">${processedLog}</div>`;
         }
+        
+        // Create expandable log entry with source info
+        const logId = `log-${Date.now()}-${logIndex}`;
+        let html = '<div class="log-line-wrapper">';
+        html += `<div class="log-line ${sourceInfo ? 'clickable-log' : ''}" ${sourceInfo ? `onclick="toggleLogSource('${logId}')"` : ''}>${logHtml}</div>`;
+        
+        if (sourceInfo) {
+            html += `<div id="${logId}" class="log-source-details" style="display: none;">`;
+            html += `<div class="source-detail"><span class="source-label">File:</span> `;
+            html += `<a href="#" class="source-path-link" data-path="${sourceInfo.filePath}" data-line="${sourceInfo.lineNumber}">${sourceInfo.fileName}</a></div>`;
+            html += `<div class="source-detail"><span class="source-label">Line:</span> ${sourceInfo.lineNumber}</div>`;
+            html += `<div class="source-detail"><span class="source-label">Function:</span> ${sourceInfo.functionName}</div>`;
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        return html;
     }).join('');
 }
 
@@ -1816,4 +1837,16 @@ function closeArrayEditor() {
     modal.classList.remove('show');
     currentArrayInput = null;
     currentArrayItems = [];
+}
+
+// Toggle log source details visibility
+function toggleLogSource(logId) {
+    const sourceDetails = document.getElementById(logId);
+    if (sourceDetails) {
+        if (sourceDetails.style.display === 'none') {
+            sourceDetails.style.display = 'block';
+        } else {
+            sourceDetails.style.display = 'none';
+        }
+    }
 }
