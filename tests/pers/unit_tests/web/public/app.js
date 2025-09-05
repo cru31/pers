@@ -9,7 +9,7 @@ async function loadResults() {
         // Get session info
         const sessionResponse = await fetch('/api/session');
         const sessionData = await sessionResponse.json();
-        document.getElementById('session-info').textContent = `Session: ${sessionData.sessionId}`;
+        document.getElementById('session-info').innerHTML = `<div style="line-height: 1.6; font-size: 0.95em;">Session: ${sessionData.sessionId}</div>`;
         
         // Display Result JSON path as hyperlink
         if (sessionData.dataPath) {
@@ -32,8 +32,8 @@ async function loadResults() {
         // Display both Test Cases and Result JSON paths from metadata if available
         if (data && data.metadata && data.metadata.test_case_json) {
             const pathElement = document.getElementById('json-file-path');
-            const testCasesLink = `Test Cases: <a href="#" class="source-path-link" data-path="${data.metadata.test_case_json}" style="color: #667eea;">${data.metadata.test_case_json}</a>`;
-            const resultLink = sessionData.dataPath ? `<br>Result: <a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a>` : '';
+            const testCasesLink = `<div style="text-align: left; margin-top: 5px; line-height: 1.6; font-size: 0.95em;">Test Cases: <a href="#" class="source-path-link" data-path="${data.metadata.test_case_json}" style="color: #667eea;">${data.metadata.test_case_json}</a></div>`;
+            const resultLink = sessionData.dataPath ? `<div style="text-align: left; margin-top: 5px; line-height: 1.6; font-size: 0.95em;">Result: <a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a></div>` : '';
             pathElement.innerHTML = testCasesLink + resultLink;
         }
         
@@ -308,9 +308,7 @@ function displayResults() {
                 
                 ${result.log_messages && result.log_messages.length > 0 ? `
                     <h4>Engine Log Messages (${result.log_messages.length} entries)</h4>
-                    <div class="log-messages">
-                        ${formatLogMessages(result.log_messages)}
-                    </div>
+                    <div class="log-messages">${formatLogMessages(result.log_messages)}</div>
                 ` : ''}
                 
                 <h4>Execution Details</h4>
