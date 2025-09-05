@@ -40,13 +40,24 @@ struct TestTypeDefinition {
     std::vector<TestVariation> variations;
 };
 
+// Structured log entry
+struct LogEntry {
+    std::string timestamp;      // "HH:MM:SS.mmm"
+    std::string level;          // "INFO", "ERROR", etc.
+    std::string category;       // Log category
+    std::string message;        // Log message
+    std::string file;           // Source file path
+    int line;                   // Line number
+    std::string function;       // Function name
+};
+
 // Test execution result
 struct TestResult {
     bool passed;
     std::string actualBehavior;
     std::string failureReason;
     std::unordered_map<std::string, std::any> actualProperties;
-    std::vector<std::string> logMessages;  // Captured log messages during test
+    std::vector<LogEntry> logMessages;  // Structured log messages
 };
 
 // Helper to get option value with type safety

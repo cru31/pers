@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <pers/utils/Logger.h>
 #include <sstream>
+#include <iomanip>
+#include <ctime>
+#include <chrono>
 
 namespace pers::tests {
 
@@ -23,15 +26,17 @@ public:
 // Base class with common functionality
 class TestHandlerBase : public ITestHandler {
 protected:
-    std::vector<std::string> _capturedLogs;
+    std::vector<LogEntry> _capturedLogs;
     
     void setupLogCapture() {
         _capturedLogs.clear();
         
         auto captureCallback = [this](pers::LogLevel level, const std::string& category, 
-                                      const std::string& message, const pers::LogSource& source, 
+                                      const std::string& message, const pers::LogSource& source,
+                                      const std::chrono::system_clock::time_point& timestamp,
                                       bool& skipLogging) {
-            std::stringstream ss;
+            // Create structured log entry
+            LogEntry entry;
             
             const char* levelStr = "UNKNOWN";
             switch (level) {
@@ -45,15 +50,32 @@ protected:
                 case pers::LogLevel::Critical: levelStr = "CRITICAL"; break;
             }
             
-            ss << "[" << levelStr << "] [" << category << "] ";
+            // Format timestamp
+            auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+            auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(
+                timestamp.time_since_epoch()).count() % 1000;
+            std::tm tm_buf;
+#ifdef _WIN32
+            localtime_s(&tm_buf, &time_t);
+#else
+            localtime_r(&time_t, &tm_buf);
+#endif
             
-            // Add source info for clickable links
-            if (source.file && source.file[0] != '\0') {
-                ss << "[" << source.file << ":" << source.line << " " << source.function << "] ";
-            }
+            // Format: HH:MM:SS.mmm
+            char timeStr[20];
+            strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &tm_buf);
+            std::stringstream ss;
+            ss << timeStr << "." << std::setfill('0') << std::setw(3) << millis;
             
-            ss << message;
-            _capturedLogs.push_back(ss.str());
+            entry.timestamp = ss.str();
+            entry.level = levelStr;
+            entry.category = category;
+            entry.message = message;
+            entry.file = source.file ? source.file : "";
+            entry.line = source.line;
+            entry.function = source.function ? source.function : "";
+            
+            _capturedLogs.push_back(entry);
             skipLogging = false;
         };
         

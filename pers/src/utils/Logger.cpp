@@ -220,7 +220,7 @@ void Logger::LogInternal(const LogEntry& entry, const LogSource& source) {
         auto callbackIt = _callbacks.find(entry.level);
         if (callbackIt != _callbacks.end() && callbackIt->second) {
             ++callbackDepth;
-            callbackIt->second(entry.level, entry.category, entry.message, source, skipLogging);
+            callbackIt->second(entry.level, entry.category, entry.message, source, entry.timestamp, skipLogging);
             --callbackDepth;
         }
     }

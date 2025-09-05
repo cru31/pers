@@ -266,8 +266,7 @@ int main(int argc, char* argv[]) {
                 // Check for TodoOrDie logs to detect engine NYI
                 bool hasTodoOrDie = false;
                 for (const auto& log : result.logMessages) {
-                    if (log.find("[TODO_OR_DIE]") != std::string::npos ||
-                        log.find("[TODO!]") != std::string::npos) {
+                    if (log.level == "TODO_OR_DIE") {
                         hasTodoOrDie = true;
                         break;
                     }

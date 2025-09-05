@@ -280,8 +280,7 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
                 // Check for TodoOrDie logs to detect engine NYI
                 bool hasTodoOrDie = false;
                 for (const auto& log : result.logMessages) {
-                    if (log.find("[TODO_OR_DIE]") != std::string::npos ||
-                        log.find("[TODO!]") != std::string::npos) {
+                    if (log.level == "TODO_OR_DIE") {
                         hasTodoOrDie = true;
                         break;
                     }
@@ -459,10 +458,18 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
             resultObj.AddMember("execution_time_ms", execTime, allocator);
             resultObj.AddMember("timestamp", Value().SetString(timeStr, allocator), allocator);
             
-            // Add log messages from test result
+            // Add structured log messages from test result
             Value logMessages(kArrayType);
             for (const auto& log : result.logMessages) {
-                logMessages.PushBack(Value().SetString(log.c_str(), allocator), allocator);
+                Value logObj(kObjectType);
+                logObj.AddMember("timestamp", Value().SetString(log.timestamp.c_str(), allocator), allocator);
+                logObj.AddMember("level", Value().SetString(log.level.c_str(), allocator), allocator);
+                logObj.AddMember("category", Value().SetString(log.category.c_str(), allocator), allocator);
+                logObj.AddMember("message", Value().SetString(log.message.c_str(), allocator), allocator);
+                logObj.AddMember("file", Value().SetString(log.file.c_str(), allocator), allocator);
+                logObj.AddMember("line", log.line, allocator);
+                logObj.AddMember("function", Value().SetString(log.function.c_str(), allocator), allocator);
+                logMessages.PushBack(logObj, allocator);
             }
             resultObj.AddMember("log_messages", logMessages, allocator);
             

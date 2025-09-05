@@ -88,6 +88,7 @@ public:
                                           const std::string& category,
                                           const std::string& message,
                                           const LogSource& source,
+                                          const std::chrono::system_clock::time_point& timestamp,
                                           bool& skipLogging)>;
     
     static Logger& Instance();
@@ -138,6 +139,7 @@ private:
     Logger& operator=(const Logger&) = delete;
     
     void LogInternal(const LogEntry& entry, const LogSource& source);
+    void InvokeCallbacks(const LogEntry& entry, const LogSource& source, bool& skipLogging);
     
     // Member variables
     std::vector<std::shared_ptr<ILogOutput>> _outputs;
