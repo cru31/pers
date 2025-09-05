@@ -32,8 +32,8 @@ async function loadResults() {
         // Display both Test Cases and Result JSON paths from metadata if available
         if (data && data.metadata && data.metadata.test_case_json) {
             const pathElement = document.getElementById('json-file-path');
-            const testCasesLink = `<div style="text-align: left; margin-top: 5px; line-height: 1.6; font-size: 0.95em;">Test Cases: <a href="#" class="source-path-link" data-path="${data.metadata.test_case_json}" style="color: #667eea;">${data.metadata.test_case_json}</a></div>`;
-            const resultLink = sessionData.dataPath ? `<div style="text-align: left; margin-top: 5px; line-height: 1.6; font-size: 0.95em;">Result: <a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a></div>` : '';
+            const testCasesLink = `<div style="text-align: left; margin-top: 10px; line-height: 1.6; font-size: 0.95em;"><span style="display: inline-block; width: 85px;">Test Cases:</span><a href="#" class="source-path-link" data-path="${data.metadata.test_case_json}" style="color: #667eea;">${data.metadata.test_case_json}</a></div>`;
+            const resultLink = sessionData.dataPath ? `<div style="text-align: left; margin-top: 5px; line-height: 1.6; font-size: 0.95em;"><span style="display: inline-block; width: 85px;">Result:</span><a href="#" class="source-path-link" data-path="${sessionData.dataPath}" style="color: #667eea;">${sessionData.dataPath}</a></div>` : '';
             pathElement.innerHTML = testCasesLink + resultLink;
         }
         
