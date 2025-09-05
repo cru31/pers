@@ -1,4 +1,5 @@
 #include "pers/utils/Logger.h"
+#include "pers/utils/Mutex.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -85,11 +86,8 @@ public:
     }
     
     void Write(const LogEntry& entry) {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (FileOutput::Write)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
-        
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+
         auto time_t = std::chrono::system_clock::to_time_t(entry.timestamp);
         std::tm tm_buf;
 #ifdef _WIN32
@@ -116,21 +114,16 @@ public:
         }
         
         file << entry.message << std::endl;
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (FileOutput::Write)" << std::endl;
     }
     
     void Flush() {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (FileOutput::Flush)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         file.flush();
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (FileOutput::Flush)" << std::endl;
     }
     
 private:
     std::ofstream file;
-    std::mutex mutex;
+    Mutex _mutex{"FileOutput", false};
 };
 
 FileOutput::FileOutput(const std::string& filename, bool append)
@@ -158,48 +151,28 @@ public:
     }
     
     void setCallback(LogLevel level, const Logger::LogCallback& callback) {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (setCallback)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         callbacks[level] = callback;
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (setCallback)" << std::endl;
     }
     
     void clearCallback(LogLevel level) {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (clearCallback)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         callbacks.erase(level);
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (clearCallback)" << std::endl;
     }
     
     void clearAllCallbacks() {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (clearAllCallbacks)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         callbacks.clear();
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (clearAllCallbacks)" << std::endl;
     }
     
     void AddOutput(const std::shared_ptr<ILogOutput>& output) {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (AddOutput)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         outputs.push_back(output);
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (AddOutput)" << std::endl;
     }
     
     void RemoveAllOutputs() {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (RemoveAllOutputs)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         outputs.clear();
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (RemoveAllOutputs)" << std::endl;
     }
     
     void SetMinLevel(LogLevel level) {
@@ -211,46 +184,26 @@ public:
     }
     
     void SetLogLevelEnabled(LogLevel level, bool enabled) {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (SetLogLevelEnabled)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         enabledLevels[level] = enabled;
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (SetLogLevelEnabled)" << std::endl;
     }
     
     bool IsLogLevelEnabled(LogLevel level) const {
-        static thread_local int mutexLockCount = 0;  // mutex 진입 횟수
-        std::cerr << "[MUTEX] Entering lock #" << mutexLockCount << " (IsLogLevelEnabled)" << std::endl;
-
-        bool ret = false;
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            auto it = enabledLevels.find(level);
-            ret = it != enabledLevels.end() ? it->second : true;
-            std::cerr << "[MUTEX] Exiting lock #" << mutexLockCount << " (IsLogLevelEnabled)" << std::endl;
-
-            mutexLockCount++;
-        }
-        return ret;
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+        auto it = enabledLevels.find(level);
+        return it != enabledLevels.end() ? it->second : true;
     }
     
     void SetCategoryFilter(const std::string& pattern) {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (SetCategoryFilter)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         categoryFilter = pattern;
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (SetCategoryFilter)" << std::endl;
     }
     
     void Log(const LogEntry& entry, const LogSource& source) {
         static thread_local int callbackDepth = 0;
-        static thread_local int mutexLockCount = 0;  // mutex 진입 횟수
         
         if (callbackDepth > 0) {
             std::cerr << "[LOGGER] Recursive logging detected (depth=" << callbackDepth 
-                     << ", next_lockId_would_be=" << (mutexLockCount + 1)
                      << "): " << entry.message << std::endl;
             return;
         }
@@ -261,33 +214,24 @@ public:
         
         // Check if this log level is enabled
         {
-            int lockId = ++mutexLockCount;  // mutex 진입 ID: 1
-            std::cerr << "[MUTEX] Entering lock #" << lockId << " (check level)" << std::endl;
-            std::lock_guard<std::mutex> lock(mutex);
+            auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
             auto it = enabledLevels.find(entry.level);
             if (it != enabledLevels.end() && !it->second) {
-                std::cerr << "[MUTEX] Exiting lock #" << lockId << " (check level)" << std::endl;
                 return;
             }
-
-            std::cerr << "[MUTEX] Exiting lock #" << lockId << " (check level)" << std::endl;
         }
         
         bool skipLogging = false;
         
         // Check for callback
         {
-            int lockId = ++mutexLockCount;  // mutex 진입 ID: 2
-            std::cerr << "[MUTEX] Entering lock #" << lockId << " (callback)" << std::endl;
-            std::lock_guard<std::mutex> lock(mutex);
+            auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
             auto callbackIt = callbacks.find(entry.level);
             if (callbackIt != callbacks.end() && callbackIt->second) {
                 ++callbackDepth;
                 callbackIt->second(entry.level, entry.category, entry.message, source, skipLogging);
                 --callbackDepth;
             }
-
-            std::cerr << "[MUTEX] Exiting lock #" << lockId << " (callback)" << std::endl;
         }
         
         // If callback requested to skip logging, return
@@ -295,14 +239,10 @@ public:
             return;
         }
         
-        int lockId = ++mutexLockCount;  // mutex 진입 ID: 3
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (write output)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
-        
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+
         // Category filter check
         if (!categoryFilter.empty() && entry.category.find(categoryFilter) == std::string::npos) {
-
-            std::cerr << "[MUTEX] Exiting lock #" << lockId << " (write output)" << std::endl;
             return;
         }
         
@@ -310,19 +250,13 @@ public:
         for (auto& output : outputs) {
             output->Write(entry);
         }
-
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (write output)" << std::endl;
     }
     
     void Flush() {
-        static thread_local int mutexLockCount = 0;
-        int lockId = ++mutexLockCount;
-        std::cerr << "[MUTEX] Entering lock #" << lockId << " (Flush)" << std::endl;
-        std::lock_guard<std::mutex> lock(mutex);
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
         for (auto& output : outputs) {
             output->Flush();
         }
-        std::cerr << "[MUTEX] Exiting lock #" << lockId << " (Flush)" << std::endl;
     }
     
 private:
@@ -331,7 +265,7 @@ private:
     std::string categoryFilter;
     std::map<LogLevel, bool> enabledLevels;
     std::map<LogLevel, Logger::LogCallback> callbacks;
-    mutable std::mutex mutex;
+    mutable Mutex _mutex{"Logger", false};
 };
 
 Logger::Logger() : impl(std::make_unique<Impl>()) {

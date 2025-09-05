@@ -100,8 +100,7 @@ void PersTriangleApp::onKeyPress(int key, int scancode, int action, int mods) {
     if (action == 1) { // GLFW_PRESS = 1
         switch (key) {
             case 70: // GLFW_KEY_F = 70
-                pers::Logger::Instance().Log(pers::LogLevel::Debug, "PersTriangleApp",
-                    "F key pressed");
+                LOG_DEBUG("PersTriangleApp", "F key pressed");
                 break;
         }
     }
