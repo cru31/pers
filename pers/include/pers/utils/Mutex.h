@@ -3,6 +3,7 @@
 #include "pers/utils/Logger.h"
 #include <mutex>
 #include <iostream>
+#include <iomanip>
 #include <thread>
 #include <atomic>
 #include <string>
@@ -40,35 +41,49 @@ public:
         }
         
         if (_enableLogging && loc.file) {
-            std::cerr << "[MUTEX] " << getFileName(loc.file) << ":" << loc.line 
-                      << " (" << loc.function << ") - Thread " << std::this_thread::get_id() 
-                      << " attempting to lock '" << _name 
-                      << "' (lock #" << lockId << ")" << std::endl;
+            std::cerr << "[MUTEX] lock:" << std::setw(6) << std::setfill(' ') << lockId 
+                      << " | " << std::left << std::setw(20) << "Attempting to lock" 
+                      << " '" << _name 
+                      << "', Thread:" << std::this_thread::get_id() 
+                      << ", " << getFileName(loc.file) << ":" << loc.line 
+                      << " (" << loc.function << ")" << std::endl;
         } else if (_enableLogging) {
-            std::cerr << "[MUTEX] Thread " << std::this_thread::get_id() 
-                      << " attempting to lock '" << _name 
-                      << "' (lock #" << lockId << ")" << std::endl;
+            std::cerr << "[MUTEX] lock:" << std::setw(6) << std::setfill(' ') << lockId 
+                      << " | " << std::left << std::setw(20) << "Attempting to lock" 
+                      << " '" << _name 
+                      << "', Thread:" << std::this_thread::get_id() << std::endl;
         }
         
         _mutex.lock();
         
         if (_enableLogging && loc.file) {
-            std::cerr << "[MUTEX] " << getFileName(loc.file) << ":" << loc.line 
-                      << " - acquired lock #" << lockId << std::endl;
+            std::cerr << "[MUTEX] lock:" << std::setw(6) << std::setfill(' ') << lockId 
+                      << " | " << std::left << std::setw(20) << "Acquired lock" 
+                      << " '" << _name 
+                      << "', Thread:" << std::this_thread::get_id() 
+                      << ", " << getFileName(loc.file) << ":" << loc.line 
+                      << " (" << loc.function << ")" << std::endl;
         } else if (_enableLogging) {
-            std::cerr << "[MUTEX] Thread " << std::this_thread::get_id() 
-                      << " acquired lock '" << _name 
-                      << "' (lock #" << lockId << ")" << std::endl;
+            std::cerr << "[MUTEX] lock:" << std::setw(6) << std::setfill(' ') << lockId 
+                      << " | " << std::left << std::setw(20) << "Acquired lock" 
+                      << " '" << _name 
+                      << "', Thread:" << std::this_thread::get_id() << std::endl;
         }
     }
     
     void unlock(const LogSource& loc = {nullptr, 0, nullptr}) {
         if (_enableLogging && loc.file) {
-            std::cerr << "[MUTEX] " << getFileName(loc.file) << ":" << loc.line 
-                      << " - releasing lock '" << _name << "'" << std::endl;
+            std::cerr << "[MUTEX] lock:" << std::setw(6) << std::setfill(' ') << _globalLockId 
+                      << " | " << std::left << std::setw(20) << "Releasing lock" 
+                      << " '" << _name 
+                      << "', Thread:" << std::this_thread::get_id() 
+                      << ", " << getFileName(loc.file) << ":" << loc.line 
+                      << " (" << loc.function << ")" << std::endl;
         } else if (_enableLogging) {
-            std::cerr << "[MUTEX] Thread " << std::this_thread::get_id() 
-                      << " releasing lock '" << _name << "'" << std::endl;
+            std::cerr << "[MUTEX] lock:" << std::setw(6) << std::setfill(' ') << _globalLockId 
+                      << " | " << std::left << std::setw(20) << "Releasing lock" 
+                      << " '" << _name 
+                      << "', Thread:" << std::this_thread::get_id() << std::endl;
         }
         _mutex.unlock();
     }
