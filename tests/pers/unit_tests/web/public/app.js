@@ -311,6 +311,10 @@ function displayResults() {
                     <div class="param-item"><strong>Time:</strong> ${result.execution_time_ms?.toFixed(2) || '-'}ms</div>
                     <div class="param-item"><strong>Timestamp:</strong> ${result.timestamp || '-'}</div>
                 </div>
+                
+                <button class="generate-test-btn" onclick='openTestEditor(${JSON.stringify(result).replace(/'/g, "&apos;")})'>
+                    Generate Test Case JSON
+                </button>
             </div>
         `;
         
@@ -862,6 +866,17 @@ function openInVSCode(path, line) {
 // Test Editor Functions
 let currentTestCase = null;
 let parameterCounter = 0;
+let updatePreviewTimeout = null;
+
+// Debounced update function
+function scheduleJsonPreviewUpdate() {
+    if (updatePreviewTimeout) {
+        clearTimeout(updatePreviewTimeout);
+    }
+    updatePreviewTimeout = setTimeout(() => {
+        updateJsonPreview();
+    }, 200); // Update after 200ms of no changes
+}
 
 function openTestEditor(testResult) {
     currentTestCase = testResult;
@@ -906,8 +921,8 @@ function addParameterRow(key, value) {
     rowDiv.dataset.paramId = parameterCounter++;
     
     rowDiv.innerHTML = `
-        <input type="text" placeholder="Parameter name" value="${escapeHtml(key)}" onchange="updateJsonPreview()">
-        <input type="text" placeholder="Parameter value" value="${escapeHtml(value)}" onchange="updateJsonPreview()">
+        <input type="text" placeholder="Parameter name" value="${escapeHtml(key)}" oninput="scheduleJsonPreviewUpdate()">
+        <input type="text" placeholder="Parameter value" value="${escapeHtml(value)}" oninput="scheduleJsonPreviewUpdate()">
         <button onclick="removeParameter(${rowDiv.dataset.paramId})" class="remove-param-btn">Remove</button>
     `;
     
@@ -918,7 +933,7 @@ function removeParameter(id) {
     const row = document.querySelector(`.parameter-row[data-param-id="${id}"]`);
     if (row) {
         row.remove();
-        updateJsonPreview();
+        updateJsonPreview(); // Update immediately when removing
     }
 }
 
@@ -1000,10 +1015,42 @@ function copyToClipboard() {
     const testCase = buildTestCaseJson();
     const jsonStr = JSON.stringify(testCase, null, 2);
     
-    // Copy to clipboard
-    navigator.clipboard.writeText(jsonStr).then(() => {
+    // Get the button element that was clicked
+    const btn = document.querySelector('.copy-btn');
+    
+    // Try modern clipboard API first, fallback to older method
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(jsonStr).then(() => {
+            // Show feedback
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.style.background = 'linear-gradient(135deg, #48bb78, #38a169)';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+            }, 2000);
+        }).catch(err => {
+            console.error('Clipboard API failed:', err);
+            fallbackCopyToClipboard(jsonStr, btn);
+        });
+    } else {
+        fallbackCopyToClipboard(jsonStr, btn);
+    }
+}
+
+function fallbackCopyToClipboard(text, btn) {
+    // Fallback method using textarea
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        document.execCommand('copy');
         // Show feedback
-        const btn = event.target;
         const originalText = btn.textContent;
         btn.textContent = 'Copied!';
         btn.style.background = 'linear-gradient(135deg, #48bb78, #38a169)';
@@ -1012,10 +1059,12 @@ function copyToClipboard() {
             btn.textContent = originalText;
             btn.style.background = '';
         }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy:', err);
-        alert('Failed to copy to clipboard');
-    });
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        alert('Failed to copy to clipboard. Please copy manually from the JSON preview.');
+    } finally {
+        document.body.removeChild(textarea);
+    }
 }
 
 // Set up event listeners

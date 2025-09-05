@@ -139,23 +139,23 @@
                 <div id="editor-form">
                     <div class="form-group">
                         <label>Test ID</label>
-                        <input type="number" id="edit-id" min="1">
+                        <input type="number" id="edit-id" min="1" oninput="scheduleJsonPreviewUpdate()">
                     </div>
                     <div class="form-group">
                         <label>Category</label>
-                        <input type="text" id="edit-category">
+                        <input type="text" id="edit-category" oninput="scheduleJsonPreviewUpdate()">
                     </div>
                     <div class="form-group">
                         <label>Test Type</label>
-                        <input type="text" id="edit-test-type">
+                        <input type="text" id="edit-test-type" oninput="scheduleJsonPreviewUpdate()">
                     </div>
                     <div class="form-group">
                         <label>Expected Result</label>
-                        <input type="text" id="edit-expected">
+                        <input type="text" id="edit-expected" oninput="scheduleJsonPreviewUpdate()">
                     </div>
                     <div class="form-group">
                         <label>Description</label>
-                        <textarea id="edit-description" rows="3"></textarea>
+                        <textarea id="edit-description" rows="3" oninput="scheduleJsonPreviewUpdate()"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Parameters <button onclick="addParameter()" class="add-param-btn">+ Add</button></label>
