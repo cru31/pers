@@ -44,6 +44,7 @@ header h1 {
     cursor: default;
     background: rgba(255, 255, 255, 0.08);
     align-items: stretch;
+    flex: 0 0 180px;
     min-width: 180px;
 }
 
@@ -70,8 +71,8 @@ header h1 {
 }
 
 .summary-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 15px;
     margin-bottom: 20px;
 }
@@ -87,6 +88,8 @@ header h1 {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    flex: 1 1 100px;
+    min-width: 100px;
 }
 
 .card:hover {
