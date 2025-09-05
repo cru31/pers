@@ -783,6 +783,10 @@ function showTestModal(testResult) {
             <h3>Execution Time</h3>
             <p>${testResult.execution_time_ms ? testResult.execution_time_ms.toFixed(2) + ' ms' : 'N/A'}</p>
         </div>
+        
+        <button class="generate-test-btn" onclick='openTestEditor(${JSON.stringify(testResult).replace(/'/g, "&apos;")})'>
+            Generate Test Case JSON
+        </button>
     `;
     
     modal.classList.add('show');
@@ -853,6 +857,165 @@ function openInVSCode(path, line) {
     
     // Try to open in VSCode
     window.location.href = vscodeUri;
+}
+
+// Test Editor Functions
+let currentTestCase = null;
+let parameterCounter = 0;
+
+function openTestEditor(testResult) {
+    currentTestCase = testResult;
+    parameterCounter = 0;
+    
+    // Populate form fields
+    document.getElementById('edit-id').value = testResult.id || '';
+    document.getElementById('edit-category').value = testResult.category || '';
+    document.getElementById('edit-test-type').value = testResult.testType || '';
+    document.getElementById('edit-expected').value = testResult.expected_result || '';
+    document.getElementById('edit-description').value = testResult.description || '';
+    
+    // Clear and populate parameters
+    const container = document.getElementById('parameters-container');
+    container.innerHTML = '';
+    
+    if (testResult.input_parameters) {
+        Object.entries(testResult.input_parameters).forEach(([key, value]) => {
+            addParameterRow(key, value);
+        });
+    }
+    
+    // Update JSON preview
+    updateJsonPreview();
+    
+    // Show modal
+    document.getElementById('test-editor-modal').classList.add('show');
+}
+
+function closeTestEditor() {
+    document.getElementById('test-editor-modal').classList.remove('show');
+}
+
+function addParameter() {
+    addParameterRow('', '');
+}
+
+function addParameterRow(key, value) {
+    const container = document.getElementById('parameters-container');
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'parameter-row';
+    rowDiv.dataset.paramId = parameterCounter++;
+    
+    rowDiv.innerHTML = `
+        <input type="text" placeholder="Parameter name" value="${escapeHtml(key)}" onchange="updateJsonPreview()">
+        <input type="text" placeholder="Parameter value" value="${escapeHtml(value)}" onchange="updateJsonPreview()">
+        <button onclick="removeParameter(${rowDiv.dataset.paramId})" class="remove-param-btn">Remove</button>
+    `;
+    
+    container.appendChild(rowDiv);
+}
+
+function removeParameter(id) {
+    const row = document.querySelector(`.parameter-row[data-param-id="${id}"]`);
+    if (row) {
+        row.remove();
+        updateJsonPreview();
+    }
+}
+
+function updateJsonPreview() {
+    const testCase = buildTestCaseJson();
+    const previewElement = document.getElementById('json-preview-content');
+    previewElement.textContent = JSON.stringify(testCase, null, 2);
+}
+
+function buildTestCaseJson() {
+    // Get form values
+    const id = parseInt(document.getElementById('edit-id').value) || 1;
+    const category = document.getElementById('edit-category').value || 'unknown';
+    const testType = document.getElementById('edit-test-type').value || 'test';
+    const expected = document.getElementById('edit-expected').value || '';
+    const description = document.getElementById('edit-description').value || '';
+    
+    // Build parameters object
+    const params = {};
+    document.querySelectorAll('.parameter-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const key = inputs[0].value.trim();
+        const value = inputs[1].value.trim();
+        if (key) {
+            // Try to parse as number or boolean
+            if (value === 'true') {
+                params[key] = true;
+            } else if (value === 'false') {
+                params[key] = false;
+            } else if (!isNaN(value) && value !== '') {
+                params[key] = parseFloat(value);
+            } else {
+                params[key] = value;
+            }
+        }
+    });
+    
+    const testCase = {
+        id: id,
+        category: category,
+        testType: testType,
+        input_parameters: params,
+        expected_result: expected
+    };
+    
+    // Add description if provided
+    if (description) {
+        testCase.description = description;
+    }
+    
+    return testCase;
+}
+
+function exportTestCase() {
+    const testCase = buildTestCaseJson();
+    const jsonStr = JSON.stringify(testCase, null, 2);
+    
+    // Get filename or generate random
+    let filename = document.getElementById('export-filename').value.trim();
+    if (!filename) {
+        // Generate random 6-character hex
+        const randomHex = Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+        filename = `testcase_${randomHex}.json`;
+    } else if (!filename.endsWith('.json')) {
+        filename += '.json';
+    }
+    
+    // Create blob and download
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function copyToClipboard() {
+    const testCase = buildTestCaseJson();
+    const jsonStr = JSON.stringify(testCase, null, 2);
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(jsonStr).then(() => {
+        // Show feedback
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.background = 'linear-gradient(135deg, #48bb78, #38a169)';
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard');
+    });
 }
 
 // Set up event listeners
