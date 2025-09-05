@@ -1127,7 +1127,7 @@ td {
 }
 
 .remove-param-btn {
-    padding: 6px 12px;
+    padding: 4px 12px;
     background: rgba(245, 101, 101, 0.2);
     color: #f56565;
     border: 1px solid #f56565;
@@ -1354,7 +1354,8 @@ td {
     background: rgba(102, 126, 234, 0.3);
 }
 
-.remove-param-btn {
+/* Remove button in bulk export modal - × style */
+.bulk-item-form .remove-param-btn {
     padding: 8px 12px;
     background: rgba(245, 101, 101, 0.2);
     color: #f56565;
@@ -1371,7 +1372,7 @@ td {
     transition: all 0.2s;
 }
 
-.remove-param-btn:hover {
+.bulk-item-form .remove-param-btn:hover {
     background: rgba(245, 101, 101, 0.3);
 }
 
