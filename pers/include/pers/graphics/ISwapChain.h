@@ -5,50 +5,15 @@
 #include <string>
 #include "pers/graphics/GraphicsTypes.h"
 #include "pers/graphics/GraphicsFormats.h"
+#include "pers/graphics/SwapChainTypes.h"
 
 namespace pers {
 
 // Forward declarations
 class ITextureView;
+class IPhysicalDevice;
 
-/**
- * @brief Present mode for swap chain
- */
-enum class PresentMode {
-    Fifo = 0,       // VSync enabled (default)
-    Immediate = 1,  // No VSync
-    Mailbox = 2,    // Triple buffering with VSync
-    FifoRelaxed = 3 // Adaptive VSync
-};
-
-/**
- * @brief Alpha compositing mode for swap chain
- */
-enum class CompositeAlphaMode {
-    Auto = 0,        // Automatically select
-    Opaque = 1,      // Alpha channel ignored
-    PreMultiplied = 2,   // Alpha premultiplied
-    PostMultiplied = 3,  // Alpha post-multiplied
-    Inherit = 4      // Inherit from system
-};
-
-/**
- * @brief Swap chain descriptor
- */
-struct SwapChainDesc {
-    // Required values - must be set by user
-    uint32_t width = 0;
-    uint32_t height = 0;
-    
-    // Values determined by negotiation - set by builder
-    TextureFormat format = TextureFormat::BGRA8Unorm;
-    PresentMode presentMode = PresentMode::Fifo;
-    CompositeAlphaMode alphaMode = CompositeAlphaMode::Opaque;
-    TextureUsage usage = TextureUsage::RenderAttachment;
-    
-    // Optional
-    std::string debugName;
-};
+// Note: PresentMode, CompositeAlphaMode, and SwapChainDesc are defined in SwapChainTypes.h
 
 /**
  * @brief Swap chain interface for frame presentation
@@ -108,6 +73,14 @@ public:
      * @return Current texture format
      */
     virtual TextureFormat getFormat() const = 0;
+    
+    /**
+     * @brief Query surface capabilities
+     * @param physicalDevice The physical device to query capabilities from
+     * @return Surface capabilities including supported formats, present modes, and dimensions
+     */
+    virtual SurfaceCapabilities querySurfaceCapabilities(
+        const std::shared_ptr<IPhysicalDevice>& physicalDevice) const = 0;
 };
 
 } // namespace pers

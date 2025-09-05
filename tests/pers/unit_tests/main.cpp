@@ -84,7 +84,29 @@ void printTestResult(const TestTypeDefinition& testType,
     std::cout << std::endl;
 }
 
+// Include handler headers
+#include "handlers/instance_creation_handler.h"
+#include "handlers/request_adapter_handler.h"  
+#include "handlers/device_creation_handler.h"
+#include "handlers/swapchain_builder_handler.h"
+
+void registerAllHandlers() {
+    auto& registry = TestHandlerRegistry::Instance();
+    
+    // Manually register all handlers here
+    registry.registerHandler("Instance Creation", 
+        std::make_shared<InstanceCreationHandler>());
+    registry.registerHandler("Request Adapter", 
+        std::make_shared<RequestAdapterHandler>());
+    registry.registerHandler("Device Creation", 
+        std::make_shared<DeviceCreationHandler>());
+    registry.registerHandler("SwapChain Builder Negotiation", 
+        std::make_shared<SwapChainBuilderNegotiationHandler>());
+}
+
 int main(int argc, char* argv[]) {
+    // Register all handlers at the start of main
+    registerAllHandlers();
     
     // Create timestamp directory for results
     auto now = std::chrono::system_clock::now();
@@ -309,6 +331,9 @@ int main(int argc, char* argv[]) {
     // Start web server to view results
     startWebServer(absoluteSessionDir.string(), absoluteResultPath.string());
 #endif
+    
+    // Clear all handlers before main exits to ensure proper destruction order
+    registry.clear();
     
     return (failedCount == 0) ? 0 : 1;
 }

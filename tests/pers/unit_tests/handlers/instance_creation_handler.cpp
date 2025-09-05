@@ -1,25 +1,19 @@
-#include "../test_handler_base.h"
-#include <pers/graphics/backends/webgpu/WebGPUBackendFactory.h>
+#include "instance_creation_handler.h"
 #include <pers/graphics/IInstance.h>
 #include <pers/graphics/backends/IGraphicsBackendFactory.h>
 #include <iostream>
 
 namespace pers::tests {
 
-class InstanceCreationHandler : public TestHandlerBase {
-private:
-    std::shared_ptr<WebGPUBackendFactory> _factory;
-    
-public:
-    InstanceCreationHandler() 
-        : _factory(std::make_shared<WebGPUBackendFactory>()) {
-    }
-    
-    std::string getTestType() const override {
-        return "Instance Creation";
-    }
-    
-    TestResult execute(const TestVariation& variation) override {
+InstanceCreationHandler::InstanceCreationHandler() 
+    : _factory(std::make_shared<WebGPUBackendFactory>()) {
+}
+
+std::string InstanceCreationHandler::getTestType() const {
+    return "Instance Creation";
+}
+
+TestResult InstanceCreationHandler::execute(const TestVariation& variation) {
         TestResult result;
         
         // Setup log capture
@@ -78,10 +72,6 @@ public:
         }
         
         return result;
-    }
-};
-
-// Register the handler
-REGISTER_TEST_HANDLER("Instance Creation", InstanceCreationHandler)
+}
 
 } // namespace pers::tests

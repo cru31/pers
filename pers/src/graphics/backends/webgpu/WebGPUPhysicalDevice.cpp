@@ -328,42 +328,77 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
         deviceDesc.requiredFeatureCount = requiredFeatures.size();
     }
     
-    // Setup required limits
+    // Setup required limits - always start with adapter defaults
     WGPULimits requiredLimits = {};
+    WGPUStatus status = wgpuAdapterGetLimits(_adapter, &requiredLimits);
+    if (status != WGPUStatus_Success) {
+        LOG_ERROR("WebGPUPhysicalDevice",
+            "Failed to query adapter limits");
+        return nullptr;
+    }
     
     if (desc.requiredLimits) {
-        // Query adapter limits for validation
-        WGPULimits adapterLimits = {};
-        WGPUStatus status = wgpuAdapterGetLimits(_adapter, &adapterLimits);
-        if (status == WGPUStatus_Success) {
-            // Validate requested limits are within adapter capability
-            if (!validateLimitsWithinCapability(*desc.requiredLimits, adapterLimits)) {
-                LOG_ERROR("WebGPUPhysicalDevice",
-                    "Requested limits exceed adapter capability");
-                return nullptr;
-            }
-        } else {
-            LOG_WARNING("WebGPUPhysicalDevice",
-                "Failed to query adapter limits for validation");
-        }
+        // Override specific limits with user-specified values
+        // Only override non-zero values to keep adapter defaults for unspecified fields
+        if (desc.requiredLimits->maxTextureDimension1D > 0) 
+            requiredLimits.maxTextureDimension1D = desc.requiredLimits->maxTextureDimension1D;
+        if (desc.requiredLimits->maxTextureDimension2D > 0) 
+            requiredLimits.maxTextureDimension2D = desc.requiredLimits->maxTextureDimension2D;
+        if (desc.requiredLimits->maxTextureDimension3D > 0) 
+            requiredLimits.maxTextureDimension3D = desc.requiredLimits->maxTextureDimension3D;
+        if (desc.requiredLimits->maxTextureArrayLayers > 0) 
+            requiredLimits.maxTextureArrayLayers = desc.requiredLimits->maxTextureArrayLayers;
+        if (desc.requiredLimits->maxBindGroups > 0) 
+            requiredLimits.maxBindGroups = desc.requiredLimits->maxBindGroups;
+        if (desc.requiredLimits->maxBindingsPerBindGroup > 0) 
+            requiredLimits.maxBindingsPerBindGroup = desc.requiredLimits->maxBindingsPerBindGroup;
+        if (desc.requiredLimits->maxDynamicUniformBuffersPerPipelineLayout > 0) 
+            requiredLimits.maxDynamicUniformBuffersPerPipelineLayout = desc.requiredLimits->maxDynamicUniformBuffersPerPipelineLayout;
+        if (desc.requiredLimits->maxDynamicStorageBuffersPerPipelineLayout > 0) 
+            requiredLimits.maxDynamicStorageBuffersPerPipelineLayout = desc.requiredLimits->maxDynamicStorageBuffersPerPipelineLayout;
+        if (desc.requiredLimits->maxSampledTexturesPerShaderStage > 0) 
+            requiredLimits.maxSampledTexturesPerShaderStage = desc.requiredLimits->maxSampledTexturesPerShaderStage;
+        if (desc.requiredLimits->maxSamplersPerShaderStage > 0) 
+            requiredLimits.maxSamplersPerShaderStage = desc.requiredLimits->maxSamplersPerShaderStage;
+        if (desc.requiredLimits->maxStorageBuffersPerShaderStage > 0) 
+            requiredLimits.maxStorageBuffersPerShaderStage = desc.requiredLimits->maxStorageBuffersPerShaderStage;
+        if (desc.requiredLimits->maxStorageTexturesPerShaderStage > 0) 
+            requiredLimits.maxStorageTexturesPerShaderStage = desc.requiredLimits->maxStorageTexturesPerShaderStage;
+        if (desc.requiredLimits->maxUniformBuffersPerShaderStage > 0) 
+            requiredLimits.maxUniformBuffersPerShaderStage = desc.requiredLimits->maxUniformBuffersPerShaderStage;
+        if (desc.requiredLimits->maxUniformBufferBindingSize > 0) 
+            requiredLimits.maxUniformBufferBindingSize = desc.requiredLimits->maxUniformBufferBindingSize;
+        if (desc.requiredLimits->maxStorageBufferBindingSize > 0) 
+            requiredLimits.maxStorageBufferBindingSize = desc.requiredLimits->maxStorageBufferBindingSize;
+        if (desc.requiredLimits->maxVertexBuffers > 0) 
+            requiredLimits.maxVertexBuffers = desc.requiredLimits->maxVertexBuffers;
+        if (desc.requiredLimits->maxVertexAttributes > 0) 
+            requiredLimits.maxVertexAttributes = desc.requiredLimits->maxVertexAttributes;
+        if (desc.requiredLimits->maxVertexBufferArrayStride > 0) 
+            requiredLimits.maxVertexBufferArrayStride = desc.requiredLimits->maxVertexBufferArrayStride;
+        if (desc.requiredLimits->maxInterStageShaderVariables > 0) 
+            requiredLimits.maxInterStageShaderVariables = desc.requiredLimits->maxInterStageShaderVariables;
+        if (desc.requiredLimits->maxComputeWorkgroupStorageSize > 0) 
+            requiredLimits.maxComputeWorkgroupStorageSize = desc.requiredLimits->maxComputeWorkgroupStorageSize;
+        if (desc.requiredLimits->maxComputeInvocationsPerWorkgroup > 0) 
+            requiredLimits.maxComputeInvocationsPerWorkgroup = desc.requiredLimits->maxComputeInvocationsPerWorkgroup;
+        if (desc.requiredLimits->maxComputeWorkgroupSizeX > 0) 
+            requiredLimits.maxComputeWorkgroupSizeX = desc.requiredLimits->maxComputeWorkgroupSizeX;
+        if (desc.requiredLimits->maxComputeWorkgroupSizeY > 0) 
+            requiredLimits.maxComputeWorkgroupSizeY = desc.requiredLimits->maxComputeWorkgroupSizeY;
+        if (desc.requiredLimits->maxComputeWorkgroupSizeZ > 0) 
+            requiredLimits.maxComputeWorkgroupSizeZ = desc.requiredLimits->maxComputeWorkgroupSizeZ;
+        if (desc.requiredLimits->maxComputeWorkgroupsPerDimension > 0) 
+            requiredLimits.maxComputeWorkgroupsPerDimension = desc.requiredLimits->maxComputeWorkgroupsPerDimension;
         
-        // Use user-specified limits
-        requiredLimits = convertToWGPULimits(*desc.requiredLimits);
-        deviceDesc.requiredLimits = &requiredLimits;
         LOG_INFO("WebGPUPhysicalDevice", 
-            "Using user-specified device limits");
+            "Using adapter defaults with user-specified overrides");
     } else {
-        // Use adapter's default limits
-        WGPUStatus status = wgpuAdapterGetLimits(_adapter, &requiredLimits);
-        if (status == WGPUStatus_Success) {
-            deviceDesc.requiredLimits = &requiredLimits;
-            LOG_INFO("WebGPUPhysicalDevice", 
-                "Using adapter's default limits");
-        } else {
-            LOG_WARNING("WebGPUPhysicalDevice", 
-                "Failed to query adapter limits, device will use its defaults");
-        }
+        LOG_INFO("WebGPUPhysicalDevice", 
+            "Using adapter's default limits");
     }
+    
+    deviceDesc.requiredLimits = &requiredLimits;
     
     // Setup uncaptured error callback
     deviceDesc.uncapturedErrorCallbackInfo.callback = [](WGPUDevice const * device, WGPUErrorType type, 

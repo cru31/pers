@@ -13,6 +13,8 @@ class WebGPUTextureView;
 /**
  * @brief WebGPU implementation of ISwapChain
  */
+class IPhysicalDevice;
+
 class WebGPUSwapChain : public ISwapChain {
 public:
     WebGPUSwapChain(const std::shared_ptr<WebGPULogicalDevice>& device,
@@ -28,6 +30,8 @@ public:
     uint32_t getHeight() const override;
     PresentMode getPresentMode() const override;
     TextureFormat getFormat() const override;
+    SurfaceCapabilities querySurfaceCapabilities(
+        const std::shared_ptr<IPhysicalDevice>& physicalDevice) const override;
     
     /**
      * @brief Query surface capabilities from the device
@@ -49,7 +53,7 @@ private:
     static PresentMode convertFromWGPUPresentMode(WGPUPresentMode mode);
     static CompositeAlphaMode convertFromWGPUAlphaMode(WGPUCompositeAlphaMode mode);
     
-    std::shared_ptr<WebGPULogicalDevice> _device;
+    std::weak_ptr<WebGPULogicalDevice> _device;
     WGPUSurface _surface = nullptr;
     SwapChainDesc _desc = {};
     

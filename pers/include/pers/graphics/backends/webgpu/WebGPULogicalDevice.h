@@ -52,7 +52,7 @@ public:
     
     // Native handle access
     NativeDeviceHandle getNativeDeviceHandle() const override;
-    
+
 private:
     WGPUDevice _device = nullptr;
     WGPUAdapter _adapter = nullptr;  // Keep reference for queries

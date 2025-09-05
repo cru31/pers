@@ -7,15 +7,7 @@
 
 namespace pers {
 
-// TextureUsage and TextureDimension are defined in GraphicsTypes.h
-
-inline TextureUsage operator|(TextureUsage a, TextureUsage b) {
-    return static_cast<TextureUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-}
-
-inline TextureUsage operator&(TextureUsage a, TextureUsage b) {
-    return static_cast<TextureUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-}
+// TextureUsage operators and TextureDimension are defined in GraphicsTypes.h
 
 inline bool operator!(TextureUsage usage) {
     return static_cast<uint32_t>(usage) == 0;

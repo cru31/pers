@@ -1,17 +1,10 @@
-#include "../test_handler_base.h"
-#include <pers/graphics/backends/webgpu/WebGPUBackendFactory.h>
-#include <pers/graphics/IInstance.h>
+#include "request_adapter_handler.h"
 #include <pers/graphics/IPhysicalDevice.h>
 #include <pers/graphics/backends/IGraphicsBackendFactory.h>
 
 namespace pers::tests {
 
-class RequestAdapterHandler : public TestHandlerBase {
-private:
-    std::shared_ptr<WebGPUBackendFactory> _factory;
-    std::shared_ptr<IInstance> _instance;
-    
-    bool initializeInstance() {
+bool RequestAdapterHandler::initializeInstance() {
         if (_instance) {
             return true;
         }
@@ -23,17 +16,16 @@ private:
         _instance = _factory->createInstance(desc);
         return _instance != nullptr;
     }
-    
-public:
-    RequestAdapterHandler() 
-        : _factory(std::make_shared<WebGPUBackendFactory>()) {
-    }
-    
-    std::string getTestType() const override {
-        return "Request Adapter";
-    }
-    
-    TestResult execute(const TestVariation& variation) override {
+
+RequestAdapterHandler::RequestAdapterHandler() 
+    : _factory(std::make_shared<WebGPUBackendFactory>()) {
+}
+
+std::string RequestAdapterHandler::getTestType() const {
+    return "Request Adapter";
+}
+
+TestResult RequestAdapterHandler::execute(const TestVariation& variation) {
         TestResult result;
         
         // Setup log capture
@@ -120,10 +112,6 @@ public:
         }
         
         return result;
-    }
-};
-
-// Register the handler
-REGISTER_TEST_HANDLER("Request Adapter", RequestAdapterHandler)
+}
 
 } // namespace pers::tests

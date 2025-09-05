@@ -120,21 +120,21 @@ public:
         return types;
     }
     
+    void clear() {
+        _handlers.clear();
+    }
+    
 private:
     TestHandlerRegistry() = default;
     std::unordered_map<std::string, std::shared_ptr<ITestHandler>> _handlers;
 };
 
-// Macro for registering handlers
-#define REGISTER_TEST_HANDLER(TestType, HandlerClass) \
-    namespace { \
-        bool _register_##HandlerClass = []() { \
-            TestHandlerRegistry::Instance().registerHandler( \
-                TestType, \
-                std::make_shared<HandlerClass>() \
-            ); \
-            return true; \
-        }(); \
+// Simple registration helper - no macros, no templates
+class TestHandlerAutoRegistrar {
+public:
+    TestHandlerAutoRegistrar(const std::string& testType, std::shared_ptr<ITestHandler> handler) {
+        TestHandlerRegistry::Instance().registerHandler(testType, handler);
     }
+};
 
 } // namespace pers::tests

@@ -9,6 +9,8 @@
 
 namespace pers {
 
+// Note: SurfaceCapabilities is defined in SwapChainTypes.h (included via ISwapChain.h)
+
 /**
  * @brief Represents the negotiation result for swap chain configuration
  */
@@ -26,25 +28,6 @@ struct SwapChainNegotiationResult {
     std::vector<CompositeAlphaMode> availableAlphaModes;
     
     std::string failureReason;
-};
-
-/**
- * @brief Surface capabilities that backends report
- */
-struct SurfaceCapabilities {
-    std::vector<TextureFormat> formats;
-    std::vector<PresentMode> presentModes;
-    std::vector<CompositeAlphaMode> alphaModes;
-    
-    uint32_t minImageCount = 2;
-    uint32_t maxImageCount = 3;
-    
-    uint32_t currentWidth = 0;
-    uint32_t currentHeight = 0;
-    uint32_t minWidth = 1;
-    uint32_t maxWidth = 8192;
-    uint32_t minHeight = 1;
-    uint32_t maxHeight = 8192;
 };
 
 /**
@@ -93,6 +76,12 @@ public:
     SwapChainDescBuilder& withDebugName(const std::string& name);
     
     /**
+     * @brief Set surface capabilities for automatic negotiation during build
+     * @param capabilities The surface capabilities reported by backend
+     */
+    SwapChainDescBuilder& withSurfaceCapabilities(const SurfaceCapabilities& capabilities);
+    
+    /**
      * @brief Negotiate configuration with surface capabilities
      * @param capabilities The surface capabilities reported by backend
      * @return Negotiation result with success/failure and selected values
@@ -115,6 +104,23 @@ public:
      * @brief Get current configured height
      */
     uint32_t getHeight() const;
+    
+    /**
+     * @brief Get negotiation logs from last build operation
+     * @return Vector of negotiation log messages (one per item negotiated)
+     */
+    const std::vector<std::string>& getNegotiationLogs() const;
+    
+    /**
+     * @brief Clear negotiation logs
+     */
+    void clearNegotiationLogs();
+    
+    /**
+     * @brief Check if surface capabilities have been set
+     * @return true if capabilities are available for auto-negotiation
+     */
+    bool hasCapabilities() const;
     
     // Legacy interface for compatibility
     SwapChainDescBuilder& setSize(uint32_t width, uint32_t height) { return withDimensions(width, height); }
@@ -139,6 +145,13 @@ private:
     
     std::string _debugName;
     TextureUsage _usage = TextureUsage::RenderAttachment;
+    
+    // Surface capabilities for auto-negotiation
+    std::optional<SurfaceCapabilities> _surfaceCapabilities;
+    
+    // Negotiation logs for debugging
+    mutable std::vector<std::string> _negotiationLogs;
+    mutable SwapChainNegotiationResult _lastNegotiationResult;
 };
 
 } // namespace pers

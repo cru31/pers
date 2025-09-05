@@ -1,18 +1,9 @@
-#include "../test_handler_base.h"
-#include <pers/graphics/backends/webgpu/WebGPUBackendFactory.h>
-#include <pers/graphics/IInstance.h>
-#include <pers/graphics/IPhysicalDevice.h>
+#include "device_creation_handler.h"
 #include <pers/graphics/ILogicalDevice.h>
 
 namespace pers::tests {
 
-class DeviceCreationHandler : public TestHandlerBase {
-private:
-    std::shared_ptr<WebGPUBackendFactory> _factory;
-    std::shared_ptr<IInstance> _instance;
-    std::shared_ptr<IPhysicalDevice> _adapter;
-    
-    bool initializeAdapter() {
+bool DeviceCreationHandler::initializeAdapter() {
         if (_adapter) {
             return true;
         }
@@ -31,17 +22,16 @@ private:
         _adapter = _instance->requestPhysicalDevice(options);
         return _adapter != nullptr;
     }
-    
-public:
-    DeviceCreationHandler() 
-        : _factory(std::make_shared<WebGPUBackendFactory>()) {
-    }
-    
-    std::string getTestType() const override {
-        return "Device Creation";
-    }
-    
-    TestResult execute(const TestVariation& variation) override {
+
+DeviceCreationHandler::DeviceCreationHandler() 
+    : _factory(std::make_shared<WebGPUBackendFactory>()) {
+}
+
+std::string DeviceCreationHandler::getTestType() const {
+    return "Device Creation";
+}
+
+TestResult DeviceCreationHandler::execute(const TestVariation& variation) {
         TestResult result;
         
         // Setup log capture
@@ -447,10 +437,6 @@ public:
         }
         
         return result;
-    }
-};
-
-// Register the handler
-REGISTER_TEST_HANDLER("Device Creation", DeviceCreationHandler)
+}
 
 } // namespace pers::tests

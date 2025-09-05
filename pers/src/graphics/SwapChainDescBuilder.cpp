@@ -1,6 +1,8 @@
 #include "pers/graphics/SwapChainDescBuilder.h"
+#include "pers/graphics/GraphicsEnumStrings.h"
 #include "pers/utils/Logger.h"
 #include <algorithm>
+#include <sstream>
 
 namespace pers {
 
@@ -41,6 +43,11 @@ SwapChainDescBuilder& SwapChainDescBuilder::withDebugName(const std::string& nam
     return *this;
 }
 
+SwapChainDescBuilder& SwapChainDescBuilder::withSurfaceCapabilities(const SurfaceCapabilities& capabilities) {
+    _surfaceCapabilities = capabilities;
+    return *this;
+}
+
 template<typename T>
 static std::optional<T> selectFromCapabilities(const T& preferred,
                                               const std::vector<T>& fallbacks,
@@ -64,6 +71,9 @@ static std::optional<T> selectFromCapabilities(const T& preferred,
 SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabilities& capabilities) const {
     SwapChainNegotiationResult result;
     
+    // Clear previous logs
+    _negotiationLogs.clear();
+    
     // Store available options for transparency
     result.availableFormats = capabilities.formats;
     result.availablePresentModes = capabilities.presentModes;
@@ -72,14 +82,22 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     // Validate dimensions
     if (_width == 0 || _height == 0) {
         result.failureReason = "Invalid dimensions: width and height must be non-zero";
+        _negotiationLogs.push_back("[FAILED] Dimensions: Invalid - width and height must be non-zero");
         return result;
     }
     
     if (_width < capabilities.minWidth || _width > capabilities.maxWidth ||
         _height < capabilities.minHeight || _height > capabilities.maxHeight) {
+        std::stringstream ss;
+        ss << "[FAILED] Dimensions: Requested " << _width << "x" << _height 
+           << " is out of supported range (" << capabilities.minWidth << "x" << capabilities.minHeight
+           << " to " << capabilities.maxWidth << "x" << capabilities.maxHeight << ")";
         result.failureReason = "Dimensions out of supported range";
+        _negotiationLogs.push_back(ss.str());
         return result;
     }
+    
+    _negotiationLogs.push_back("[OK] Dimensions: " + std::to_string(_width) + "x" + std::to_string(_height));
     
     // Negotiate format
     auto selectedFormat = selectFromCapabilities(
@@ -92,6 +110,15 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
         result.formatSupported = false;
         result.failureReason = "No supported texture format found";
         
+        std::stringstream ss;
+        ss << "[FAILED] Format: Preferred " << GraphicsEnumStrings::toString(_preferredFormat) << " not supported. ";
+        ss << "Available formats: ";
+        for (size_t i = 0; i < capabilities.formats.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << GraphicsEnumStrings::toString(capabilities.formats[i]);
+        }
+        _negotiationLogs.push_back(ss.str());
+        
         LOG_WARNING("SwapChainDescBuilder",
                               "SwapChain format negotiation failed - Preferred format not available, no fallback formats matched");
         
@@ -100,6 +127,14 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     
     result.formatSupported = true;
     result.negotiatedFormat = selectedFormat.value();
+    
+    // Log format negotiation
+    if (selectedFormat.value() == _preferredFormat) {
+        _negotiationLogs.push_back("[OK] Format: Using preferred " + GraphicsEnumStrings::toString(_preferredFormat));
+    } else {
+        _negotiationLogs.push_back("[FALLBACK] Format: Preferred " + GraphicsEnumStrings::toString(_preferredFormat) + 
+                                  " not available, using fallback " + GraphicsEnumStrings::toString(selectedFormat.value()));
+    }
     
     // Negotiate present mode
     auto selectedPresentMode = selectFromCapabilities(
@@ -112,6 +147,15 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
         result.presentModeSupported = false;
         result.failureReason = "No supported present mode found";
         
+        std::stringstream ss;
+        ss << "[FAILED] PresentMode: Preferred " << GraphicsEnumStrings::toString(_preferredPresentMode) << " not supported. ";
+        ss << "Available modes: ";
+        for (size_t i = 0; i < capabilities.presentModes.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << GraphicsEnumStrings::toString(capabilities.presentModes[i]);
+        }
+        _negotiationLogs.push_back(ss.str());
+        
         LOG_WARNING("SwapChainDescBuilder",
                               "SwapChain present mode negotiation failed");
         
@@ -120,6 +164,14 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     
     result.presentModeSupported = true;
     result.negotiatedPresentMode = selectedPresentMode.value();
+    
+    // Log present mode negotiation
+    if (selectedPresentMode.value() == _preferredPresentMode) {
+        _negotiationLogs.push_back("[OK] PresentMode: Using preferred " + GraphicsEnumStrings::toString(_preferredPresentMode));
+    } else {
+        _negotiationLogs.push_back("[FALLBACK] PresentMode: Preferred " + GraphicsEnumStrings::toString(_preferredPresentMode) + 
+                                  " not available, using fallback " + GraphicsEnumStrings::toString(selectedPresentMode.value()));
+    }
     
     // Negotiate alpha mode
     auto selectedAlphaMode = selectFromCapabilities(
@@ -132,6 +184,15 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
         result.alphaModeSupported = false;
         result.failureReason = "No supported alpha mode found";
         
+        std::stringstream ss;
+        ss << "[FAILED] AlphaMode: Preferred " << GraphicsEnumStrings::toString(_preferredAlphaMode) << " not supported. ";
+        ss << "Available modes: ";
+        for (size_t i = 0; i < capabilities.alphaModes.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << GraphicsEnumStrings::toString(capabilities.alphaModes[i]);
+        }
+        _negotiationLogs.push_back(ss.str());
+        
         LOG_WARNING("SwapChainDescBuilder",
                               "SwapChain alpha mode negotiation failed");
         
@@ -140,6 +201,17 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
     
     result.alphaModeSupported = true;
     result.negotiatedAlphaMode = selectedAlphaMode.value();
+    
+    // Log alpha mode negotiation
+    if (selectedAlphaMode.value() == _preferredAlphaMode) {
+        _negotiationLogs.push_back("[OK] AlphaMode: Using preferred " + GraphicsEnumStrings::toString(_preferredAlphaMode));
+    } else {
+        _negotiationLogs.push_back("[FALLBACK] AlphaMode: Preferred " + GraphicsEnumStrings::toString(_preferredAlphaMode) + 
+                                  " not available, using fallback " + GraphicsEnumStrings::toString(selectedAlphaMode.value()));
+    }
+    
+    // Store the result for later use
+    _lastNegotiationResult = result;
     
     // Log successful negotiation
     LOG_INFO("SwapChainDescBuilder",
@@ -179,15 +251,43 @@ uint32_t SwapChainDescBuilder::getHeight() const {
 }
 
 SwapChainDesc SwapChainDescBuilder::build() const {
+    // If surface capabilities are available, auto-negotiate
+    if (_surfaceCapabilities.has_value()) {
+        SwapChainNegotiationResult result = negotiate(_surfaceCapabilities.value());
+        
+        if (result.formatSupported && result.presentModeSupported && result.alphaModeSupported) {
+            // Build with negotiation result
+            return build(result);
+        } else {
+            // Log failure and return empty descriptor
+            LOG_ERROR("SwapChainDescBuilder",
+                                 "Auto-negotiation failed: " + result.failureReason);
+            return SwapChainDesc();
+        }
+    }
+    
+    // No capabilities set, use simple build
     SwapChainDesc desc;
     desc.width = _width;
     desc.height = _height;
     desc.format = _preferredFormat;
     desc.presentMode = _preferredPresentMode;
     desc.alphaMode = _preferredAlphaMode;
-    desc.usage = _usage;
+    desc.usage = static_cast<TextureUsageFlags>(_usage);
     desc.debugName = _debugName;
     return desc;
+}
+
+const std::vector<std::string>& SwapChainDescBuilder::getNegotiationLogs() const {
+    return _negotiationLogs;
+}
+
+void SwapChainDescBuilder::clearNegotiationLogs() {
+    _negotiationLogs.clear();
+}
+
+bool SwapChainDescBuilder::hasCapabilities() const {
+    return _surfaceCapabilities.has_value();
 }
 
 } // namespace pers

@@ -1,6 +1,7 @@
 #include "pers/graphics/backends/webgpu/WebGPUSwapChain.h"
 #include "pers/graphics/backends/webgpu/WebGPULogicalDevice.h"
 #include "pers/graphics/backends/webgpu/WebGPUTextureView.h"
+#include "pers/graphics/IPhysicalDevice.h"
 #include "pers/utils/Logger.h"
 #include <algorithm>
 #include <stdexcept>
@@ -20,12 +21,14 @@ WebGPUSwapChain::WebGPUSwapChain(const std::shared_ptr<WebGPULogicalDevice>& dev
     , _surface(surface)
     , _desc(desc) {
     
-    if (!_device) {
-        throw std::invalid_argument("WebGPUSwapChain: device cannot be null");
+    if (!device) {
+        LOG_ERROR("WebGPUSwapChain", "Device cannot be null");
+        return;
     }
     
     if (!_surface) {
-        throw std::invalid_argument("WebGPUSwapChain: surface cannot be null");
+        LOG_ERROR("WebGPUSwapChain", "Surface cannot be null");
+        return;
     }
     
     configureSurface();
@@ -43,9 +46,15 @@ WebGPUSwapChain::~WebGPUSwapChain() {
 }
 
 void WebGPUSwapChain::configureSurface() {
+    auto device = _device.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUSwapChain", "Device expired during configureSurface");
+        return;
+    }
+    
     // Configure surface with the new Surface API
     _surfaceConfig = {};
-    _surfaceConfig.device = _device->getNativeDeviceHandle().as<WGPUDevice>();
+    _surfaceConfig.device = device->getNativeDeviceHandle().as<WGPUDevice>();
     _surfaceConfig.format = convertToWGPUFormat(_desc.format);
     _surfaceConfig.usage = WGPUTextureUsage_RenderAttachment;
     _surfaceConfig.width = _desc.width;
@@ -171,6 +180,27 @@ PresentMode WebGPUSwapChain::getPresentMode() const {
 
 TextureFormat WebGPUSwapChain::getFormat() const {
     return _desc.format;
+}
+
+SurfaceCapabilities WebGPUSwapChain::querySurfaceCapabilities(
+    const std::shared_ptr<IPhysicalDevice>& physicalDevice) const {
+    
+    auto device = _device.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUSwapChain", "Device expired during querySurfaceCapabilities");
+        return SurfaceCapabilities{};
+    }
+    
+    if (!physicalDevice) {
+        LOG_ERROR("WebGPUSwapChain", "PhysicalDevice is null");
+        return SurfaceCapabilities{};
+    }
+    
+    auto adapter = physicalDevice->getNativeAdapterHandle().as<WGPUAdapter>();
+    return querySurfaceCapabilities(
+        device->getNativeDeviceHandle().as<WGPUDevice>(),
+        adapter, 
+        _surface);
 }
 
 SurfaceCapabilities WebGPUSwapChain::querySurfaceCapabilities(

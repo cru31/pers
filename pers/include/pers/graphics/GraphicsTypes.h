@@ -38,6 +38,25 @@ enum class TextureUsage : uint32_t {
     RenderAttachment = 1 << 4
 };
 
+// Bitwise operators for TextureUsage
+inline TextureUsage operator|(TextureUsage a, TextureUsage b) {
+    return static_cast<TextureUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline TextureUsage operator&(TextureUsage a, TextureUsage b) {
+    return static_cast<TextureUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
+inline TextureUsage& operator|=(TextureUsage& a, TextureUsage b) {
+    a = a | b;
+    return a;
+}
+
+inline TextureUsage& operator&=(TextureUsage& a, TextureUsage b) {
+    a = a & b;
+    return a;
+}
+
 /**
  * @brief Filter mode for texture sampling
  */

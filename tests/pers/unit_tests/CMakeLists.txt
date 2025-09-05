@@ -9,14 +9,19 @@ add_executable(pers_unit_tests
     handlers/instance_creation_handler.cpp
     handlers/request_adapter_handler.cpp
     handlers/device_creation_handler.cpp
+    handlers/swapchain_builder_handler.cpp
 )
 
 # Find rapidjson
 find_package(RapidJSON CONFIG REQUIRED)
 
+# Find GLFW
+find_package(glfw3 CONFIG REQUIRED)
+
 # Link libraries
 target_link_libraries(pers_unit_tests PRIVATE
     pers_static
+    glfw
 )
 
 # Include directories
