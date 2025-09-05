@@ -46,6 +46,8 @@ header h1 {
     align-items: stretch;
     flex: 1 1 180px;
     min-width: 180px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .card.statistics:hover {
