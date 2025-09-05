@@ -44,6 +44,7 @@ header h1 {
     cursor: default;
     background: rgba(255, 255, 255, 0.08);
     align-items: stretch;
+    min-width: 180px;
 }
 
 .card.statistics:hover {
@@ -70,7 +71,7 @@ header h1 {
 
 .summary-cards {
     display: grid;
-    grid-template-columns: 180px repeat(auto-fit, minmax(80px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     gap: 15px;
     margin-bottom: 20px;
 }
