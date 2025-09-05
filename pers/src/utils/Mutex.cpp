@@ -2,6 +2,7 @@
 
 namespace pers {
 
-std::atomic<int> Mutex::_globalLockId{0};
+// Static member definition for debug mode Mutex specialization
+std::atomic<int> Mutex<true>::_globalLockId{0};
 
 } // namespace pers

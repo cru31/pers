@@ -123,7 +123,7 @@ public:
     
 private:
     std::ofstream file;
-    Mutex _mutex{"FileOutput", false};
+    Mutex<false> _mutex{"FileOutput"};
 };
 
 FileOutput::FileOutput(const std::string& filename, bool append)
@@ -265,7 +265,7 @@ private:
     std::string categoryFilter;
     std::map<LogLevel, bool> enabledLevels;
     std::map<LogLevel, Logger::LogCallback> callbacks;
-    mutable Mutex _mutex{"Logger", false};
+    mutable Mutex<false> _mutex{"Logger"};
 };
 
 Logger::Logger() : impl(std::make_unique<Impl>()) {
