@@ -9,11 +9,12 @@
 #include <thread>
 #include <atomic>
 #include <functional>
+#include <map>
+#include <fstream>
+#include "pers/utils/SourceLocation.h"
+#include "pers/utils/Mutex.h"
 
 namespace pers {
-
-// Macro to capture source location information
-#define PERS_SOURCE_LOC pers::LogSource{__FILE__, __LINE__, __FUNCTION__}
 
 // Logger macros for easy usage
 #define LOG_TRACE(category, message) pers::Logger::Instance().Log(pers::LogLevel::Trace, category, message, PERS_SOURCE_LOC)
@@ -76,15 +77,8 @@ public:
     void Flush() override;
     
 private:
-    class Impl;
-    std::shared_ptr<Impl> impl;
-};
-
-// Source location info for logging
-struct LogSource {
-    const char* file;
-    int line;
-    const char* function;
+    std::ofstream _file;
+    mutable Mutex<false> _mutex;
 };
 
 class Logger {
@@ -143,8 +137,15 @@ private:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
     
-    class Impl;
-    std::shared_ptr<Impl> impl;
+    void LogInternal(const LogEntry& entry, const LogSource& source);
+    
+    // Member variables
+    std::vector<std::shared_ptr<ILogOutput>> _outputs;
+    std::atomic<LogLevel> _minLevel;
+    std::string _categoryFilter;
+    std::map<LogLevel, bool> _enabledLevels;
+    std::map<LogLevel, LogCallback> _callbacks;
+    mutable Mutex<false> _mutex;
 };
 
 class LogStream {

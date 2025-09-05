@@ -76,200 +76,61 @@ void ConsoleOutput::Flush() {
 }
 
 // FileOutput implementation
-class FileOutput::Impl {
-public:
-    explicit Impl(const std::string& filename, bool append)
-        : file(filename, append ? std::ios::app : std::ios::out) {
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open log file: " + filename);
-        }
-    }
-    
-    void Write(const LogEntry& entry) {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-
-        auto time_t = std::chrono::system_clock::to_time_t(entry.timestamp);
-        std::tm tm_buf;
-#ifdef _WIN32
-        localtime_s(&tm_buf, &time_t);
-#else
-        localtime_r(&time_t, &tm_buf);
-#endif
-        
-        file << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "] ";
-        
-        switch (entry.level) {
-            case LogLevel::Trace:       file << "[TRACE] "; break;
-            case LogLevel::Debug:       file << "[DEBUG] "; break;
-            case LogLevel::Info:        file << "[INFO ] "; break;
-            case LogLevel::TodoSomeday: file << "[TODO ] "; break;
-            case LogLevel::Warning:     file << "[WARN ] "; break;
-            case LogLevel::TodoOrDie:   file << "[TODO!] "; break;
-            case LogLevel::Error:       file << "[ERROR] "; break;
-            case LogLevel::Critical:    file << "[FATAL] "; break;
-        }
-        
-        if (!entry.category.empty()) {
-            file << "[" << entry.category << "] ";
-        }
-        
-        file << entry.message << std::endl;
-    }
-    
-    void Flush() {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        file.flush();
-    }
-    
-private:
-    std::ofstream file;
-    Mutex<false> _mutex{"FileOutput"};
-};
-
 FileOutput::FileOutput(const std::string& filename, bool append)
-    : impl(std::make_unique<Impl>(filename, append)) {
+    : _file(filename, append ? std::ios::app : std::ios::out),
+      _mutex("FileOutput") {
+    if (!_file.is_open()) {
+        throw std::runtime_error("Failed to open log file: " + filename);
+    }
 }
 
 FileOutput::~FileOutput() = default;
 
 void FileOutput::Write(const LogEntry& entry) {
-    impl->Write(entry);
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+
+    auto time_t = std::chrono::system_clock::to_time_t(entry.timestamp);
+    std::tm tm_buf;
+#ifdef _WIN32
+    localtime_s(&tm_buf, &time_t);
+#else
+    localtime_r(&time_t, &tm_buf);
+#endif
+    
+    _file << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "] ";
+    
+    switch (entry.level) {
+        case LogLevel::Trace:       _file << "[TRACE] "; break;
+        case LogLevel::Debug:       _file << "[DEBUG] "; break;
+        case LogLevel::Info:        _file << "[INFO ] "; break;
+        case LogLevel::TodoSomeday: _file << "[TODO ] "; break;
+        case LogLevel::Warning:     _file << "[WARN ] "; break;
+        case LogLevel::TodoOrDie:   _file << "[TODO!] "; break;
+        case LogLevel::Error:       _file << "[ERROR] "; break;
+        case LogLevel::Critical:    _file << "[FATAL] "; break;
+    }
+    
+    if (!entry.category.empty()) {
+        _file << "[" << entry.category << "] ";
+    }
+    
+    _file << entry.message << std::endl;
 }
 
 void FileOutput::Flush() {
-    impl->Flush();
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _file.flush();
 }
 
 // Logger implementation
-class Logger::Impl {
-public:
-    Impl() : minLevel(LogLevel::Trace) {
-        // Enable all log levels by default
-        for (int i = static_cast<int>(LogLevel::Trace); i <= static_cast<int>(LogLevel::Critical); ++i) {
-            enabledLevels[static_cast<LogLevel>(i)] = true;
-        }
+Logger::Logger() 
+    : _minLevel(LogLevel::Trace),
+      _mutex("Logger") {
+    // Enable all log levels by default
+    for (int i = static_cast<int>(LogLevel::Trace); i <= static_cast<int>(LogLevel::Critical); ++i) {
+        _enabledLevels[static_cast<LogLevel>(i)] = true;
     }
-    
-    void setCallback(LogLevel level, const Logger::LogCallback& callback) {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        callbacks[level] = callback;
-    }
-    
-    void clearCallback(LogLevel level) {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        callbacks.erase(level);
-    }
-    
-    void clearAllCallbacks() {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        callbacks.clear();
-    }
-    
-    void AddOutput(const std::shared_ptr<ILogOutput>& output) {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        outputs.push_back(output);
-    }
-    
-    void RemoveAllOutputs() {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        outputs.clear();
-    }
-    
-    void SetMinLevel(LogLevel level) {
-        minLevel = level;
-    }
-    
-    LogLevel GetMinLevel() const {
-        return minLevel;
-    }
-    
-    void SetLogLevelEnabled(LogLevel level, bool enabled) {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        enabledLevels[level] = enabled;
-    }
-    
-    bool IsLogLevelEnabled(LogLevel level) const {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        auto it = enabledLevels.find(level);
-        return it != enabledLevels.end() ? it->second : true;
-    }
-    
-    void SetCategoryFilter(const std::string& pattern) {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        categoryFilter = pattern;
-    }
-    
-    void Log(const LogEntry& entry, const LogSource& source) {
-        static thread_local int callbackDepth = 0;
-        
-        if (callbackDepth > 0) {
-            std::cerr << "[LOGGER] Recursive logging detected (depth=" << callbackDepth 
-                     << "): " << entry.message << std::endl;
-            return;
-        }
-        
-        if (entry.level < minLevel) {
-            return;
-        }
-        
-        // Check if this log level is enabled
-        {
-            auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-            auto it = enabledLevels.find(entry.level);
-            if (it != enabledLevels.end() && !it->second) {
-                return;
-            }
-        }
-        
-        bool skipLogging = false;
-        
-        // Check for callback
-        {
-            auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-            auto callbackIt = callbacks.find(entry.level);
-            if (callbackIt != callbacks.end() && callbackIt->second) {
-                ++callbackDepth;
-                callbackIt->second(entry.level, entry.category, entry.message, source, skipLogging);
-                --callbackDepth;
-            }
-        }
-        
-        // If callback requested to skip logging, return
-        if (skipLogging) {
-            return;
-        }
-        
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-
-        // Category filter check
-        if (!categoryFilter.empty() && entry.category.find(categoryFilter) == std::string::npos) {
-            return;
-        }
-        
-        // Write to all outputs
-        for (auto& output : outputs) {
-            output->Write(entry);
-        }
-    }
-    
-    void Flush() {
-        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
-        for (auto& output : outputs) {
-            output->Flush();
-        }
-    }
-    
-private:
-    std::vector<std::shared_ptr<ILogOutput>> outputs;
-    std::atomic<LogLevel> minLevel;
-    std::string categoryFilter;
-    std::map<LogLevel, bool> enabledLevels;
-    std::map<LogLevel, Logger::LogCallback> callbacks;
-    mutable Mutex<false> _mutex{"Logger"};
-};
-
-Logger::Logger() : impl(std::make_unique<Impl>()) {
-    // added basic ConsoleOutput
+    // Add basic ConsoleOutput
     AddOutput(std::make_shared<ConsoleOutput>(true));
 }
 
@@ -280,44 +141,106 @@ Logger& Logger::Instance() {
     return instance;
 }
 
-void Logger::AddOutput(const std::shared_ptr<ILogOutput>& output) {
-    impl->AddOutput(output);
-}
-
-void Logger::RemoveAllOutputs() {
-    impl->RemoveAllOutputs();
-}
-
-void Logger::SetMinLevel(LogLevel level) {
-    impl->SetMinLevel(level);
-}
-
-LogLevel Logger::GetMinLevel() const {
-    return impl->GetMinLevel();
-}
-
-void Logger::SetCategoryFilter(const std::string& pattern) {
-    impl->SetCategoryFilter(pattern);
-}
-
-void Logger::SetLogLevelEnabled(LogLevel level, bool enabled) {
-    impl->SetLogLevelEnabled(level, enabled);
-}
-
-bool Logger::IsLogLevelEnabled(LogLevel level) const {
-    return impl->IsLogLevelEnabled(level);
-}
-
 void Logger::setCallback(LogLevel level, const LogCallback& callback) {
-    impl->setCallback(level, callback);
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _callbacks[level] = callback;
 }
 
 void Logger::clearCallback(LogLevel level) {
-    impl->clearCallback(level);
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _callbacks.erase(level);
 }
 
 void Logger::clearAllCallbacks() {
-    impl->clearAllCallbacks();
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _callbacks.clear();
+}
+
+void Logger::AddOutput(const std::shared_ptr<ILogOutput>& output) {
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _outputs.push_back(output);
+}
+
+void Logger::RemoveAllOutputs() {
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _outputs.clear();
+}
+
+void Logger::SetMinLevel(LogLevel level) {
+    _minLevel = level;
+}
+
+LogLevel Logger::GetMinLevel() const {
+    return _minLevel;
+}
+
+void Logger::SetLogLevelEnabled(LogLevel level, bool enabled) {
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _enabledLevels[level] = enabled;
+}
+
+bool Logger::IsLogLevelEnabled(LogLevel level) const {
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    auto it = _enabledLevels.find(level);
+    return it != _enabledLevels.end() ? it->second : true;
+}
+
+void Logger::SetCategoryFilter(const std::string& pattern) {
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    _categoryFilter = pattern;
+}
+
+void Logger::LogInternal(const LogEntry& entry, const LogSource& source) {
+    static thread_local int callbackDepth = 0;
+    
+    if (callbackDepth > 0) {
+        std::cerr << "[LOGGER] Recursive logging detected (depth=" << callbackDepth 
+                 << "): " << entry.message << std::endl;
+        return;
+    }
+    
+    if (entry.level < _minLevel) {
+        return;
+    }
+    
+    // Check if this log level is enabled
+    {
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+        auto it = _enabledLevels.find(entry.level);
+        if (it != _enabledLevels.end() && !it->second) {
+            return;
+        }
+    }
+    
+    bool skipLogging = false;
+    
+    // Check for callback
+    {
+        auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+        auto callbackIt = _callbacks.find(entry.level);
+        if (callbackIt != _callbacks.end() && callbackIt->second) {
+            ++callbackDepth;
+            callbackIt->second(entry.level, entry.category, entry.message, source, skipLogging);
+            --callbackDepth;
+        }
+    }
+    
+    // If callback requested to skip logging, return
+    if (skipLogging) {
+        return;
+    }
+    
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+
+    // Category filter check
+    if (!_categoryFilter.empty() && entry.category.find(_categoryFilter) == std::string::npos) {
+        return;
+    }
+    
+    // Write to all outputs
+    for (auto& output : _outputs) {
+        output->Write(entry);
+    }
 }
 
 void Logger::Log(LogLevel level,
@@ -334,11 +257,14 @@ void Logger::Log(LogLevel level,
     entry.function = source.function ? source.function : "";
     entry.threadId = std::this_thread::get_id();
     
-    impl->Log(entry, source);
+    LogInternal(entry, source);
 }
 
 void Logger::Flush() {
-    impl->Flush();
+    auto guard = makeLockGuard(_mutex, PERS_SOURCE_LOC);
+    for (auto& output : _outputs) {
+        output->Flush();
+    }
 }
 
 // LogStream implementation
