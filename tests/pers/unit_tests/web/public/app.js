@@ -443,10 +443,11 @@ function formatLogMessages(logs) {
             logHtml = log;
         }
         
-        // Parse log level and apply colored span
-        const levelMatch = logHtml.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/);
+        // Parse log level and structure the output
+        const levelMatch = logHtml.match(/^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]\s*(.*)$/);
         if (levelMatch) {
             const level = levelMatch[1];
+            const restOfLog = levelMatch[2];
             const levelClassMap = {
                 'TRACE': 'log-trace',
                 'DEBUG': 'log-debug',
@@ -459,11 +460,9 @@ function formatLogMessages(logs) {
             };
             const logClass = levelClassMap[level] || '';
             
-            // Replace the log level with a colored span
-            logHtml = logHtml.replace(
-                /^\[(TRACE|DEBUG|INFO|TODO_SOMEDAY|WARNING|TODO_OR_DIE|ERROR|CRITICAL)\]/,
-                `<span class="log-level-inline ${logClass}">[${level}]</span>`
-            );
+            // Structure with fixed-width level and message - truncate long levels to 8 chars
+            const truncatedLevel = level.length > 8 ? level.substring(0, 8) : level;
+            logHtml = `<span class="log-level-inline ${logClass}" title="[${level}]">[${truncatedLevel}]</span><span class="log-message-text">${restOfLog}</span>`;
         }
         
         // Create expandable log entry with source info
@@ -647,12 +646,13 @@ function createFullLogsView() {
             logClass = levelClassMap[logLevel] || '';
         }
         
-        // Apply the log level class to get the color
-        const levelSpan = `<span class="log-level-badge ${logClass}">[${logLevel}]</span>`;
+        // Apply the log level class to get the color with fixed width - truncate to 8 chars
+        const truncatedLevel = (logLevel || 'INFO').length > 8 ? (logLevel || 'INFO').substring(0, 8) : (logLevel || 'INFO');
+        const levelSpan = `<span class="log-level-badge ${logClass}" title="[${logLevel || 'INFO'}]">[${truncatedLevel}]</span>`;
         const categorySpan = logCategory ? `<span class="log-category">${escapeHtml(logCategory)}:</span>` : '';
         const messageSpan = `<span class="log-message">${escapeHtml(logMessage)}</span>`;
         
-        logDiv.innerHTML = `<span class="test-id-badge">${entry.testId}</span>${levelSpan}${categorySpan} ${messageSpan}`;
+        logDiv.innerHTML = `<span class="test-id-badge">${entry.testId}</span><span class="log-content-aligned">${levelSpan}${categorySpan} ${messageSpan}</span>`;
         
         // Create source info container (hidden by default)
         const sourceDiv = document.createElement('div');
