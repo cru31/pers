@@ -193,6 +193,17 @@
                                     <!-- Array parameters will be dynamically added here -->
                                 </div>
                             </div>
+                            
+                            <!-- Object Parameters -->
+                            <div class="param-subsection">
+                                <div class="param-section-header">
+                                    <button onclick="addObjectParameter()" class="add-param-btn">Add</button>
+                                    <label>Object Parameters</label>
+                                </div>
+                                <div id="object-parameters-container" class="param-container">
+                                    <!-- Object parameters will be dynamically added here -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -211,19 +222,79 @@
         <div class="modal-content array-editor-modal">
             <span class="close-modal" onclick="closeArrayEditor()">&times;</span>
             <h2>Edit Array Parameter</h2>
-            <div class="array-editor-controls">
-                <div class="autocomplete-wrapper" style="flex: 1;">
-                    <input type="text" id="new-array-item" class="autocomplete-input" placeholder="Enter new item">
-                    <div class="autocomplete-dropdown" id="array-new-item-dropdown" style="display: none;"></div>
+            
+            <!-- Add new item section -->
+            <div class="array-add-item-section">
+                <div class="array-add-item-row">
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="new-array-item" class="autocomplete-input" placeholder="Enter new item">
+                        <div class="autocomplete-dropdown" id="array-new-item-dropdown" style="display: none;"></div>
+                    </div>
+                    <button onclick="addArrayItem()" class="array-add-btn">Add</button>
                 </div>
-                <button onclick="addArrayItem()" class="add-item-btn">Add Item</button>
             </div>
-            <div id="array-items-list">
-                <!-- Array items will be listed here -->
+            
+            <!-- Items list section -->
+            <div class="array-items-section">
+                <div class="array-items-header">Items</div>
+                <div class="array-items-table" id="array-items-list">
+                    <!-- Array items will be listed here -->
+                </div>
             </div>
+            
+            <!-- Preview section -->
+            <div class="array-preview-section">
+                <div class="array-preview-header">Preview</div>
+                <pre id="array-preview-content"></pre>
+            </div>
+            
+            <!-- Footer buttons -->
             <div class="array-editor-footer">
-                <button onclick="saveArrayChanges()" class="save-array-btn">Save Changes</button>
-                <button onclick="closeArrayEditor()" class="cancel-array-btn">Cancel</button>
+                <button onclick="saveArrayChanges()" class="array-save-btn">Save</button>
+                <button onclick="closeArrayEditor()" class="array-cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON Object Editor Modal -->
+    <div id="json-object-editor-modal" class="modal">
+        <div class="modal-content json-object-editor-modal">
+            <span class="close-modal" onclick="closeJsonObjectEditor()">&times;</span>
+            <h2>Edit JSON Object</h2>
+            
+            <!-- Add new property section -->
+            <div class="json-add-property-section">
+                <div class="json-add-property-row">
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="new-object-key" class="autocomplete-input" placeholder="Property name">
+                        <div class="autocomplete-dropdown" id="object-key-dropdown" style="display: none;"></div>
+                    </div>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="new-object-value" class="autocomplete-input" placeholder="Property value">
+                        <div class="autocomplete-dropdown" id="object-value-dropdown" style="display: none;"></div>
+                    </div>
+                    <button onclick="addJsonProperty()" class="json-add-btn">Add</button>
+                </div>
+            </div>
+            
+            <!-- Properties table -->
+            <div class="json-properties-section">
+                <div class="json-properties-header">Properties</div>
+                <div class="json-properties-table" id="json-properties-list">
+                    <!-- Properties will be listed here -->
+                </div>
+            </div>
+            
+            <!-- Preview section -->
+            <div class="json-preview-section">
+                <div class="json-preview-header">Preview</div>
+                <pre id="json-object-preview-content"></pre>
+            </div>
+            
+            <!-- Footer buttons -->
+            <div class="json-editor-footer">
+                <button onclick="saveJsonObjectChanges()" class="json-save-btn">Save</button>
+                <button onclick="closeJsonObjectEditor()" class="json-cancel-btn">Cancel</button>
             </div>
         </div>
     </div>

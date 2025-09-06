@@ -8,6 +8,8 @@ let parameterValues = new Map(); // Map<parameterName, Set<value>>
 let parameterNamesByTestType = new Map(); // Map<testType, Set<parameterNames>>
 let expectedResults = new Set(); // Set of all expected results
 let arrayParameters = new Set(); // Set of parameter names that are arrays
+let objectParameters = new Set(); // Set of parameter names that are objects
+let objectPropertyValues = new Map(); // Map<objectParam.property, Set<values>>
 
 // Track active dropdown to handle proper closing
 let activeDropdown = null;
@@ -113,7 +115,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Common test editor functions
-function createParameterRow(key = '', value = '', isArray = false, prefix = 'edit', isForArrayParam = false) {
+function createParameterRow(key = '', value = '', isArray = false, prefix = 'edit', isForArrayParam = false, isForObjectParam = false) {
     let valueStr;
     if (isArray && Array.isArray(value)) {
         valueStr = value.map(item => typeof item === 'string' ? `"${item}"` : JSON.stringify(item)).join(', ');
@@ -143,15 +145,23 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
     const escapedValue = valueStr.replace(/"/g, '&quot;');
     
     const nameHandlers = prefix === 'edit' ? 
-        `oninput="handleParamNameChange(this)" onfocus="closeAllDropdowns(); showParameterNameAutocomplete(this, ${isForArrayParam})"` :
-        `oninput="handleBulkParamNameChange(this)" onfocus="closeAllDropdowns(); showBulkParameterNameAutocomplete(this, ${isForArrayParam})"`;
+        `oninput="handleParamNameChange(this)" onfocus="closeAllDropdowns(); showParameterNameAutocomplete(this, ${isForArrayParam}, ${isForObjectParam})"` :
+        `oninput="handleBulkParamNameChange(this)" onfocus="closeAllDropdowns(); showBulkParameterNameAutocomplete(this, ${isForArrayParam}, ${isForObjectParam})"`;
     
-    // For arrays, make the input read-only and clickable to open editor
-    const valueHandlers = isArray ? 
-        `readonly style="cursor: pointer; background: #1e1e2e;" onclick="closeAllDropdowns(); openArrayEditor(this, null, this.parentElement.parentElement.querySelector('.param-name').value)"` :
-        (prefix === 'edit' ? 
+    // Determine if value is a JSON object (not array)
+    const isObject = !isArray && isForObjectParam;
+    
+    // For arrays and objects, make the input read-only and clickable to open editor
+    let valueHandlers;
+    if (isArray) {
+        valueHandlers = `readonly style="cursor: pointer; background: #1e1e2e;" onclick="closeAllDropdowns(); openArrayEditor(this, null, this.parentElement.parentElement.querySelector('.param-name').value)"`;
+    } else if (isObject) {
+        valueHandlers = `readonly style="cursor: pointer; background: #1e1e2e;" onclick="closeAllDropdowns(); openJsonObjectEditor(this, this.parentElement.parentElement.querySelector('.param-name').value)"`;
+    } else {
+        valueHandlers = prefix === 'edit' ? 
             `oninput="showAutocomplete(this, this.parentElement.parentElement.querySelector('.param-name').value); scheduleJsonPreviewUpdate()" onfocus="closeAllDropdowns(); showAutocomplete(this, this.parentElement.parentElement.querySelector('.param-name').value)"` :
-            `oninput="showBulkAutocomplete(this)" onfocus="closeAllDropdowns(); showBulkAutocomplete(this)"`);
+            `oninput="showBulkAutocomplete(this)" onfocus="closeAllDropdowns(); showBulkAutocomplete(this)"`;
+    }
     
     return `
         <div class="param-row">
@@ -162,8 +172,8 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
                 <div class="autocomplete-dropdown" style="display: none;"></div>
             </div>
             <div class="autocomplete-wrapper param-value-wrapper">
-                <input type="text" class="param-value autocomplete-input" value="${escapedValue}" placeholder="${isArray ? 'Click to edit array' : 'Parameter value'}" 
-                       data-is-array="${isArray}" data-param-key="${key}"
+                <input type="text" class="param-value autocomplete-input" value="${escapedValue}" placeholder="${isArray ? 'Click to edit array' : (isObject ? 'Click to edit object' : 'Parameter value')}" 
+                       data-is-array="${isArray}" data-is-object="${isObject}" data-param-key="${key}"
                        ${valueHandlers}>
                 <div class="autocomplete-dropdown" style="display: none;"></div>
             </div>
@@ -174,9 +184,6 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
 // Handle parameter name change - check if it's an array parameter
 function handleParamNameChange(input) {
     const paramName = input.value.trim();
-    const nameWrapper = input.parentElement;
-    const valueWrapper = nameWrapper.nextElementSibling;
-    const valueInput = valueWrapper.querySelector('.param-value');
     
     // Check for duplicate parameter name
     if (paramName) {
@@ -197,74 +204,6 @@ function handleParamNameChange(input) {
         }
     }
     
-    // Show parameter name autocomplete
-    showParameterNameAutocomplete(input);
-    
-    // Check if this is already an array parameter
-    const wasArray = valueInput.dataset.isArray === 'true';
-    
-    // Determine if it should be array:
-    // 1. If empty name and was array, keep as array
-    // 2. If matches known array parameter, make it array
-    // 3. If matches known non-array parameter, make it non-array
-    let shouldBeArray = false;
-    
-    if (paramName === '' && wasArray) {
-        // Keep as array if it was already array
-        shouldBeArray = true;
-    } else if (arrayParameters.has(paramName)) {
-        // Known array parameter
-        shouldBeArray = true;
-    } else if (paramName !== '' && parameterNames.has(paramName) && !arrayParameters.has(paramName)) {
-        // Known non-array parameter
-        shouldBeArray = false;
-    } else if (wasArray) {
-        // Keep current array state if name is not a known non-array parameter
-        shouldBeArray = true;
-    }
-    
-    // Apply array state
-    if (shouldBeArray && !wasArray) {
-        // Convert to array control - make it read-only and clickable
-        if (!valueInput.value) {
-            valueInput.value = '';  // Keep empty if no value
-        }
-        valueInput.dataset.isArray = 'true';
-        valueInput.readOnly = true;
-        valueInput.style.cursor = 'pointer';
-        valueInput.style.background = '#1e1e2e';
-        valueInput.placeholder = 'Click to edit array';
-        
-        // Add array-param class to both wrappers
-        nameWrapper.classList.add('array-param');
-        valueWrapper.classList.add('array-param');
-        
-        // Remove all existing event handlers and add click handler
-        const newInput = valueInput.cloneNode(true);
-        newInput.onclick = () => openArrayEditor(newInput, null, paramName);
-        valueInput.parentNode.replaceChild(newInput, valueInput);
-    } else if (!shouldBeArray && wasArray) {
-        // Convert back to normal input
-        valueInput.value = '';
-        valueInput.dataset.isArray = 'false';
-        valueInput.readOnly = false;
-        valueInput.style.cursor = 'text';
-        valueInput.style.background = '';
-        valueInput.placeholder = 'Parameter value';
-        
-        // Restore normal event handlers
-        const newInput = valueInput.cloneNode(true);
-        newInput.oninput = () => {
-            showAutocomplete(newInput, paramName);
-            scheduleJsonPreviewUpdate();
-        };
-        newInput.onfocus = () => {
-            closeAllDropdowns();
-            showAutocomplete(newInput, paramName);
-        };
-        valueInput.parentNode.replaceChild(newInput, valueInput);
-    }
-    
     scheduleJsonPreviewUpdate();
 }
 
@@ -275,6 +214,8 @@ function collectParameterValues(results) {
     parameterNamesByTestType.clear();
     expectedResults.clear();
     arrayParameters.clear();
+    objectParameters.clear();
+    objectPropertyValues.clear();
     
     results.forEach(result => {
         const testType = result.testType || '';
@@ -348,10 +289,24 @@ function collectValuesFromObject(obj, prefix = '') {
             // Don't store the combined array as a single value
             // We want individual items for autocomplete
         } else if (typeof value === 'object' && value !== null) {
+            // Track this as an object parameter
+            objectParameters.add(key);
+            
             // For objects, store the JSON representation as a suggestion
             const jsonStr = JSON.stringify(value);
             parameterValues.get(key).add(jsonStr);
             parameterValues.get(fullKey).add(jsonStr);
+            
+            // Collect object property names and values for autocomplete
+            Object.entries(value).forEach(([propKey, propValue]) => {
+                const objectPropKey = `${key}.${propKey}`;
+                if (!objectPropertyValues.has(objectPropKey)) {
+                    objectPropertyValues.set(objectPropKey, new Set());
+                }
+                if (typeof propValue === 'string' || typeof propValue === 'number' || typeof propValue === 'boolean') {
+                    objectPropertyValues.get(objectPropKey).add(String(propValue));
+                }
+            });
             
             // Also recurse into nested objects
             collectValuesFromObject(value, fullKey);
@@ -1426,7 +1381,7 @@ function closeTestEditor() {
 
 function addParameter() {
     const container = document.getElementById('single-parameters-container');
-    const rowHtml = createParameterRow('', '', false, 'edit', false);
+    const rowHtml = createParameterRow('', '', false, 'edit', false, false);
     
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
@@ -1444,7 +1399,25 @@ function addParameter() {
 
 function addArrayParameter() {
     const container = document.getElementById('array-parameters-container');
-    const rowHtml = createParameterRow('', '', true, 'edit', true);
+    const rowHtml = createParameterRow('', '', true, 'edit', true, false);
+    
+    // Create a temporary div to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = rowHtml;
+    
+    // Add change handler to check for duplicates
+    const newRow = tempDiv.firstElementChild;
+    const nameInput = newRow.querySelector('.param-name');
+    nameInput.addEventListener('blur', () => checkForDuplicateParameter(nameInput));
+    
+    // Append the parsed element to the container
+    container.appendChild(newRow);
+    scheduleJsonPreviewUpdate();
+}
+
+function addObjectParameter() {
+    const container = document.getElementById('object-parameters-container');
+    const rowHtml = createParameterRow('', '{}', false, 'edit', false, true);
     
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
@@ -1579,53 +1552,29 @@ function hideBulkAutocomplete(input) {
 // Handle bulk parameter name change
 function handleBulkParamNameChange(input) {
     const paramName = input.value.trim();
-    const nameWrapper = input.parentElement;
-    const valueWrapper = nameWrapper.nextElementSibling;
-    const valueInput = valueWrapper.querySelector('.param-value');
-    const index = input.closest('.bulk-export-item')?.dataset.index;
     
-    // Check if this parameter name was previously used as an array
-    if (arrayParameters.has(paramName)) {
-        // Convert to array control - make it read-only and clickable
-        if (!valueInput.value) {
-            valueInput.value = '';  // Keep empty if no value
-        }
-        valueInput.dataset.isArray = 'true';
-        valueInput.readOnly = true;
-        valueInput.style.cursor = 'pointer';
-        valueInput.style.background = '#1e1e2e';
-        valueInput.placeholder = 'Click to edit array';
-        
-        // Remove all existing event handlers and add click handler
-        const newInput = valueInput.cloneNode(true);
-        newInput.onclick = () => {
-            closeAllDropdowns();
-            openArrayEditor(newInput, index, paramName);
-        };
-        newInput.onfocus = closeAllDropdowns;
-        valueInput.parentNode.replaceChild(newInput, valueInput);
-    } else if (valueInput.dataset.isArray === 'true') {
-        // Convert back to normal input
-        valueInput.value = '';
-        valueInput.dataset.isArray = 'false';
-        valueInput.readOnly = false;
-        valueInput.style.cursor = 'text';
-        valueInput.style.background = '';
-        valueInput.placeholder = 'Parameter value';
-        
-        // Restore normal event handlers
-        const newInput = valueInput.cloneNode(true);
-        newInput.oninput = () => {
-            showBulkAutocomplete(newInput);
-            if (typeof updateBulkJsonPreview === 'function') {
-                updateBulkJsonPreview();
+    // Check for duplicate parameter name
+    if (paramName) {
+        const allParamNames = [];
+        const container = input.closest('.bulk-export-item');
+        if (container) {
+            container.querySelectorAll('.param-row').forEach(row => {
+                const nameInput = row.querySelector('.param-name');
+                if (nameInput && nameInput !== input) {
+                    const name = nameInput.value.trim();
+                    if (name) allParamNames.push(name);
+                }
+            });
+            
+            if (allParamNames.includes(paramName)) {
+                showNotification(`Parameter "${paramName}" already exists!`, 'error');
+                input.value = '';
+                if (typeof updateBulkJsonPreview === 'function') {
+                    updateBulkJsonPreview();
+                }
+                return;
             }
-        };
-        newInput.onfocus = () => {
-            closeAllDropdowns();
-            showBulkAutocomplete(newInput);
-        };
-        valueInput.parentNode.replaceChild(newInput, valueInput);
+        }
     }
     
     // Update JSON preview if in bulk export
@@ -1635,7 +1584,7 @@ function handleBulkParamNameChange(input) {
 }
 
 // Show bulk parameter name autocomplete
-function showBulkParameterNameAutocomplete(input, isArrayParam = false) {
+function showBulkParameterNameAutocomplete(input, isArrayParam = false, isObjectParam = false) {
     // Find the test type for this bulk item
     const bulkItem = input.closest('.bulk-export-item');
     const index = bulkItem ? bulkItem.dataset.index : null;
@@ -1647,7 +1596,18 @@ function showBulkParameterNameAutocomplete(input, isArrayParam = false) {
     }
     
     // Get parameter names for this test type
-    const parameterNames = parameterNamesByTestType.get(testType) || new Set();
+    let parameterNames = parameterNamesByTestType.get(testType) || new Set();
+    
+    // Filter based on parameter type
+    if (isArrayParam) {
+        parameterNames = new Set([...parameterNames].filter(name => arrayParameters.has(name)));
+    } else if (isObjectParam) {
+        parameterNames = new Set([...parameterNames].filter(name => objectParameters.has(name)));
+    } else {
+        // For single value parameters, exclude both array and object parameters
+        parameterNames = new Set([...parameterNames].filter(name => 
+            !arrayParameters.has(name) && !objectParameters.has(name)));
+    }
     
     // Filter out already used parameters in bulk export
     const usedParams = new Set();
@@ -1686,7 +1646,7 @@ function hideBulkParameterNameDropdown(input) {
 }
 
 // Show parameter name autocomplete
-function showParameterNameAutocomplete(input, isArrayParam = false) {
+function showParameterNameAutocomplete(input, isArrayParam = false, isObjectParam = false) {
     // Get current test type from the form
     const testTypeInput = document.getElementById('edit-test-type');
     const testType = testTypeInput ? testTypeInput.value : '';
@@ -1694,9 +1654,15 @@ function showParameterNameAutocomplete(input, isArrayParam = false) {
     // Get parameter names for this test type
     let parameterNames = parameterNamesByTestType.get(testType) || new Set();
     
-    // If adding array parameter, filter to only show array parameters
+    // Filter based on parameter type
     if (isArrayParam) {
         parameterNames = new Set([...parameterNames].filter(name => arrayParameters.has(name)));
+    } else if (isObjectParam) {
+        parameterNames = new Set([...parameterNames].filter(name => objectParameters.has(name)));
+    } else {
+        // For single value parameters, exclude both array and object parameters
+        parameterNames = new Set([...parameterNames].filter(name => 
+            !arrayParameters.has(name) && !objectParameters.has(name)));
     }
     
     // Filter out already used parameter names
@@ -1721,9 +1687,6 @@ function showParameterNameAutocomplete(input, isArrayParam = false) {
         
         input.value = value;
         scheduleJsonPreviewUpdate();
-        
-        // Trigger parameter name change to check if it's an array
-        handleParamNameChange(input);
     });
 }
 
@@ -1862,6 +1825,7 @@ function buildTestCaseJson() {
         const key = nameInput.value.trim();
         const value = valueInput.value.trim();
         const isArray = valueInput.dataset.isArray === 'true';
+        const isObject = valueInput.dataset.isObject === 'true';
         
         if (key) {
             if (isArray) {
@@ -1891,9 +1855,28 @@ function buildTestCaseJson() {
                     // If parsing fails, treat as comma-separated string
                     params[key] = value.split(',').map(v => v.trim());
                 }
+            } else if (isObject) {
+                // Parse JSON object value
+                try {
+                    if (value.startsWith('{') && value.endsWith('}')) {
+                        params[key] = JSON.parse(value);
+                    } else {
+                        params[key] = {};
+                    }
+                } catch (e) {
+                    // If parsing fails, treat as empty object
+                    params[key] = {};
+                }
             } else {
-                // Try to parse as number or boolean
-                if (value === 'true') {
+                // Try to parse as JSON object first (for single values that might be objects)
+                if (value.startsWith('{') && value.endsWith('}')) {
+                    try {
+                        params[key] = JSON.parse(value);
+                    } catch (e) {
+                        // Not valid JSON, treat as string
+                        params[key] = value;
+                    }
+                } else if (value === 'true') {
                     params[key] = true;
                 } else if (value === 'false') {
                     params[key] = false;
@@ -2241,9 +2224,10 @@ function buildBulkTestCases() {
         
         const params = {};
         
-        // Collect parameters from both single and array containers
+        // Collect parameters from single, array, and object containers
         const singleParamsContainer = document.getElementById(`bulk-single-params-${index}`);
         const arrayParamsContainer = document.getElementById(`bulk-array-params-${index}`);
+        const objectParamsContainer = document.getElementById(`bulk-object-params-${index}`);
         
         const collectParams = (container) => {
             if (container) {
@@ -2251,6 +2235,7 @@ function buildBulkTestCases() {
                 const nameInput = row.querySelector('.param-name');
                 const valueInput = row.querySelector('.param-value');
                 const isArray = valueInput && valueInput.dataset.isArray === 'true';
+                const isObject = valueInput && valueInput.dataset.isObject === 'true';
                 
                 if (nameInput && valueInput && nameInput.value) {
                     const key = nameInput.value.trim();
@@ -2283,8 +2268,20 @@ function buildBulkTestCases() {
                             // If parsing fails, treat as comma-separated string
                             value = value.split(',').map(v => v.trim());
                         }
+                    } else if (isObject) {
+                        // Parse JSON object value
+                        try {
+                            if (value.startsWith('{') && value.endsWith('}')) {
+                                value = JSON.parse(value);
+                            } else {
+                                value = {};
+                            }
+                        } catch (e) {
+                            // If parsing fails, treat as empty object
+                            value = {};
+                        }
                     } else {
-                        // Check if it's a JSON object string
+                        // Check if it's a JSON object string (for single values that might be objects)
                         if (value.startsWith('{') && value.endsWith('}')) {
                             try {
                                 value = JSON.parse(value);
@@ -2307,6 +2304,7 @@ function buildBulkTestCases() {
         
         collectParams(singleParamsContainer);
         collectParams(arrayParamsContainer);
+        collectParams(objectParamsContainer);
         
         if (!singleParamsContainer && !arrayParamsContainer) {
             // Use original parameters if not expanded
@@ -2375,27 +2373,43 @@ function populateBulkExportModal() {
             });
         }
         
-        // Build single and array parameters HTML separately
+        // Build single, array, and object parameters HTML separately
         let singleParametersHtml = '';
         let arrayParametersHtml = '';
+        let objectParametersHtml = '';
         if (result.input_parameters) {
             Object.entries(result.input_parameters).forEach(([key, value]) => {
                 let actualIsArray = Array.isArray(value);
+                let actualIsObject = false;
                 
-                // Check if value is a string that represents an array
-                if (!actualIsArray && typeof value === 'string' && value.trim().startsWith('[')) {
-                    try {
-                        const parsed = JSON.parse(value);
-                        actualIsArray = Array.isArray(parsed);
-                    } catch (e) {
-                        // Not valid JSON, treat as single value
+                // Check if value is a string that represents an array or object
+                if (!actualIsArray && typeof value === 'string') {
+                    const trimmed = value.trim();
+                    if (trimmed.startsWith('[')) {
+                        try {
+                            const parsed = JSON.parse(value);
+                            actualIsArray = Array.isArray(parsed);
+                        } catch (e) {
+                            // Not valid JSON, treat as single value
+                        }
+                    } else if (trimmed.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(value);
+                            actualIsObject = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+                        } catch (e) {
+                            // Not valid JSON, treat as single value
+                        }
                     }
+                } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    actualIsObject = true;
                 }
                 
                 if (actualIsArray) {
-                    arrayParametersHtml += createParameterRow(key, value, true, 'bulk', true);
+                    arrayParametersHtml += createParameterRow(key, value, true, 'bulk', true, false);
+                } else if (actualIsObject) {
+                    objectParametersHtml += createParameterRow(key, value, false, 'bulk', false, true);
                 } else {
-                    singleParametersHtml += createParameterRow(key, value, false, 'bulk', false);
+                    singleParametersHtml += createParameterRow(key, value, false, 'bulk', false, false);
                 }
             });
         }
@@ -2439,7 +2453,7 @@ function populateBulkExportModal() {
                         <!-- Single Value Parameters -->
                         <div class="param-subsection">
                             <div class="param-section-header">
-                                <button onclick="addBulkParameter(${index}, false)" class="add-param-btn">Add</button>
+                                <button onclick="addBulkParameter(${index}, false, false)" class="add-param-btn">Add</button>
                                 <label>Single Value Parameters</label>
                             </div>
                             <div id="bulk-single-params-${index}" class="param-container">
@@ -2450,11 +2464,22 @@ function populateBulkExportModal() {
                         <!-- Array Parameters -->
                         <div class="param-subsection">
                             <div class="param-section-header">
-                                <button onclick="addBulkParameter(${index}, true)" class="add-param-btn">Add</button>
+                                <button onclick="addBulkParameter(${index}, true, false)" class="add-param-btn">Add</button>
                                 <label>Array Parameters</label>
                             </div>
                             <div id="bulk-array-params-${index}" class="param-container">
                                 ${arrayParametersHtml}
+                            </div>
+                        </div>
+                        
+                        <!-- Object Parameters -->
+                        <div class="param-subsection">
+                            <div class="param-section-header">
+                                <button onclick="addBulkParameter(${index}, false, true)" class="add-param-btn">Add</button>
+                                <label>Object Parameters</label>
+                            </div>
+                            <div id="bulk-object-params-${index}" class="param-container">
+                                ${objectParametersHtml}
                             </div>
                         </div>
                     </div>
@@ -2517,12 +2542,18 @@ function closeBulkExportModal() {
     }
 }
 
-function addBulkParameter(index, isArray = false) {
-    const container = isArray ? 
-        document.getElementById(`bulk-array-params-${index}`) :
-        document.getElementById(`bulk-single-params-${index}`);
+function addBulkParameter(index, isArray = false, isObject = false) {
+    let container;
+    if (isArray) {
+        container = document.getElementById(`bulk-array-params-${index}`);
+    } else if (isObject) {
+        container = document.getElementById(`bulk-object-params-${index}`);
+    } else {
+        container = document.getElementById(`bulk-single-params-${index}`);
+    }
     
-    const rowHtml = createParameterRow('', '', isArray, 'bulk', isArray);
+    const initialValue = isObject ? '{}' : '';
+    const rowHtml = createParameterRow('', initialValue, isArray, 'bulk', isArray, isObject);
     
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
@@ -2680,12 +2711,8 @@ function populateArrayEditor() {
     const container = document.getElementById('array-items-list');
     container.innerHTML = '';
     
-    // Add scrollable class only if there are many items
-    if (currentArrayItems.length > 5) {
-        container.classList.add('scrollable');
-    } else {
-        container.classList.remove('scrollable');
-    }
+    // Update preview
+    updateArrayPreview();
     
     if (currentArrayItems.length === 0) {
         container.innerHTML = '<div class="no-items">No items in array. Add items using the form above.</div>';
@@ -2801,6 +2828,302 @@ function closeArrayEditor() {
     modal.classList.remove('show');
     currentArrayInput = null;
     currentArrayItems = [];
+}
+
+function updateArrayPreview() {
+    const preview = document.getElementById('array-preview-content');
+    if (preview) {
+        preview.textContent = JSON.stringify(currentArrayItems, null, 2);
+    }
+}
+
+// JSON Object Editor Functions
+let currentJsonObjectInput = null;
+let currentJsonObject = {};
+let currentJsonObjectParamName = '';
+
+function openJsonObjectEditor(inputElement, paramName) {
+    currentJsonObjectInput = inputElement;
+    currentJsonObjectParamName = paramName;
+    
+    // Parse current JSON object value
+    const currentValue = inputElement.value.trim();
+    try {
+        if (currentValue.startsWith('{')) {
+            currentJsonObject = JSON.parse(currentValue);
+        } else {
+            currentJsonObject = {};
+        }
+        
+        if (typeof currentJsonObject !== 'object' || currentJsonObject === null || Array.isArray(currentJsonObject)) {
+            currentJsonObject = {};
+        }
+    } catch (e) {
+        currentJsonObject = {};
+    }
+    
+    // Set up autocomplete for key and value inputs
+    const keyInput = document.getElementById('new-object-key');
+    const valueInput = document.getElementById('new-object-value');
+    
+    keyInput.oninput = () => showObjectKeyAutocomplete(keyInput);
+    keyInput.onfocus = () => showObjectKeyAutocomplete(keyInput);
+    keyInput.onblur = () => {
+        setTimeout(() => hideObjectKeyAutocomplete(keyInput), 200);
+    };
+    
+    valueInput.oninput = () => showObjectValueAutocomplete(valueInput, keyInput.value);
+    valueInput.onfocus = () => showObjectValueAutocomplete(valueInput, keyInput.value);
+    valueInput.onblur = () => {
+        setTimeout(() => hideObjectValueAutocomplete(valueInput), 200);
+    };
+    
+    // Update modal title
+    const modal = document.getElementById('json-object-editor-modal');
+    modal.querySelector('h2').textContent = `Edit JSON Object: ${paramName}`;
+    
+    // Populate JSON object editor
+    populateJsonObjectEditor();
+    
+    // Show modal
+    modal.classList.add('show');
+}
+
+function populateJsonObjectEditor() {
+    const container = document.getElementById('json-properties-list');
+    container.innerHTML = '';
+    
+    const entries = Object.entries(currentJsonObject);
+    
+    // Add scrollable class only if there are many items
+    if (entries.length > 5) {
+        container.classList.add('scrollable');
+    } else {
+        container.classList.remove('scrollable');
+    }
+    
+    if (entries.length === 0) {
+        container.innerHTML = '<div class="no-items">No properties. Add properties using the form above.</div>';
+    } else {
+        entries.forEach(([key, value]) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'json-property-item';
+            
+            let valueStr = value;
+            if (typeof value === 'object') {
+                valueStr = JSON.stringify(value);
+            }
+            
+            itemDiv.innerHTML = `
+                <div class="autocomplete-wrapper">
+                    <input type="text" value="${key}" data-original-key="${key}"
+                           onchange="updateJsonPropertyKey(this, '${key}')"
+                           onfocus="showObjectKeyAutocomplete(this)"
+                           oninput="showObjectKeyAutocomplete(this)"
+                           onblur="setTimeout(() => hideObjectKeyAutocomplete(this), 200)">
+                    <div class="autocomplete-dropdown" style="display: none;"></div>
+                </div>
+                <div class="autocomplete-wrapper">
+                    <input type="text" value="${String(valueStr).replace(/"/g, '&quot;')}" 
+                           onchange="updateJsonPropertyValue('${key}', this.value)"
+                           onfocus="showObjectValueAutocomplete(this, '${key}')"
+                           oninput="showObjectValueAutocomplete(this, '${key}')"
+                           onblur="setTimeout(() => hideObjectValueAutocomplete(this), 200)">
+                    <div class="autocomplete-dropdown" style="display: none;"></div>
+                </div>
+                <button class="remove-btn" onclick="removeJsonProperty('${key}')">Remove</button>
+            `;
+            
+            container.appendChild(itemDiv);
+        });
+    }
+    
+    // Update preview
+    updateJsonObjectPreview();
+}
+
+function addJsonProperty() {
+    const keyInput = document.getElementById('new-object-key');
+    const valueInput = document.getElementById('new-object-value');
+    
+    const key = keyInput.value.trim();
+    const valueStr = valueInput.value.trim();
+    
+    if (!key) {
+        showNotification('Please enter a property name', 'error');
+        return;
+    }
+    
+    // Try to parse value as JSON, number, or boolean
+    let value = valueStr;
+    try {
+        if (valueStr.startsWith('{') || valueStr.startsWith('[')) {
+            value = JSON.parse(valueStr);
+        } else if (valueStr === 'true') {
+            value = true;
+        } else if (valueStr === 'false') {
+            value = false;
+        } else if (!isNaN(valueStr) && valueStr !== '') {
+            value = parseFloat(valueStr);
+        }
+    } catch (e) {
+        // Keep as string if not valid JSON
+    }
+    
+    currentJsonObject[key] = value;
+    keyInput.value = '';
+    valueInput.value = '';
+    populateJsonObjectEditor();
+}
+
+function updateJsonPropertyKey(input, oldKey) {
+    const newKey = input.value.trim();
+    
+    if (newKey && newKey !== oldKey) {
+        const value = currentJsonObject[oldKey];
+        delete currentJsonObject[oldKey];
+        currentJsonObject[newKey] = value;
+        populateJsonObjectEditor();
+    } else if (!newKey) {
+        // Revert if empty
+        input.value = oldKey;
+    }
+}
+
+function updateJsonPropertyValue(key, newValue) {
+    let value = newValue;
+    try {
+        if (newValue.startsWith('{') || newValue.startsWith('[')) {
+            value = JSON.parse(newValue);
+        } else if (newValue === 'true') {
+            value = true;
+        } else if (newValue === 'false') {
+            value = false;
+        } else if (!isNaN(newValue) && newValue !== '') {
+            value = parseFloat(newValue);
+        }
+    } catch (e) {
+        // Keep as string
+    }
+    currentJsonObject[key] = value;
+    updateJsonObjectPreview();
+}
+
+function removeJsonProperty(key) {
+    delete currentJsonObject[key];
+    populateJsonObjectEditor();
+}
+
+function updateJsonObjectPreview() {
+    const preview = document.getElementById('json-object-preview-content');
+    if (preview) {
+        preview.textContent = JSON.stringify(currentJsonObject, null, 2);
+    }
+}
+
+function saveJsonObjectChanges() {
+    if (currentJsonObjectInput) {
+        // Update the input field with formatted JSON
+        currentJsonObjectInput.value = JSON.stringify(currentJsonObject, null, 2);
+        
+        // Trigger change event to update preview if needed
+        const changeEvent = new Event('change', { bubbles: true });
+        currentJsonObjectInput.dispatchEvent(changeEvent);
+        
+        // Update the data-is-object attribute
+        currentJsonObjectInput.setAttribute('data-is-object', 'true');
+        
+        closeJsonObjectEditor();
+        showNotification('JSON object updated successfully');
+    } else {
+        closeJsonObjectEditor();
+    }
+}
+
+function closeJsonObjectEditor() {
+    const modal = document.getElementById('json-object-editor-modal');
+    modal.classList.remove('show');
+    currentJsonObjectInput = null;
+    currentJsonObject = {};
+    currentJsonObjectParamName = '';
+}
+
+// Autocomplete functions for object editor
+function showObjectKeyAutocomplete(input) {
+    const dropdown = input.parentElement.querySelector('.autocomplete-dropdown');
+    
+    // Get all known property names for object parameters
+    const knownKeys = new Set();
+    objectPropertyValues.forEach((values, key) => {
+        // key format is "paramName.propertyName"
+        const parts = key.split('.');
+        if (parts.length >= 2) {
+            knownKeys.add(parts[parts.length - 1]);
+        }
+    });
+    
+    // Add common WebGPU object properties
+    const commonKeys = [
+        'maxTextureDimension1D', 'maxTextureDimension2D', 'maxTextureDimension3D',
+        'maxTextureArrayLayers', 'maxBindGroups', 'maxBindingsPerBindGroup',
+        'maxDynamicUniformBuffersPerPipelineLayout', 'maxDynamicStorageBuffersPerPipelineLayout',
+        'maxSampledTexturesPerShaderStage', 'maxSamplersPerShaderStage',
+        'maxStorageBuffersPerShaderStage', 'maxStorageTexturesPerShaderStage',
+        'maxUniformBuffersPerShaderStage', 'maxUniformBufferBindingSize',
+        'maxStorageBufferBindingSize', 'maxVertexBuffers', 'maxVertexAttributes',
+        'maxVertexBufferArrayStride', 'maxInterStageShaderVariables',
+        'maxComputeWorkgroupStorageSize', 'maxComputeInvocationsPerWorkgroup',
+        'maxComputeWorkgroupSizeX', 'maxComputeWorkgroupSizeY', 'maxComputeWorkgroupSizeZ',
+        'maxComputeWorkgroupsPerDimension'
+    ];
+    
+    commonKeys.forEach(key => knownKeys.add(key));
+    
+    showDropdown(input, Array.from(knownKeys), (value) => {
+        input.value = value;
+        dropdown.style.display = 'none';
+    });
+}
+
+function hideObjectKeyAutocomplete(input) {
+    const dropdown = input.parentElement.querySelector('.autocomplete-dropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+}
+
+function showObjectValueAutocomplete(input, propertyKey) {
+    const dropdown = input.parentElement.querySelector('.autocomplete-dropdown');
+    
+    // Get known values for this property
+    const fullKey = `${currentJsonObjectParamName}.${propertyKey}`;
+    let knownValues = new Set();
+    
+    if (objectPropertyValues.has(fullKey)) {
+        knownValues = objectPropertyValues.get(fullKey);
+    }
+    
+    // Add common values based on property name
+    if (propertyKey.includes('max') || propertyKey.includes('size') || propertyKey.includes('count')) {
+        // Add common size/limit values
+        [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 134217728].forEach(v => knownValues.add(String(v)));
+    }
+    
+    // Add boolean values for boolean-like properties
+    knownValues.add('true');
+    knownValues.add('false');
+    
+    showDropdown(input, Array.from(knownValues), (value) => {
+        input.value = value;
+        dropdown.style.display = 'none';
+    });
+}
+
+function hideObjectValueAutocomplete(input) {
+    const dropdown = input.parentElement.querySelector('.autocomplete-dropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
 }
 
 // Toggle log source details visibility

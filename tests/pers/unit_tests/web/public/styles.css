@@ -160,12 +160,13 @@ header h1 {
 .filters select {
     flex: 1;
     min-width: 200px;
-    padding: 12px;
+    padding: 5px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
+    height: 28px;
 }
 
 .filters input::placeholder {
@@ -619,12 +620,13 @@ td {
 .logs-header select {
     flex: 1;
     min-width: 200px;
-    padding: 12px;
+    padding: 5px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
+    height: 28px;
 }
 
 
@@ -871,14 +873,15 @@ td {
 
 .view-test-details-btn {
     margin-top: 15px;
-    padding: 10px 20px;
+    padding: 0 20px;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 0;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    height: 28px;
     transition: all 0.3s;
 }
 
@@ -911,11 +914,10 @@ td {
     border-radius: 15px;
     padding: 30px;
     max-width: 800px;
-    max-height: 80vh;
-    overflow-y: auto;
     position: relative;
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
     animation: slideIn 0.3s ease-out;
+    overflow: visible !important;
 }
 
 @keyframes slideIn {
@@ -987,13 +989,14 @@ td {
 }
 
 .load-json-btn, .bulk-export-btn {
-    padding: 10px 20px;
+    padding: 0 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 14px;
+    height: 28px;
     transition: all 0.3s ease;
     white-space: nowrap;
 }
@@ -1029,7 +1032,7 @@ td {
 /* Test Case Editor Modal Styles */
 .editor-modal {
     max-width: 1500px;
-    max-height: 90vh;
+    overflow: visible !important;
 }
 
 .editor-modal h2 {
@@ -1046,23 +1049,25 @@ td {
 .editor-controls input {
     flex: 1;
     max-width: 300px;
-    padding: 8px 12px;
+    padding: 5px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
+    height: 28px;
 }
 
 .export-btn, .copy-btn {
-    padding: 10px 20px;
+    padding: 0 20px;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
+    height: 28px;
     transition: all 0.3s;
 }
 
@@ -1076,12 +1081,14 @@ td {
     flex-direction: column;
     gap: 15px;
     margin-bottom: 20px;
+    overflow: visible !important;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    overflow: visible !important;
 }
 
 .form-group label {
@@ -1093,13 +1100,17 @@ td {
 
 .form-group input,
 .form-group textarea {
-    padding: 10px;
+    padding: 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
     font-family: inherit;
+}
+
+.form-group input {
+    height: 28px;
 }
 
 .form-group textarea {
@@ -1107,16 +1118,17 @@ td {
 }
 
 .add-param-btn {
-    padding: 4px 12px;
+    padding: 0;
     background: rgba(72, 187, 120, 0.2);
     color: #48bb78;
     border: 1px solid #48bb78;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
     transition: all 0.2s;
     width: 70px;
+    height: 28px;
     flex-shrink: 0;
 }
 
@@ -1138,12 +1150,13 @@ td {
 
 .parameter-row input {
     flex: 1;
-    padding: 8px;
+    padding: 5px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
+    height: 28px;
 }
 
 .parameter-row input::placeholder {
@@ -1154,12 +1167,20 @@ td {
 .autocomplete-wrapper {
     position: relative;
     flex: 1;
+    overflow: visible !important;
 }
 
 /* Array editor autocomplete fix */
 .array-editor-modal .autocomplete-dropdown,
 #array-new-item-dropdown {
     z-index: 10001 !important;
+}
+
+/* JSON Object editor autocomplete fix */
+.json-object-editor-modal .autocomplete-dropdown,
+#object-key-dropdown,
+#object-value-dropdown {
+    z-index: 10003 !important;
 }
 
 /* Array parameter styles */
@@ -1209,6 +1230,7 @@ td {
 
 .section-content {
     padding-top: 0;
+    overflow: visible !important;
 }
 
 .section-divider .form-group {
@@ -1247,6 +1269,7 @@ td {
 .param-container {
     margin-top: 8px;
     padding-left: 0;
+    overflow: visible !important;
 }
 
 /* Two column layout for compact fields */
@@ -1255,6 +1278,7 @@ td {
     grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin-bottom: 10px;
+    overflow: visible !important;
 }
 
 /* Three column layout for bulk export */
@@ -1272,12 +1296,13 @@ td {
 
 .autocomplete-input {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
+    height: 28px;
 }
 
 .autocomplete-dropdown {
@@ -1290,7 +1315,7 @@ td {
     background: #2a2a2a;
     border: 1px solid rgba(102, 126, 234, 0.5);
     border-top: none;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0;
     z-index: 10000;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
@@ -1312,16 +1337,17 @@ td {
 }
 
 .remove-param-btn {
-    padding: 4px 12px;
+    padding: 0;
     background: rgba(245, 101, 101, 0.2);
     color: #f56565;
     border: 1px solid #f56565;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
     transition: all 0.2s;
     width: 70px;
+    height: 28px;
     flex-shrink: 0;
 }
 
@@ -1332,7 +1358,7 @@ td {
 .json-preview {
     background: #1a1a1a;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    border-radius: 0;
     padding: 12px;
     max-height: 300px;
     overflow-y: auto;
@@ -1352,15 +1378,16 @@ td {
 }
 
 .generate-test-btn {
-    padding: 8px 16px;
+    padding: 0 16px;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
     margin-top: 10px;
+    height: 28px;
     transition: all 0.3s;
 }
 
@@ -1393,8 +1420,7 @@ td {
 .bulk-export-modal {
     width: 630px;
     max-width: 95vw;
-    max-height: 85vh;
-    overflow-y: visible; /* Changed to visible to prevent dropdown cutoff */
+    overflow: visible !important;
     position: relative;
 }
 
@@ -1403,8 +1429,7 @@ td {
 }
 
 .bulk-export-modal > div:not(.bulk-export-controls) {
-    max-height: calc(85vh - 100px);
-    overflow-y: auto;
+    overflow: visible !important;
 }
 
 .bulk-export-controls {
@@ -1416,13 +1441,14 @@ td {
 
 .expand-all-btn,
 .collapse-all-btn {
-    padding: 8px 16px;
+    padding: 0 16px;
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 14px;
+    height: 28px;
     transition: all 0.2s;
 }
 
@@ -1433,17 +1459,16 @@ td {
 }
 
 #bulk-export-list {
-    max-height: 500px;
-    overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 0;
     padding: 10px;
+    overflow: visible !important;
 }
 
 .bulk-export-item {
     margin-bottom: 10px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
+    border-radius: 0;
     overflow: hidden;
 }
 
@@ -1486,12 +1511,14 @@ td {
 .bulk-item-content {
     padding: 15px;
     background: rgba(0, 0, 0, 0.2);
+    overflow: visible !important;
 }
 
 .bulk-item-form {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    overflow: visible !important;
 }
 
 .bulk-item-form .form-group:last-child {
@@ -1504,6 +1531,7 @@ td {
     flex-direction: column;
     gap: 12px;
     margin-top: 8px;
+    overflow: visible !important;
 }
 
 .param-row {
@@ -1525,33 +1553,36 @@ td {
 
 .param-name {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
+    height: 28px;
 }
 
 .param-value {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
     font-family: 'Courier New', monospace;
+    height: 28px;
 }
 
 .edit-array-btn {
-    padding: 8px 12px;
+    padding: 0;
     background: rgba(102, 126, 234, 0.2);
     color: #667eea;
     border: 1px solid #667eea;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 13px;
+    height: 28px;
     transition: all 0.2s;
 }
 
@@ -1566,7 +1597,7 @@ td {
     top: 20px;
     right: 20px;
     padding: 12px 20px;
-    border-radius: 8px;
+    border-radius: 0;
     font-size: 14px;
     font-weight: 500;
     z-index: 10000;
@@ -1594,66 +1625,115 @@ td {
     }
 }
 
-/* Array Editor Modal Styles */
+/* Array Editor Modal Styles - Redesigned to match JSON Object Editor */
 #array-editor-modal {
-    z-index: 1002; /* Higher than bulk export modal */
+    z-index: 1002;
 }
 
 .array-editor-modal {
-    max-width: 600px;
-    max-height: 70vh;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     z-index: 1002;
     padding: 20px;
     overflow: visible !important;
 }
 
-.array-editor-modal h2 {
-    margin-bottom: 15px;
+/* JSON Object Editor Modal Styles - Redesigned */
+#json-object-editor-modal {
+    z-index: 1002;
+}
+
+.json-object-editor-modal {
+    max-width: 800px;
+    width: 90%;
+    padding: 20px;
+    overflow: visible !important;
+}
+
+.json-object-editor-modal h2 {
+    margin: 0 0 20px 0;
     font-size: 18px;
+    color: #e0e0e0;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
 }
 
-.array-editor-controls {
-    display: flex;
+/* Add item section */
+.array-add-item-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.array-add-item-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
     gap: 10px;
-    margin-bottom: 15px;
+    align-items: center;
 }
 
-.array-editor-controls input {
-    flex: 1;
-    padding: 8px;
+.array-add-item-row .autocomplete-wrapper {
+    position: relative;
+    overflow: visible !important;
+}
+
+.array-add-item-row input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 0;
     color: #fff;
     font-size: 14px;
 }
 
-.add-item-btn {
-    padding: 8px 16px;
+.array-add-btn {
+    padding: 0 20px;
+    height: 32px;
     background: #48bb78;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
+    min-width: 80px;
     transition: background 0.2s;
 }
 
-.add-item-btn:hover {
+.array-add-btn:hover {
     background: #38a169;
 }
 
-#array-items-list {
-    max-height: 400px;
-    overflow: visible;
+/* Items list section */
+.array-items-section {
     margin-bottom: 20px;
-    position: relative;
 }
 
-/* Only enable scroll when there are many items */
-#array-items-list.scrollable {
+.array-items-header {
+    padding: 8px 15px;
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    font-size: 14px;
+    font-weight: 600;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.array-items-table {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none;
+    min-height: 150px;
+    max-height: 250px;
     overflow-y: auto;
+    overflow-x: hidden;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .no-items {
@@ -1663,50 +1743,67 @@ td {
     font-style: italic;
 }
 
+/* Array item redesign */
 .array-item {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
     gap: 10px;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    align-items: center;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+.array-item:hover {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .array-item:last-child {
     border-bottom: none;
-    padding-bottom: 0;
 }
 
 .array-item-index {
     color: #667eea;
     font-weight: 600;
-    min-width: 30px;
+    font-size: 13px;
+    text-align: center;
 }
 
-.array-item-value {
-    flex: 1;
-    padding: 6px 8px;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    color: #fff;
-    font-size: 14px;
+.array-item .autocomplete-wrapper {
+    position: relative;
+    overflow: visible !important;
 }
 
-.array-item-value:focus {
+.array-item input {
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0;
+    color: #e0e6ed;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.array-item input:focus {
     outline: none;
-    border-color: rgba(102, 126, 234, 0.5);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .remove-array-item {
-    padding: 6px 12px;
+    padding: 0;
+    width: 70px;
+    height: 28px;
     background: transparent;
     color: #f56565;
     border: 1px solid #f56565;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 600;
     transition: all 0.2s;
 }
 
@@ -1714,41 +1811,284 @@ td {
     background: rgba(245, 101, 101, 0.2);
 }
 
+/* Preview section */
+.array-preview-section {
+    margin-bottom: 20px;
+}
+
+.array-preview-header {
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#array-preview-content {
+    margin: 0;
+    padding: 15px;
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    color: #48bb78;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 80px;
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre;
+}
+
+/* Footer buttons */
 .array-editor-footer {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
 }
 
-.save-array-btn {
-    padding: 8px 16px;
-    background: #667eea;
-    color: white;
+.array-save-btn,
+.array-cancel-btn {
+    padding: 0 30px;
+    height: 36px;
     border: none;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 500;
-    transition: background 0.2s;
-}
-
-.save-array-btn:hover {
-    background: #5a67d8;
-}
-
-.cancel-array-btn {
-    padding: 8px 16px;
-    background: transparent;
-    color: #aaa;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
+    font-weight: 600;
     transition: all 0.2s;
 }
 
-.cancel-array-btn:hover {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.3);
+.array-save-btn {
+    background: #667eea;
+    color: white;
 }
 
+.array-save-btn:hover {
+    background: #5a67d8;
+}
+
+.array-cancel-btn {
+    background: transparent;
+    color: #a0aec0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.array-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+/* JSON Object Editor - New Clean Layout */
+
+/* Add property section */
+.json-add-property-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.json-add-property-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.json-add-property-row .autocomplete-wrapper {
+    position: relative;
+    overflow: visible !important;
+}
+
+.json-add-property-row input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    color: #fff;
+    font-size: 14px;
+}
+
+.json-add-btn {
+    padding: 0 20px;
+    height: 32px;
+    background: #48bb78;
+    color: white;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 80px;
+    transition: background 0.2s;
+}
+
+.json-add-btn:hover {
+    background: #38a169;
+}
+
+/* Properties table section */
+.json-properties-section {
+    margin-bottom: 20px;
+}
+
+.json-properties-header {
+    padding: 8px 15px;
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    font-size: 14px;
+    font-weight: 600;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.json-properties-table {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none;
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Property row redesign */
+.json-property-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    align-items: center;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+.json-property-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.json-property-item:last-child {
+    border-bottom: none;
+}
+
+.json-property-item .autocomplete-wrapper {
+    position: relative;
+    overflow: visible !important;
+}
+
+.json-property-item input {
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0;
+    color: #e0e6ed;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.json-property-item input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.json-property-item .remove-btn {
+    padding: 0;
+    width: 70px;
+    height: 28px;
+    background: transparent;
+    color: #f56565;
+    border: 1px solid #f56565;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.json-property-item .remove-btn:hover {
+    background: rgba(245, 101, 101, 0.2);
+}
+
+/* Preview section */
+.json-preview-section {
+    margin-bottom: 20px;
+}
+
+.json-preview-header {
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#json-object-preview-content {
+    margin: 0;
+    padding: 15px;
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    color: #48bb78;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100px;
+    max-height: 150px;
+    overflow-y: auto;
+    white-space: pre;
+}
+
+/* Footer buttons */
+.json-editor-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.json-save-btn,
+.json-cancel-btn {
+    padding: 0 30px;
+    height: 36px;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.json-save-btn {
+    background: #667eea;
+    color: white;
+}
+
+.json-save-btn:hover {
+    background: #5a67d8;
+}
+
+.json-cancel-btn {
+    background: transparent;
+    color: #a0aec0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.json-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
