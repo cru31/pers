@@ -136,35 +136,67 @@
                     <button onclick="copyToClipboard()" class="copy-btn">Copy to Clipboard</button>
                 </div>
                 <div id="editor-form">
-                    <div class="form-group">
-                        <label>Test ID</label>
-                        <input type="number" id="edit-id" min="1" oninput="scheduleJsonPreviewUpdate()">
+                    <!-- General Properties Section -->
+                    <div class="section-divider">
+                        <h3 class="section-title">General Properties</h3>
+                        <div class="section-content">
+                            <div class="two-column-grid">
+                                <div class="form-group">
+                                    <label>Test ID</label>
+                                    <input type="number" id="edit-id" min="1" oninput="scheduleJsonPreviewUpdate()">
+                                </div>
+                                <div class="form-group">
+                                    <label>Category</label>
+                                    <input type="text" id="edit-category" oninput="scheduleJsonPreviewUpdate()">
+                                </div>
+                                <div class="form-group">
+                                    <label>Test Type</label>
+                                    <input type="text" id="edit-test-type" oninput="scheduleJsonPreviewUpdate()">
+                                </div>
+                                <div class="form-group">
+                                    <label>Expected Result</label>
+                                    <div class="autocomplete-wrapper">
+                                        <input type="text" id="edit-expected" class="autocomplete-input" oninput="scheduleJsonPreviewUpdate()">
+                                        <div class="autocomplete-dropdown" id="expected-dropdown" style="display: none;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea id="edit-description" rows="3" oninput="scheduleJsonPreviewUpdate()"></textarea>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <input type="text" id="edit-category" oninput="scheduleJsonPreviewUpdate()">
-                    </div>
-                    <div class="form-group">
-                        <label>Test Type</label>
-                        <input type="text" id="edit-test-type" oninput="scheduleJsonPreviewUpdate()">
-                    </div>
-                    <div class="form-group">
-                        <label>Expected Result</label>
-                        <input type="text" id="edit-expected" oninput="scheduleJsonPreviewUpdate()">
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="edit-description" rows="3" oninput="scheduleJsonPreviewUpdate()"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Parameters <button onclick="addParameter()" class="add-param-btn">+ Add</button></label>
-                        <div id="parameters-container">
-                            <!-- Parameters will be dynamically added here -->
+                    
+                    <!-- Parameters Section -->
+                    <div class="section-divider">
+                        <h3 class="section-title">Parameters</h3>
+                        <div class="section-content">
+                            <!-- Single Value Parameters -->
+                            <div class="param-subsection">
+                                <div class="param-section-header">
+                                    <button onclick="addParameter()" class="add-param-btn">Add</button>
+                                    <label>Single Value Parameters</label>
+                                </div>
+                                <div id="single-parameters-container" class="param-container">
+                                    <!-- Single value parameters will be dynamically added here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Array Parameters -->
+                            <div class="param-subsection">
+                                <div class="param-section-header">
+                                    <button onclick="addArrayParameter()" class="add-param-btn">Add</button>
+                                    <label>Array Parameters</label>
+                                </div>
+                                <div id="array-parameters-container" class="param-container">
+                                    <!-- Array parameters will be dynamically added here -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="json-preview">
-                    <h3>JSON Preview</h3>
                     <pre id="json-preview-content"></pre>
                 </div>
             </div>
@@ -180,7 +212,10 @@
             <span class="close-modal" onclick="closeArrayEditor()">&times;</span>
             <h2>Edit Array Parameter</h2>
             <div class="array-editor-controls">
-                <input type="text" id="new-array-item" placeholder="Enter new item">
+                <div class="autocomplete-wrapper" style="flex: 1;">
+                    <input type="text" id="new-array-item" class="autocomplete-input" placeholder="Enter new item">
+                    <div class="autocomplete-dropdown" id="array-new-item-dropdown" style="display: none;"></div>
+                </div>
                 <button onclick="addArrayItem()" class="add-item-btn">Add Item</button>
             </div>
             <div id="array-items-list">

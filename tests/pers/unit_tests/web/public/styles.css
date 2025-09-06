@@ -1028,8 +1028,12 @@ td {
 
 /* Test Case Editor Modal Styles */
 .editor-modal {
-    max-width: 1000px;
+    max-width: 1500px;
     max-height: 90vh;
+}
+
+.editor-modal h2 {
+    margin-bottom: 20px;
 }
 
 .editor-controls {
@@ -1103,7 +1107,6 @@ td {
 }
 
 .add-param-btn {
-    margin-left: 10px;
     padding: 4px 12px;
     background: rgba(72, 187, 120, 0.2);
     color: #48bb78;
@@ -1113,6 +1116,8 @@ td {
     font-size: 12px;
     font-weight: 600;
     transition: all 0.2s;
+    width: 70px;
+    flex-shrink: 0;
 }
 
 .add-param-btn:hover {
@@ -1145,6 +1150,167 @@ td {
     color: #666;
 }
 
+/* Autocomplete styles */
+.autocomplete-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+/* Array editor autocomplete fix */
+.array-editor-modal .autocomplete-dropdown,
+#array-new-item-dropdown {
+    z-index: 10001 !important;
+}
+
+/* Array parameter styles */
+.array-param-row .autocomplete-wrapper input {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 1px #f39c12;
+}
+
+/* Parameter section header for better organization */
+.param-section-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 5px;
+}
+
+.param-section-header label {
+    font-weight: 600;
+    color: #a0aec0;
+}
+
+/* Section dividers for better visual organization */
+.section-divider {
+    margin-bottom: 20px;
+}
+
+.bulk-item-form .section-divider {
+    margin-bottom: 10px;
+    padding: 8px;
+}
+
+.section-title {
+    margin: 0 0 15px 0;
+    color: #e2e8f0;
+    font-size: 14px;
+    font-weight: 600;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.bulk-item-form .section-title {
+    margin: 0 0 8px 0;
+    padding-bottom: 6px;
+    font-size: 13px;
+}
+
+.section-content {
+    padding-top: 0;
+}
+
+.section-divider .form-group {
+    margin-bottom: 12px;
+}
+
+.bulk-item-form .form-group {
+    margin-bottom: 8px;
+}
+
+.section-divider .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Parameter subsections */
+.param-subsection {
+    padding-top: 15px;
+    margin-bottom: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bulk-item-form .param-subsection {
+    padding-top: 10px;
+    margin-bottom: 10px;
+}
+
+.param-subsection:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+.param-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.param-container {
+    margin-top: 8px;
+    padding-left: 0;
+}
+
+/* Two column layout for compact fields */
+.two-column-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+/* Three column layout for bulk export */
+.three-column-grid {
+    display: grid;
+    grid-template-columns: 0.8fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.array-param-row .autocomplete-wrapper input:focus {
+    border-color: #e67e22;
+    box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.3);
+}
+
+.autocomplete-input {
+    width: 100%;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #2a2a2a;
+    border: 1px solid rgba(102, 126, 234, 0.5);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 10000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background: rgba(102, 126, 234, 0.2);
+}
+
 .remove-param-btn {
     padding: 4px 12px;
     background: rgba(245, 101, 101, 0.2);
@@ -1155,6 +1321,8 @@ td {
     font-size: 12px;
     font-weight: 600;
     transition: all 0.2s;
+    width: 70px;
+    flex-shrink: 0;
 }
 
 .remove-param-btn:hover {
@@ -1165,15 +1333,10 @@ td {
     background: #1a1a1a;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
-    padding: 15px;
+    padding: 12px;
     max-height: 300px;
     overflow-y: auto;
-}
-
-.json-preview h3 {
-    color: #667eea;
-    margin-bottom: 10px;
-    font-size: 16px;
+    margin-top: 10px;
 }
 
 #json-preview-content {
@@ -1181,6 +1344,7 @@ td {
     color: #e0e0e0;
     font-family: 'Courier New', monospace;
     font-size: 13px;
+    margin: 0;
     line-height: 1.5;
     margin: 0;
     white-space: pre-wrap;
@@ -1227,8 +1391,19 @@ td {
 }
 
 .bulk-export-modal {
-    max-width: 900px;
+    width: 630px;
+    max-width: 95vw;
     max-height: 85vh;
+    overflow-y: visible; /* Changed to visible to prevent dropdown cutoff */
+    position: relative;
+}
+
+.bulk-export-modal h2 {
+    margin-bottom: 25px;
+}
+
+.bulk-export-modal > div:not(.bulk-export-controls) {
+    max-height: calc(85vh - 100px);
     overflow-y: auto;
 }
 
@@ -1314,9 +1489,9 @@ td {
 }
 
 .bulk-item-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .bulk-item-form .form-group:last-child {
@@ -1335,11 +1510,22 @@ td {
     display: flex;
     gap: 10px;
     align-items: center;
+    margin-bottom: 10px;
+}
+
+.param-name-wrapper {
+    width: 150px;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+.param-value-wrapper {
+    flex: 1;
 }
 
 .param-name {
-    width: 150px;
-    padding: 8px;
+    width: 100%;
+    padding: 6px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
@@ -1348,8 +1534,8 @@ td {
 }
 
 .param-value {
-    flex: 1;
-    padding: 8px;
+    width: 100%;
+    padding: 6px 8px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
@@ -1373,27 +1559,6 @@ td {
     background: rgba(102, 126, 234, 0.3);
 }
 
-/* Remove button in bulk export modal - × style */
-.bulk-item-form .remove-param-btn {
-    padding: 8px 12px;
-    background: rgba(245, 101, 101, 0.2);
-    color: #f56565;
-    border: 1px solid #f56565;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.bulk-item-form .remove-param-btn:hover {
-    background: rgba(245, 101, 101, 0.3);
-}
 
 /* Notification styles */
 .notification {
@@ -1439,6 +1604,7 @@ td {
     max-height: 70vh;
     z-index: 1002;
     padding: 20px;
+    overflow: visible !important;
 }
 
 .array-editor-modal h2 {
@@ -1480,8 +1646,14 @@ td {
 
 #array-items-list {
     max-height: 400px;
-    overflow-y: auto;
+    overflow: visible;
     margin-bottom: 20px;
+    position: relative;
+}
+
+/* Only enable scroll when there are many items */
+#array-items-list.scrollable {
+    overflow-y: auto;
 }
 
 .no-items {
