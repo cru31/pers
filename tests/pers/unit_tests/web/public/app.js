@@ -165,7 +165,6 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
     
     return `
         <div class="param-row">
-            <button class="remove-param-btn" onclick="this.parentElement.remove(); ${prefix === 'edit' ? 'scheduleJsonPreviewUpdate()' : ''}">Remove</button>
             <div class="autocomplete-wrapper param-name-wrapper">
                 <input type="text" class="param-name autocomplete-input" value="${key}" placeholder="Parameter name" 
                        ${nameHandlers}>
@@ -177,6 +176,7 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
                        ${valueHandlers}>
                 <div class="autocomplete-dropdown" style="display: none;"></div>
             </div>
+            <button class="remove-param-btn" onclick="this.parentElement.remove(); ${prefix === 'edit' ? 'scheduleJsonPreviewUpdate()' : ''}">Remove</button>
         </div>
     `;
 }
@@ -622,6 +622,10 @@ function displayResults() {
         
         detailCell.innerHTML = `
             <div class="detail-content">
+                <button class="generate-test-btn detail-generate-btn" onclick='openTestEditor(${JSON.stringify(result).replace(/'/g, "&apos;")})'>
+                    Generate Test Case JSON
+                </button>
+                
                 <h4>Input Parameters</h4>
                 ${inputHtml || '<p>No input parameters</p>'}
                 
@@ -656,10 +660,6 @@ function displayResults() {
                     <div class="param-item"><strong>Time:</strong> ${result.execution_time_ms?.toFixed(2) || '-'}ms</div>
                     <div class="param-item"><strong>Timestamp:</strong> ${result.timestamp || '-'}</div>
                 </div>
-                
-                <button class="generate-test-btn" onclick='openTestEditor(${JSON.stringify(result).replace(/'/g, "&apos;")})'>
-                    Generate Test Case JSON
-                </button>
             </div>
         `;
         
@@ -1159,7 +1159,10 @@ function showTestModal(testResult) {
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
     
-    modalTitle.textContent = `Test ${testResult.id}: ${testResult.testType}`;
+    modalTitle.innerHTML = `Test ${testResult.id}: ${testResult.testType}
+        <button class="generate-test-btn modal-generate-btn" onclick='openTestEditor(${JSON.stringify(testResult).replace(/'/g, "&apos;")})'>
+            Generate Test Case JSON
+        </button>`;
     
     // Parse input parameters - use input_parameters if available
     let inputHtml = '';
@@ -1211,10 +1214,6 @@ function showTestModal(testResult) {
             <h3>Execution Time</h3>
             <p>${testResult.execution_time_ms ? testResult.execution_time_ms.toFixed(2) + ' ms' : 'N/A'}</p>
         </div>
-        
-        <button class="generate-test-btn" onclick='openTestEditor(${JSON.stringify(testResult).replace(/'/g, "&apos;")})'>
-            Generate Test Case JSON
-        </button>
     `;
     
     modal.classList.add('show');
@@ -1803,7 +1802,7 @@ function adjustDropdownPosition(dropdown) {
 function updateJsonPreview() {
     const testCase = buildTestCaseJson();
     const previewElement = document.getElementById('json-preview-content');
-    previewElement.textContent = JSON.stringify(testCase, null, 2);
+    previewElement.value = JSON.stringify(testCase, null, 2);
 }
 
 function buildTestCaseJson() {
@@ -1906,8 +1905,8 @@ function buildTestCaseJson() {
 }
 
 function exportTestCase() {
-    const testCase = buildTestCaseJson();
-    const jsonStr = JSON.stringify(testCase, null, 2);
+    // Get the edited JSON from the preview textarea
+    const jsonStr = document.getElementById('json-preview-content').value;
     
     // Get filename or generate random
     let filename = document.getElementById('export-filename').value.trim();
@@ -1930,8 +1929,8 @@ function exportTestCase() {
 }
 
 function copyToClipboard() {
-    const testCase = buildTestCaseJson();
-    const jsonStr = JSON.stringify(testCase, null, 2);
+    // Get the edited JSON from the preview textarea
+    const jsonStr = document.getElementById('json-preview-content').value;
     
     // Get the button element that was clicked
     const btn = document.querySelector('.copy-btn');
@@ -2833,7 +2832,7 @@ function closeArrayEditor() {
 function updateArrayPreview() {
     const preview = document.getElementById('array-preview-content');
     if (preview) {
-        preview.textContent = JSON.stringify(currentArrayItems, null, 2);
+        preview.value = JSON.stringify(currentArrayItems, null, 2);
     }
 }
 
@@ -3017,7 +3016,7 @@ function removeJsonProperty(key) {
 function updateJsonObjectPreview() {
     const preview = document.getElementById('json-object-preview-content');
     if (preview) {
-        preview.textContent = JSON.stringify(currentJsonObject, null, 2);
+        preview.value = JSON.stringify(currentJsonObject, null, 2);
     }
 }
 

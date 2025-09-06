@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pers Test Results Viewer</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="bulk-export-modal.css">
 </head>
 <body>
     <div class="container">
@@ -127,88 +128,94 @@
 
         <!-- Test Case Editor Modal -->
         <div id="test-editor-modal" class="modal">
-            <div class="modal-content editor-modal">
+            <div class="modal-content test-editor-modal">
                 <span class="close-modal" onclick="closeTestEditor()">&times;</span>
                 <h2>Test Case JSON Editor</h2>
-                <div class="editor-controls">
-                    <input type="text" id="export-filename" placeholder="Filename (optional)">
-                    <button onclick="exportTestCase()" class="export-btn">Export JSON</button>
-                    <button onclick="copyToClipboard()" class="copy-btn">Copy to Clipboard</button>
-                </div>
-                <div id="editor-form">
-                    <!-- General Properties Section -->
-                    <div class="section-divider">
-                        <h3 class="section-title">General Properties</h3>
-                        <div class="section-content">
-                            <div class="two-column-grid">
-                                <div class="form-group">
-                                    <label>Test ID</label>
-                                    <input type="number" id="edit-id" min="1" oninput="scheduleJsonPreviewUpdate()">
-                                </div>
-                                <div class="form-group">
-                                    <label>Category</label>
-                                    <input type="text" id="edit-category" oninput="scheduleJsonPreviewUpdate()">
-                                </div>
-                                <div class="form-group">
-                                    <label>Test Type</label>
-                                    <input type="text" id="edit-test-type" oninput="scheduleJsonPreviewUpdate()">
-                                </div>
-                                <div class="form-group">
-                                    <label>Expected Result</label>
-                                    <div class="autocomplete-wrapper">
-                                        <input type="text" id="edit-expected" class="autocomplete-input" oninput="scheduleJsonPreviewUpdate()">
-                                        <div class="autocomplete-dropdown" id="expected-dropdown" style="display: none;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Description</label>
-                                <textarea id="edit-description" rows="3" oninput="scheduleJsonPreviewUpdate()"></textarea>
-                            </div>
-                        </div>
+                
+                <!-- Export Controls Section -->
+                <div class="test-editor-controls-section">
+                    <div class="test-editor-controls-row">
+                        <input type="text" id="export-filename" placeholder="Filename (optional)">
+                        <button onclick="exportTestCase()" class="test-export-btn">Export JSON</button>
+                        <button onclick="copyToClipboard()" class="test-copy-btn">Copy to Clipboard</button>
                     </div>
-                    
-                    <!-- Parameters Section -->
-                    <div class="section-divider">
-                        <h3 class="section-title">Parameters</h3>
-                        <div class="section-content">
-                            <!-- Single Value Parameters -->
-                            <div class="param-subsection">
-                                <div class="param-section-header">
-                                    <button onclick="addParameter()" class="add-param-btn">Add</button>
-                                    <label>Single Value Parameters</label>
-                                </div>
-                                <div id="single-parameters-container" class="param-container">
-                                    <!-- Single value parameters will be dynamically added here -->
-                                </div>
+                </div>
+                
+                <!-- General Properties Section -->
+                <div class="test-general-section">
+                    <div class="test-section-header">General Properties</div>
+                    <div class="test-section-content">
+                        <div class="test-properties-grid">
+                            <div class="test-form-group">
+                                <label>Test ID</label>
+                                <input type="number" id="edit-id" min="1" oninput="scheduleJsonPreviewUpdate()">
                             </div>
-                            
-                            <!-- Array Parameters -->
-                            <div class="param-subsection">
-                                <div class="param-section-header">
-                                    <button onclick="addArrayParameter()" class="add-param-btn">Add</button>
-                                    <label>Array Parameters</label>
-                                </div>
-                                <div id="array-parameters-container" class="param-container">
-                                    <!-- Array parameters will be dynamically added here -->
-                                </div>
+                            <div class="test-form-group">
+                                <label>Category</label>
+                                <input type="text" id="edit-category" oninput="scheduleJsonPreviewUpdate()">
                             </div>
-                            
-                            <!-- Object Parameters -->
-                            <div class="param-subsection">
-                                <div class="param-section-header">
-                                    <button onclick="addObjectParameter()" class="add-param-btn">Add</button>
-                                    <label>Object Parameters</label>
-                                </div>
-                                <div id="object-parameters-container" class="param-container">
-                                    <!-- Object parameters will be dynamically added here -->
+                            <div class="test-form-group">
+                                <label>Test Type</label>
+                                <input type="text" id="edit-test-type" oninput="scheduleJsonPreviewUpdate()">
+                            </div>
+                            <div class="test-form-group">
+                                <label>Expected Result</label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="edit-expected" class="autocomplete-input" oninput="scheduleJsonPreviewUpdate()">
+                                    <div class="autocomplete-dropdown" id="expected-dropdown" style="display: none;"></div>
                                 </div>
                             </div>
                         </div>
+                        <div class="test-form-group full-width">
+                            <label>Description</label>
+                            <textarea id="edit-description" rows="3" oninput="scheduleJsonPreviewUpdate()"></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="json-preview">
-                    <pre id="json-preview-content"></pre>
+                
+                <!-- Parameters Section -->
+                <div class="test-parameters-section">
+                    <div class="test-section-header">Parameters</div>
+                    <div class="test-parameters-content">
+                        <!-- Single Value Parameters -->
+                        <div class="test-param-type">
+                            <div class="test-param-header">
+                                <label>Single Value Parameters</label>
+                                <button onclick="addParameter()" class="test-add-param-btn">Add</button>
+                            </div>
+                            <div id="single-parameters-container" class="test-param-container">
+                                <!-- Single value parameters will be dynamically added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Array Parameters -->
+                        <div class="test-param-type">
+                            <div class="test-param-header">
+                                <label>Array Parameters</label>
+                                <button onclick="addArrayParameter()" class="test-add-param-btn">Add</button>
+                            </div>
+                            <div id="array-parameters-container" class="test-param-container">
+                                <!-- Array parameters will be dynamically added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Object Parameters -->
+                        <div class="test-param-type">
+                            <div class="test-param-header">
+                                <label>Object Parameters</label>
+                                <button onclick="addObjectParameter()" class="test-add-param-btn">Add</button>
+                            </div>
+                            <div id="object-parameters-container" class="test-param-container">
+                                <!-- Object parameters will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preview Section -->
+                <div class="test-preview-section">
+                    <div class="test-preview-header">Preview</div>
+                    <textarea id="json-preview-content" spellcheck="false"></textarea>
                 </div>
             </div>
         </div>
@@ -245,7 +252,7 @@
             <!-- Preview section -->
             <div class="array-preview-section">
                 <div class="array-preview-header">Preview</div>
-                <pre id="array-preview-content"></pre>
+                <textarea id="array-preview-content" spellcheck="false"></textarea>
             </div>
             
             <!-- Footer buttons -->
@@ -288,7 +295,7 @@
             <!-- Preview section -->
             <div class="json-preview-section">
                 <div class="json-preview-header">Preview</div>
-                <pre id="json-object-preview-content"></pre>
+                <textarea id="json-object-preview-content" spellcheck="false"></textarea>
             </div>
             
             <!-- Footer buttons -->
