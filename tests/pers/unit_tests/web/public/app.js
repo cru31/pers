@@ -1475,83 +1475,21 @@ function openTestEditor(testResult, mode = "testcase") {
     // Create a clean test case based on mode
     let cleanTestCase;
     
-    if (mode === "applied") {
-        // Use ALL applied properties from test execution (no filtering)
-        cleanTestCase = {
-            id: testResult.id,
-            category: testResult.category,
-            testType: testResult.testType,
-            expected_result: testResult.expected_result,
-            description: testResult.description,
-            input_parameters: testResult.input_parameters || {}
-        };
-    } else if (mode === "testcase" || mode === false) {
-        // Get original test case parameters (filtering out runtime properties)
-        const runtimeOnlyProps = [
-            'builder_width', 'builder_height', 
-            'preferred_format', 'preferred_present_mode', 'preferred_alpha_mode',
-            'format_fallbacks', 'present_mode_fallbacks', 'alpha_mode_fallbacks',
-            'debugEnabled', 'validationEnabled'
-        ];
-        
-        // Filter to only include test-defined parameters
-        const testCaseParams = {};
-        if (testResult.original_parameters) {
-            // If we have original parameters saved, use those
-            Object.assign(testCaseParams, testResult.original_parameters);
-        } else if (testResult.input_parameters) {
-            // Otherwise filter out runtime properties
-            Object.entries(testResult.input_parameters).forEach(([key, value]) => {
-                if (!runtimeOnlyProps.includes(key)) {
-                    testCaseParams[key] = value;
-                }
-            });
+    // Convert from result format to test case format
+    const testCaseParams = testResult.input_parameters || {};
+    
+    cleanTestCase = {
+        id: testResult.id,
+        variationName: testResult.description || testResult.testType || `Test ${testResult.id}`,
+        options: testCaseParams,
+        expectedBehavior: {
+            returnValue: testResult.expected_result || "success"
         }
-        
-        cleanTestCase = {
-            id: testResult.id,
-            category: testResult.category,
-            testType: testResult.testType,
-            expected_result: testResult.expected_result,
-            description: testResult.description,
-            input_parameters: Object.keys(testCaseParams).length > 0 ? testCaseParams : undefined
-        };
-    } else if (mode === true) {
-        // Legacy mode for backward compatibility (same as "applied" but with filtering)
-        const runtimeOnlyProps = [
-            'builder_width', 'builder_height', 
-            'preferred_format', 'preferred_present_mode', 'preferred_alpha_mode',
-            'format_fallbacks', 'present_mode_fallbacks', 'alpha_mode_fallbacks',
-            'debugEnabled', 'validationEnabled'
-        ];
-        
-        const filteredParams = {};
-        if (testResult.input_parameters) {
-            Object.entries(testResult.input_parameters).forEach(([key, value]) => {
-                if (!runtimeOnlyProps.includes(key)) {
-                    filteredParams[key] = value;
-                }
-            });
-        }
-        
-        cleanTestCase = {
-            id: testResult.id,
-            category: testResult.category,
-            testType: testResult.testType,
-            expected_result: testResult.expected_result,
-            description: testResult.description,
-            input_parameters: filteredParams
-        };
-    } else {
-        // Default to test case mode with no parameters
-        cleanTestCase = {
-            id: testResult.id,
-            category: testResult.category,
-            testType: testResult.testType,
-            expected_result: testResult.expected_result,
-            description: testResult.description
-        };
-    }
+    };
+    
+    // Store category and testType separately for the form
+    cleanTestCase.category = testResult.category;
+    cleanTestCase.testType = testResult.testType;
     
     currentTestCase = cleanTestCase;
     parameterCounter = 0;
@@ -1571,7 +1509,7 @@ function openTestEditor(testResult, mode = "testcase") {
     
     // Set up expected result with autocomplete
     const expectedInput = document.getElementById('edit-expected');
-    expectedInput.value = cleanTestCase.expected_result || '';
+    expectedInput.value = cleanTestCase.expectedBehavior?.returnValue || '';
     
     // Add autocomplete handlers to expected result
     expectedInput.oninput = () => {
@@ -1583,7 +1521,7 @@ function openTestEditor(testResult, mode = "testcase") {
         showExpectedResultAutocomplete(expectedInput);
     };
     
-    document.getElementById('edit-description').value = cleanTestCase.description || '';
+    document.getElementById('edit-description').value = cleanTestCase.variationName || '';
     
     // Clear ALL parameter containers
     const singleContainer = document.getElementById('single-parameters-container');
@@ -1595,14 +1533,14 @@ function openTestEditor(testResult, mode = "testcase") {
     if (arrayContainer) arrayContainer.innerHTML = '';
     if (objectContainer) objectContainer.innerHTML = '';
     
-    // Only populate parameters if we have input_parameters
-    if (cleanTestCase.input_parameters) {
+    // Only populate parameters if we have options
+    if (cleanTestCase.options) {
         // For backward compatibility, check if old container exists
         const oldContainer = document.getElementById('parameters-container');
         if (oldContainer && (!singleContainer || !arrayContainer)) {
             // Old structure, use old container
             oldContainer.innerHTML = '';
-            Object.entries(cleanTestCase.input_parameters).forEach(([key, value]) => {
+            Object.entries(cleanTestCase.options).forEach(([key, value]) => {
                 const isArray = Array.isArray(value);
                 const rowHtml = createParameterRow(key, value, isArray, 'edit', isArray);
                 const tempDiv = document.createElement('div');
@@ -1611,7 +1549,7 @@ function openTestEditor(testResult, mode = "testcase") {
             });
         } else if (singleContainer && arrayContainer) {
             // New structure with separated containers
-            Object.entries(cleanTestCase.input_parameters).forEach(([key, value]) => {
+            Object.entries(cleanTestCase.options).forEach(([key, value]) => {
                 const isArray = Array.isArray(value);
                 const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
                 
@@ -2271,18 +2209,15 @@ function buildTestCaseJson() {
         }
     });
     
+    // Build test case in the correct format for variations array
     const testCase = {
-        id: id,
-        category: category,
-        testType: testType,
-        input_parameters: params,
-        expected_result: expected
+        id: parseInt(id),
+        variationName: description || `Test ${id}`,
+        options: params,  // Parameters go in options
+        expectedBehavior: {
+            returnValue: expected || "success"
+        }
     };
-    
-    // Add description if provided
-    if (description) {
-        testCase.description = description;
-    }
     
     return testCase;
 }
@@ -2762,17 +2697,22 @@ function buildBulkTestCases() {
         
         const testCase = {
             id: autoId++,
-            category: categoryInput ? categoryInput.value : (result.category || ''),
-            testType: testTypeInput ? testTypeInput.value : (result.testType || ''),
-            input_parameters: params,
-            expected_result: expectedInput ? expectedInput.value : (result.expected_result || '')
+            variationName: descriptionInput ? descriptionInput.value : `Test ${autoId}`,
+            options: params,
+            expectedBehavior: {
+                returnValue: expectedInput ? expectedInput.value : (result.expected_result || 'success')
+            }
         };
         
-        // Add description if provided
-        const description = descriptionInput ? descriptionInput.value : '';
-        if (description) {
-            testCase.description = description;
+        // Add category and testType if they're different from the original
+        if (categoryInput && categoryInput.value && categoryInput.value !== result.category) {
+            testCase.category = categoryInput.value;
         }
+        if (testTypeInput && testTypeInput.value && testTypeInput.value !== result.testType) {
+            testCase.testType = testTypeInput.value;
+        }
+        
+        // Description is now handled as variationName above
         
         testCases.push(testCase);
     });
