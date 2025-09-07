@@ -64,8 +64,8 @@
                     <input type="file" id="json-file-input" accept=".json" style="display: none;">
                     <button id="load-json-btn" class="load-json-btn">Load Test Results</button>
                     <span id="loaded-file-name" class="loaded-file-name"></span>
-                    <button id="bulk-export-btn" class="bulk-export-btn" onclick="openBulkExport()" style="display:none;">
-                        Export Selected (<span id="selected-count">0</span>)
+                    <button id="bulk-export-testcase-btn" class="bulk-export-btn" onclick="openBulkExport('testcase')" disabled style="opacity: 0.5; cursor: not-allowed;" title="Export from Test Case JSON">
+                        Export Selected (<span id="selected-count-tc">0</span>)
                     </button>
                 </div>
             </div>

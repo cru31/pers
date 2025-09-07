@@ -634,7 +634,12 @@ function displayResults() {
             const params = parseInput(result.input);
             inputHtml = '<div class="input-params">';
             for (const [key, value] of Object.entries(params)) {
-                inputHtml += `<div class="param-item"><strong>${key}:</strong> ${value}</div>`;
+                const valueStr = String(value);
+                if (valueStr.length > 50) {
+                    inputHtml += `<div class="param-item"><strong>${key}:</strong> ${createTruncatedValue(value)}</div>`;
+                } else {
+                    inputHtml += `<div class="param-item"><strong>${key}:</strong> ${value}</div>`;
+                }
             }
             inputHtml += '</div>';
         }
@@ -647,9 +652,11 @@ function displayResults() {
         
         detailCell.innerHTML = `
             <div class="detail-content">
-                <button class="generate-test-btn detail-generate-btn" onclick='openTestEditor(${JSON.stringify(result).replace(/'/g, "&apos;")})'>
-                    Generate Test Case JSON
-                </button>
+                <div class="detail-buttons-container">
+                    <button class="generate-test-btn detail-generate-btn" onclick='openTestEditor(${JSON.stringify(result).replace(/'/g, "&apos;")})' title="Generate test case JSON">
+                        Generate Test Case
+                    </button>
+                </div>
                 
                 <h4>Input Parameters</h4>
                 ${inputHtml || '<p>No input parameters</p>'}
@@ -725,6 +732,97 @@ function parseInput(input) {
     return params;
 }
 
+// Helper function to create truncated text with clickable tooltip
+function createTruncatedValue(value, maxLength = 50) {
+    const valueStr = String(value);
+    if (valueStr.length <= maxLength) {
+        return valueStr;
+    }
+    
+    const truncated = valueStr.substring(0, maxLength) + '...';
+    const uniqueId = 'tooltip-' + Math.random().toString(36).substr(2, 9);
+    
+    // Escape for display
+    const escapedForHtml = valueStr.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escapedForAttr = valueStr.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    
+    return `<span class="param-value-truncated" 
+                  onclick="showClickableTooltip(event, '${uniqueId}', '${escapedForAttr}')"
+                  title="Click to view full text">${truncated}</span>`;
+}
+
+// Show clickable tooltip function
+function showClickableTooltip(event, uniqueId, fullValue) {
+    event.stopPropagation();
+    
+    // Close any existing tooltip
+    const existingTooltip = document.querySelector('.param-tooltip-window');
+    if (existingTooltip) {
+        existingTooltip.remove();
+    }
+    
+    // Decode the escaped value
+    const decodedValue = fullValue
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+    
+    // Create new tooltip window - simplified
+    const tooltip = document.createElement('div');
+    tooltip.className = 'param-tooltip-window';
+    tooltip.innerHTML = `
+        <textarea class="tooltip-text" readonly>${decodedValue}</textarea>
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    // Position the tooltip near the clicked element
+    const rect = event.target.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left;
+    let top = rect.bottom + 5;
+    
+    // Adjust if tooltip goes off screen
+    if (left + tooltipRect.width > window.innerWidth) {
+        left = window.innerWidth - tooltipRect.width - 10;
+    }
+    if (top + tooltipRect.height > window.innerHeight) {
+        top = rect.top - tooltipRect.height - 5;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    
+    // Close tooltip when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeTooltip(e) {
+            if (!tooltip.contains(e.target)) {
+                tooltip.remove();
+                document.removeEventListener('click', closeTooltip);
+            }
+        });
+    }, 100);
+}
+
+// Copy tooltip text function
+function copyTooltipText(button) {
+    const textarea = button.parentElement.querySelector('.tooltip-text');
+    textarea.select();
+    document.execCommand('copy');
+    
+    // Show feedback
+    const originalText = button.textContent;
+    button.textContent = 'Copied!';
+    button.style.background = '#48bb78';
+    
+    setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = '';
+    }, 1500);
+}
+
 // Format input parameters from JSON object
 function formatInputParameters(params) {
     if (!params || typeof params !== 'object') return '';
@@ -735,26 +833,48 @@ function formatInputParameters(params) {
         if (value === null || value === undefined) {
             html += `<div class="param-item"><strong>${key}:</strong> <em>null</em></div>`;
         } else if (Array.isArray(value)) {
-            // Format arrays with one item per line
-            let arrayContent = `<div class="param-item"><strong>${key}:</strong>`;
-            value.forEach(item => {
-                arrayContent += `<br>&nbsp;&nbsp;&nbsp;&nbsp;- ${item}`;
-            });
-            arrayContent += '</div>';
-            html += arrayContent;
+            // Format arrays with truncation for long items
+            const arrayStr = JSON.stringify(value);
+            if (arrayStr.length > 100) {
+                // For long arrays, show truncated version with tooltip
+                html += `<div class="param-item"><strong>${key}:</strong> ${createTruncatedValue(arrayStr, 80)}</div>`;
+            } else {
+                let arrayContent = `<div class="param-item"><strong>${key}:</strong>`;
+                value.forEach(item => {
+                    const itemStr = String(item);
+                    if (itemStr.length > 50) {
+                        arrayContent += `<br>&nbsp;&nbsp;&nbsp;&nbsp;- ${createTruncatedValue(item)}`;
+                    } else {
+                        arrayContent += `<br>&nbsp;&nbsp;&nbsp;&nbsp;- ${item}`;
+                    }
+                });
+                arrayContent += '</div>';
+                html += arrayContent;
+            }
         } else if (typeof value === 'object') {
-            // Format nested objects with indentation in a single box
-            let objContent = `<div class="param-item"><strong>${key}:</strong>`;
+            // Format nested objects in readable multi-line format
+            let objContent = `<div class="param-item"><strong>${key}:</strong> {`;
             const entries = Object.entries(value);
-            entries.forEach(([k, v]) => {
-                objContent += `<br>&nbsp;&nbsp;&nbsp;&nbsp;<strong>${k}:</strong> ${v}`;
+            entries.forEach(([k, v], index) => {
+                const vStr = String(v);
+                const comma = index < entries.length - 1 ? ',' : '';
+                if (vStr.length > 50) {
+                    objContent += `<br>&nbsp;&nbsp;${k}: ${createTruncatedValue(v)}${comma}`;
+                } else {
+                    objContent += `<br>&nbsp;&nbsp;${k}: ${v}${comma}`;
+                }
             });
-            objContent += '</div>';
+            objContent += '<br>}</div>';
             html += objContent;
         } else if (typeof value === 'boolean') {
             html += `<div class="param-item"><strong>${key}:</strong> <span class="bool-value">${value}</span></div>`;
         } else {
-            html += `<div class="param-item"><strong>${key}:</strong> <span class="value">${value}</span></div>`;
+            const valueStr = String(value);
+            if (valueStr.length > 50) {
+                html += `<div class="param-item"><strong>${key}:</strong> ${createTruncatedValue(value)}</div>`;
+            } else {
+                html += `<div class="param-item"><strong>${key}:</strong> <span class="value">${value}</span></div>`;
+            }
         }
     }
     
@@ -1115,16 +1235,30 @@ function createFullLogsView() {
                 if (Array.isArray(value)) {
                     valueStr = '[' + value.join(', ') + ']';
                 } else if (typeof value === 'object' && value !== null) {
-                    valueStr = '{' + Object.entries(value).map(([k, v]) => `${k}: ${v}`).join(', ') + '}';
+                    // Format object in multi-line format for inline display
+                    const entries = Object.entries(value);
+                    if (entries.length <= 3) {
+                        // For small objects, show in one line
+                        valueStr = '{' + entries.map(([k, v]) => `${k}: ${v}`).join(', ') + '}';
+                    } else {
+                        // For larger objects, truncate and use tooltip
+                        const preview = '{' + entries.slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(', ') + ', ...}';
+                        const fullStr = JSON.stringify(value, null, 2);
+                        valueStr = createTruncatedValue(fullStr, preview.length);
+                    }
                 }
-                inputHtml += `<span class="param-inline"><strong>${key}:</strong> ${valueStr}</span>`;
+                // Apply truncation for long values
+                const displayValue = createTruncatedValue(valueStr);
+                inputHtml += `<span class="param-inline"><strong>${key}:</strong> ${displayValue}</span>`;
             }
             inputHtml += '</div>';
         } else if (entry.result.input) {
             const params = parseInput(entry.result.input);
             inputHtml = '<div class="inline-params">';
             for (const [key, value] of Object.entries(params)) {
-                inputHtml += `<span class="param-inline"><strong>${key}:</strong> ${value}</span>`;
+                // Apply truncation for long values
+                const displayValue = createTruncatedValue(value);
+                inputHtml += `<span class="param-inline"><strong>${key}:</strong> ${displayValue}</span>`;
             }
             inputHtml += '</div>';
         }
@@ -1197,7 +1331,9 @@ function showTestModal(testResult) {
         const params = parseInput(testResult.input);
         inputHtml = '<div class="input-params">';
         for (const [key, value] of Object.entries(params)) {
-            inputHtml += `<div class="param-item"><strong>${key}:</strong> ${value}</div>`;
+            // Apply truncation for long values
+            const displayValue = createTruncatedValue(value);
+            inputHtml += `<div class="param-item"><strong>${key}:</strong> ${displayValue}</div>`;
         }
         inputHtml += '</div>';
     }
@@ -1335,26 +1471,107 @@ function scheduleJsonPreviewUpdate() {
     }, 200); // Update after 200ms of no changes
 }
 
-function openTestEditor(testResult) {
-    currentTestCase = testResult;
+function openTestEditor(testResult, mode = "testcase") {
+    // Create a clean test case based on mode
+    let cleanTestCase;
+    
+    if (mode === "applied") {
+        // Use ALL applied properties from test execution (no filtering)
+        cleanTestCase = {
+            id: testResult.id,
+            category: testResult.category,
+            testType: testResult.testType,
+            expected_result: testResult.expected_result,
+            description: testResult.description,
+            input_parameters: testResult.input_parameters || {}
+        };
+    } else if (mode === "testcase" || mode === false) {
+        // Get original test case parameters (filtering out runtime properties)
+        const runtimeOnlyProps = [
+            'builder_width', 'builder_height', 
+            'preferred_format', 'preferred_present_mode', 'preferred_alpha_mode',
+            'format_fallbacks', 'present_mode_fallbacks', 'alpha_mode_fallbacks',
+            'debugEnabled', 'validationEnabled'
+        ];
+        
+        // Filter to only include test-defined parameters
+        const testCaseParams = {};
+        if (testResult.original_parameters) {
+            // If we have original parameters saved, use those
+            Object.assign(testCaseParams, testResult.original_parameters);
+        } else if (testResult.input_parameters) {
+            // Otherwise filter out runtime properties
+            Object.entries(testResult.input_parameters).forEach(([key, value]) => {
+                if (!runtimeOnlyProps.includes(key)) {
+                    testCaseParams[key] = value;
+                }
+            });
+        }
+        
+        cleanTestCase = {
+            id: testResult.id,
+            category: testResult.category,
+            testType: testResult.testType,
+            expected_result: testResult.expected_result,
+            description: testResult.description,
+            input_parameters: Object.keys(testCaseParams).length > 0 ? testCaseParams : undefined
+        };
+    } else if (mode === true) {
+        // Legacy mode for backward compatibility (same as "applied" but with filtering)
+        const runtimeOnlyProps = [
+            'builder_width', 'builder_height', 
+            'preferred_format', 'preferred_present_mode', 'preferred_alpha_mode',
+            'format_fallbacks', 'present_mode_fallbacks', 'alpha_mode_fallbacks',
+            'debugEnabled', 'validationEnabled'
+        ];
+        
+        const filteredParams = {};
+        if (testResult.input_parameters) {
+            Object.entries(testResult.input_parameters).forEach(([key, value]) => {
+                if (!runtimeOnlyProps.includes(key)) {
+                    filteredParams[key] = value;
+                }
+            });
+        }
+        
+        cleanTestCase = {
+            id: testResult.id,
+            category: testResult.category,
+            testType: testResult.testType,
+            expected_result: testResult.expected_result,
+            description: testResult.description,
+            input_parameters: filteredParams
+        };
+    } else {
+        // Default to test case mode with no parameters
+        cleanTestCase = {
+            id: testResult.id,
+            category: testResult.category,
+            testType: testResult.testType,
+            expected_result: testResult.expected_result,
+            description: testResult.description
+        };
+    }
+    
+    currentTestCase = cleanTestCase;
     parameterCounter = 0;
     
     // Populate form fields
     const idInput = document.getElementById('edit-id');
     
     // Check if ID is empty or non-numeric, then show next available ID
-    if (!testResult.id || testResult.id === '' || testResult.id === null || isNaN(parseInt(testResult.id))) {
+    if (!cleanTestCase.id || cleanTestCase.id === '' || cleanTestCase.id === null || isNaN(parseInt(cleanTestCase.id))) {
         const generatedId = String(lastGeneratedTestId + 1);
         idInput.value = generatedId;
     } else {
-        idInput.value = testResult.id;
+        idInput.value = cleanTestCase.id;
     }
-    document.getElementById('edit-category').value = testResult.category || '';
-    document.getElementById('edit-test-type').value = testResult.testType || '';
+    document.getElementById('edit-category').value = cleanTestCase.category || '';
+    document.getElementById('edit-test-type').value = cleanTestCase.testType || '';
     
     // Set up expected result with autocomplete
     const expectedInput = document.getElementById('edit-expected');
-    expectedInput.value = testResult.expected_result || '';
+    expectedInput.value = cleanTestCase.expected_result || '';
     
     // Add autocomplete handlers to expected result
     expectedInput.oninput = () => {
@@ -1366,36 +1583,48 @@ function openTestEditor(testResult) {
         showExpectedResultAutocomplete(expectedInput);
     };
     
-    document.getElementById('edit-description').value = testResult.description || '';
+    document.getElementById('edit-description').value = cleanTestCase.description || '';
     
-    // Clear and populate parameters
+    // Clear ALL parameter containers
     const singleContainer = document.getElementById('single-parameters-container');
     const arrayContainer = document.getElementById('array-parameters-container');
+    const objectContainer = document.getElementById('object-parameters-container');
     
-    // Clear both containers
+    // Clear all containers
     if (singleContainer) singleContainer.innerHTML = '';
     if (arrayContainer) arrayContainer.innerHTML = '';
+    if (objectContainer) objectContainer.innerHTML = '';
     
-    // For backward compatibility, check if old container exists
-    const oldContainer = document.getElementById('parameters-container');
-    if (oldContainer && (!singleContainer || !arrayContainer)) {
-        // Old structure, use old container
-        oldContainer.innerHTML = '';
-        if (testResult.input_parameters) {
-            Object.entries(testResult.input_parameters).forEach(([key, value]) => {
+    // Only populate parameters if we have input_parameters
+    if (cleanTestCase.input_parameters) {
+        // For backward compatibility, check if old container exists
+        const oldContainer = document.getElementById('parameters-container');
+        if (oldContainer && (!singleContainer || !arrayContainer)) {
+            // Old structure, use old container
+            oldContainer.innerHTML = '';
+            Object.entries(cleanTestCase.input_parameters).forEach(([key, value]) => {
                 const isArray = Array.isArray(value);
                 const rowHtml = createParameterRow(key, value, isArray, 'edit', isArray);
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = rowHtml;
                 oldContainer.appendChild(tempDiv.firstElementChild);
             });
-        }
-    } else if (singleContainer && arrayContainer) {
-        // New structure with separated containers
-        if (testResult.input_parameters) {
-            Object.entries(testResult.input_parameters).forEach(([key, value]) => {
+        } else if (singleContainer && arrayContainer) {
+            // New structure with separated containers
+            Object.entries(cleanTestCase.input_parameters).forEach(([key, value]) => {
                 const isArray = Array.isArray(value);
-                addParameterRow(key, value, isArray);
+                const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
+                
+                if (isArray) {
+                    // Add to array container
+                    addArrayParameterWithValue(key, value);
+                } else if (isObject) {
+                    // Add to object container
+                    addObjectParameterWithValue(key, value);
+                } else {
+                    // Add to single value container
+                    addParameterWithValue(key, value);
+                }
             });
         }
     }
@@ -1471,6 +1700,83 @@ function addObjectParameter() {
     nameInput.addEventListener('blur', () => checkForDuplicateParameter(nameInput));
     
     // Append the parsed element to the container
+    container.appendChild(newRow);
+    scheduleJsonPreviewUpdate();
+}
+
+// Helper functions to add parameters with values (for loading actual results)
+function addParameterWithValue(key, value) {
+    const container = document.getElementById('single-parameters-container');
+    const rowHtml = createParameterRow(key, value, false, 'edit', false, false);
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = rowHtml;
+    
+    // Add blur handler for duplicate checking
+    const newRow = tempDiv.firstElementChild;
+    const nameInput = newRow.querySelector('.param-name');
+    if (nameInput) {
+        nameInput.addEventListener('blur', () => checkForDuplicateParam(nameInput));
+    }
+    
+    container.appendChild(newRow);
+    scheduleJsonPreviewUpdate();
+}
+
+function addArrayParameterWithValue(key, value) {
+    const container = document.getElementById('array-parameters-container');
+    // Convert value to proper format if it's an array
+    let displayValue = value;
+    if (Array.isArray(value)) {
+        displayValue = JSON.stringify(value);
+    }
+    const rowHtml = createParameterRow(key, displayValue, true, 'edit', true, false);
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = rowHtml;
+    
+    // Add blur handler for duplicate checking
+    const newRow = tempDiv.firstElementChild;
+    const nameInput = newRow.querySelector('.param-name');
+    if (nameInput) {
+        nameInput.addEventListener('blur', () => checkForDuplicateParam(nameInput));
+    }
+    
+    // Store the actual array value in the data attribute
+    const valueInput = newRow.querySelector('.param-value');
+    if (valueInput && Array.isArray(value)) {
+        valueInput.dataset.arrayValue = JSON.stringify(value);
+    }
+    
+    container.appendChild(newRow);
+    scheduleJsonPreviewUpdate();
+}
+
+function addObjectParameterWithValue(key, value) {
+    const container = document.getElementById('object-parameters-container');
+    // Convert value to proper format if it's an object
+    let displayValue = value;
+    if (typeof value === 'object' && value !== null) {
+        displayValue = JSON.stringify(value);
+    }
+    const rowHtml = createParameterRow(key, displayValue, false, 'edit', false, true);
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = rowHtml;
+    
+    // Add blur handler for duplicate checking
+    const newRow = tempDiv.firstElementChild;
+    const nameInput = newRow.querySelector('.param-name');
+    if (nameInput) {
+        nameInput.addEventListener('blur', () => checkForDuplicateParam(nameInput));
+    }
+    
+    // Store the actual object value in the data attribute
+    const valueInput = newRow.querySelector('.param-value');
+    if (valueInput && typeof value === 'object') {
+        valueInput.dataset.objectValue = JSON.stringify(value);
+    }
+    
     container.appendChild(newRow);
     scheduleJsonPreviewUpdate();
 }
@@ -2254,20 +2560,43 @@ function updateSelectAllCheckbox() {
 }
 
 function updateBulkExportButton() {
-    const btn = document.getElementById('bulk-export-btn');
+    const btnTestCase = document.getElementById('bulk-export-testcase-btn');
     const count = selectedTestCases.size;
     
-    if (count > 0) {
-        btn.style.display = 'inline-block';
-        document.getElementById('selected-count').textContent = count;
-    } else {
-        btn.style.display = 'none';
+    // Update counter
+    const countTc = document.getElementById('selected-count-tc');
+    if (countTc) countTc.textContent = count;
+    
+    // Update button
+    if (btnTestCase) {
+        btnTestCase.style.display = 'inline-block'; // Always visible
+        
+        if (count > 0) {
+            btnTestCase.disabled = false;
+            btnTestCase.style.opacity = '1';
+            btnTestCase.style.cursor = 'pointer';
+        } else {
+            btnTestCase.disabled = true;
+            btnTestCase.style.opacity = '0.5';
+            btnTestCase.style.cursor = 'not-allowed';
+        }
     }
+    
+    // Backward compatibility for old bulk-export-btn
+    const oldBtn = document.getElementById('bulk-export-btn');
+    if (oldBtn) {
+        oldBtn.style.display = 'none';
+    }
+    const oldCount = document.getElementById('selected-count');
+    if (oldCount) oldCount.textContent = count;
 }
 
 // Bulk export modal functions
-function openBulkExport() {
+function openBulkExport(mode = 'testcase') {
     if (selectedTestCases.size === 0) return;
+    
+    // Store the export mode
+    window.bulkExportMode = mode;
     
     // Create modal if it doesn't exist
     let modal = document.getElementById('bulk-export-modal');
@@ -2286,7 +2615,7 @@ function createBulkExportModal() {
         <div id="bulk-export-modal" class="modal">
             <div class="modal-content bulk-export-modal">
                 <span class="close-modal" onclick="closeBulkExportModal()">&times;</span>
-                <h2>Export Selected Test Cases</h2>
+                <h2>Export Selected Test Cases (${window.bulkExportMode === 'applied' ? 'Applied Properties' : 'Test Case JSON'})</h2>
                 <div class="bulk-export-modal-scroll">
                     <div class="bulk-export-controls">
                         <button onclick="expandAllBulkItems()" class="expand-all-btn">Expand All</button>
@@ -2311,6 +2640,7 @@ function updateBulkJsonPreview() {
 }
 
 function buildBulkTestCases() {
+    const mode = window.bulkExportMode || 'testcase';
     const testCases = [];
     let autoId = 1;
     
@@ -2323,7 +2653,7 @@ function buildBulkTestCases() {
         const expectedInput = document.getElementById(`bulk-expected-${index}`);
         const descriptionInput = document.getElementById(`bulk-description-${index}`);
         
-        const params = {};
+        let params = {};
         
         // Collect parameters from single, array, and object containers
         const singleParamsContainer = document.getElementById(`bulk-single-params-${index}`);
@@ -2409,7 +2739,25 @@ function buildBulkTestCases() {
         
         if (!singleParamsContainer && !arrayParamsContainer) {
             // Use original parameters if not expanded
-            Object.assign(params, result.input_parameters || {});
+            if (mode === 'testcase') {
+                // Filter out runtime-only properties for test case mode
+                const runtimeOnlyProps = [
+                    'builder_width', 'builder_height', 
+                    'preferred_format', 'preferred_present_mode', 'preferred_alpha_mode',
+                    'format_fallbacks', 'present_mode_fallbacks', 'alpha_mode_fallbacks',
+                    'debugEnabled', 'validationEnabled'
+                ];
+                
+                const originalParams = result.input_parameters || {};
+                Object.entries(originalParams).forEach(([key, value]) => {
+                    if (!runtimeOnlyProps.includes(key)) {
+                        params[key] = value;
+                    }
+                });
+            } else {
+                // For 'applied' mode, use all parameters
+                Object.assign(params, result.input_parameters || {});
+            }
         }
         
         const testCase = {
@@ -2433,8 +2781,15 @@ function buildBulkTestCases() {
 }
 
 function populateBulkExportModal() {
+    const mode = window.bulkExportMode || 'testcase';
     const container = document.getElementById('bulk-export-list');
     container.innerHTML = '';
+    
+    // Update modal title to show mode
+    const modalTitle = document.querySelector('#bulk-export-modal h2');
+    if (modalTitle) {
+        modalTitle.textContent = `Export Selected Test Cases (${mode === 'applied' ? 'Applied Properties' : 'Test Case JSON'})`;
+    }
     
     // Convert set to array and sort by test ID
     const selectedArray = Array.from(selectedTestCases).sort((a, b) => {
@@ -2465,14 +2820,35 @@ function populateBulkExportModal() {
         contentDiv.className = 'bulk-item-content';
         contentDiv.style.display = 'none';
         
-        // Build parameters HTML using shared function
+        // Build parameters HTML based on mode
         let parametersHtml = '';
-        if (result.input_parameters) {
-            Object.entries(result.input_parameters).forEach(([key, value]) => {
-                const isArray = Array.isArray(value);
-                parametersHtml += createParameterRow(key, value, isArray, 'bulk');
-            });
+        let paramsToShow = {};
+        
+        if (mode === 'testcase') {
+            // Filter out runtime-only properties for test case mode
+            const runtimeOnlyProps = [
+                'builder_width', 'builder_height', 
+                'preferred_format', 'preferred_present_mode', 'preferred_alpha_mode',
+                'format_fallbacks', 'present_mode_fallbacks', 'alpha_mode_fallbacks',
+                'debugEnabled', 'validationEnabled'
+            ];
+            
+            if (result.input_parameters) {
+                Object.entries(result.input_parameters).forEach(([key, value]) => {
+                    if (!runtimeOnlyProps.includes(key)) {
+                        paramsToShow[key] = value;
+                    }
+                });
+            }
+        } else {
+            // For 'applied' mode, show all parameters
+            paramsToShow = result.input_parameters || {};
         }
+        
+        Object.entries(paramsToShow).forEach(([key, value]) => {
+            const isArray = Array.isArray(value);
+            parametersHtml += createParameterRow(key, value, isArray, 'bulk');
+        })
         
         // Build single, array, and object parameters HTML separately
         let singleParametersHtml = '';
