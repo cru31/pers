@@ -2,6 +2,7 @@ let allResults = [];
 let filteredResults = [];
 let sortColumn = null;
 let sortDirection = 'asc';
+let lastGeneratedTestId = -1; // Track last generated test ID
 
 // Parameter value collection for autocomplete
 let parameterValues = new Map(); // Map<parameterName, Set<value>>
@@ -145,8 +146,8 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
     const escapedValue = valueStr.replace(/"/g, '&quot;');
     
     const nameHandlers = prefix === 'edit' ? 
-        `oninput="handleParamNameChange(this)" onfocus="closeAllDropdowns(); showParameterNameAutocomplete(this, ${isForArrayParam}, ${isForObjectParam})"` :
-        `oninput="handleBulkParamNameChange(this)" onfocus="closeAllDropdowns(); showBulkParameterNameAutocomplete(this, ${isForArrayParam}, ${isForObjectParam})"`;
+        `oninput="scheduleJsonPreviewUpdate()" onblur="checkForDuplicateParam(this)" onfocus="closeAllDropdowns(); showParameterNameAutocomplete(this, ${isForArrayParam}, ${isForObjectParam})"` :
+        `oninput="updateBulkJsonPreview()" onblur="checkForDuplicateBulkParam(this)" onfocus="closeAllDropdowns(); showBulkParameterNameAutocomplete(this, ${isForArrayParam}, ${isForObjectParam})"`;
     
     // Determine if value is a JSON object (not array)
     const isObject = !isArray && isForObjectParam;
@@ -181,29 +182,45 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
     `;
 }
 
-// Handle parameter name change - check if it's an array parameter
-function handleParamNameChange(input) {
+// Check for duplicate parameter when focus is lost
+function checkForDuplicateParam(input) {
     const paramName = input.value.trim();
     
-    // Check for duplicate parameter name
     if (paramName) {
-        const allParamNames = [];
+        // Find all parameter rows with the same name
+        const duplicateInputs = [];
         document.querySelectorAll('.param-row').forEach(row => {
             const nameInput = row.querySelector('.param-name');
-            if (nameInput && nameInput !== input) {
-                const name = nameInput.value.trim();
-                if (name) allParamNames.push(name);
+            if (nameInput && nameInput !== input && nameInput.value.trim() === paramName) {
+                duplicateInputs.push(nameInput);
             }
         });
         
-        if (allParamNames.includes(paramName)) {
-            showNotification(`Parameter "${paramName}" already exists!`, 'error');
-            input.value = '';
-            scheduleJsonPreviewUpdate();
-            return;
+        // If there are duplicates, show message box and refocus
+        if (duplicateInputs.length > 0) {
+            // Store the current value to ensure it's not lost
+            const currentValue = input.value;
+            
+            // Show alert message box
+            alert(`Parameter "${paramName}" already exists!\nPlease use a different name.`);
+            
+            // Ensure the value is still there and return focus with cursor at end
+            setTimeout(() => {
+                // Restore value if somehow it was lost
+                if (input.value !== currentValue) {
+                    input.value = currentValue;
+                }
+                input.focus();
+                // Set cursor position to the end of the text
+                const length = input.value.length;
+                input.setSelectionRange(length, length);
+            }, 50);
         }
     }
-    
+}
+
+// Handle parameter name change - just update preview
+function handleParamNameChange(input) {
     scheduleJsonPreviewUpdate();
 }
 
@@ -348,6 +365,14 @@ async function loadResults() {
 
         const data = await response.json();
         allResults = data.results || [];
+        
+        // Initialize lastGeneratedTestId based on existing test IDs
+        allResults.forEach(result => {
+            const id = parseInt(result.id);
+            if (!isNaN(id)) {
+                lastGeneratedTestId = Math.max(lastGeneratedTestId, id);
+            }
+        });
         
         // Collect parameter values for autocomplete
         collectParameterValues(allResults);
@@ -1253,6 +1278,15 @@ function loadJsonFile(file) {
             
             // Update data
             allResults = data.results || [];
+            
+            // Initialize lastGeneratedTestId based on existing test IDs
+            allResults.forEach(result => {
+                const id = parseInt(result.id);
+                if (!isNaN(id)) {
+                    lastGeneratedTestId = Math.max(lastGeneratedTestId, id);
+                }
+            });
+            
             updateSummary(data.metadata);
             populateCategoryFilter();
             filteredResults = [...allResults];
@@ -1305,17 +1339,16 @@ function openTestEditor(testResult) {
     currentTestCase = testResult;
     parameterCounter = 0;
     
-    // Auto-generate ID if not present or empty
-    if (!testResult.id || testResult.id === '' || testResult.id === null) {
-        const timestamp = Date.now();
-        const random = Math.floor(Math.random() * 1000);
-        const generatedId = `test-${timestamp}-${random}`;
-        testResult.id = generatedId;
-    }
-    
     // Populate form fields
     const idInput = document.getElementById('edit-id');
-    idInput.value = testResult.id;
+    
+    // Check if ID is empty or non-numeric, then show next available ID
+    if (!testResult.id || testResult.id === '' || testResult.id === null || isNaN(parseInt(testResult.id))) {
+        const generatedId = String(lastGeneratedTestId + 1);
+        idInput.value = generatedId;
+    } else {
+        idInput.value = testResult.id;
+    }
     document.getElementById('edit-category').value = testResult.category || '';
     document.getElementById('edit-test-type').value = testResult.testType || '';
     
@@ -1372,10 +1405,20 @@ function openTestEditor(testResult) {
     
     // Show modal
     document.getElementById('test-editor-modal').classList.add('show');
+    document.body.classList.add('modal-open');
+    
+    // Adjust preview height after modal is shown
+    setTimeout(() => {
+        const previewElement = document.getElementById('json-preview-content');
+        if (previewElement) {
+            adjustTextareaHeight(previewElement);
+        }
+    }, 50);
 }
 
 function closeTestEditor() {
     document.getElementById('test-editor-modal').classList.remove('show');
+    document.body.classList.remove('modal-open');
 }
 
 function addParameter() {
@@ -1548,34 +1591,48 @@ function hideBulkAutocomplete(input) {
     }
 }
 
-// Handle bulk parameter name change
-function handleBulkParamNameChange(input) {
+// Check for duplicate bulk parameter when focus is lost
+function checkForDuplicateBulkParam(input) {
     const paramName = input.value.trim();
     
-    // Check for duplicate parameter name
     if (paramName) {
-        const allParamNames = [];
+        // Find all parameter rows with the same name in the same bulk export item
         const container = input.closest('.bulk-export-item');
         if (container) {
+            const duplicateInputs = [];
             container.querySelectorAll('.param-row').forEach(row => {
                 const nameInput = row.querySelector('.param-name');
-                if (nameInput && nameInput !== input) {
-                    const name = nameInput.value.trim();
-                    if (name) allParamNames.push(name);
+                if (nameInput && nameInput !== input && nameInput.value.trim() === paramName) {
+                    duplicateInputs.push(nameInput);
                 }
             });
             
-            if (allParamNames.includes(paramName)) {
-                showNotification(`Parameter "${paramName}" already exists!`, 'error');
-                input.value = '';
-                if (typeof updateBulkJsonPreview === 'function') {
-                    updateBulkJsonPreview();
-                }
-                return;
+            // If there are duplicates, show message box and refocus
+            if (duplicateInputs.length > 0) {
+                // Store the current value to ensure it's not lost
+                const currentValue = input.value;
+                
+                // Show alert message box
+                alert(`Parameter "${paramName}" already exists!\nPlease use a different name.`);
+                
+                // Ensure the value is still there and return focus with cursor at end
+                setTimeout(() => {
+                    // Restore value if somehow it was lost
+                    if (input.value !== currentValue) {
+                        input.value = currentValue;
+                    }
+                    input.focus();
+                    // Set cursor position to the end of the text
+                    const length = input.value.length;
+                    input.setSelectionRange(length, length);
+                }, 50);
             }
         }
     }
-    
+}
+
+// Handle bulk parameter name change - just update preview
+function handleBulkParamNameChange(input) {
     // Update JSON preview if in bulk export
     if (typeof updateBulkJsonPreview === 'function') {
         updateBulkJsonPreview();
@@ -1803,12 +1860,32 @@ function updateJsonPreview() {
     const testCase = buildTestCaseJson();
     const previewElement = document.getElementById('json-preview-content');
     previewElement.value = JSON.stringify(testCase, null, 2);
+    
+    // Auto-adjust height based on content
+    adjustTextareaHeight(previewElement);
+}
+
+function adjustTextareaHeight(textarea) {
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    // Set height to scrollHeight to fit content
+    const newHeight = Math.max(250, textarea.scrollHeight);
+    textarea.style.height = newHeight + 'px';
+    
+    // Ensure the modal scrolls to show changes if needed
+    const modalScroll = document.querySelector('.test-editor-modal-scroll');
+    if (modalScroll) {
+        // Small delay to ensure DOM is updated
+        setTimeout(() => {
+            modalScroll.scrollTop = modalScroll.scrollTop;
+        }, 0);
+    }
 }
 
 function buildTestCaseJson() {
     // Get form values
     const idValue = document.getElementById('edit-id').value;
-    const id = idValue || `test-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const id = idValue || String(lastGeneratedTestId + 1);
     const category = document.getElementById('edit-category').value || 'unknown';
     const testType = document.getElementById('edit-test-type').value || 'test';
     const expected = document.getElementById('edit-expected').value || '';
@@ -1908,6 +1985,17 @@ function exportTestCase() {
     // Get the edited JSON from the preview textarea
     const jsonStr = document.getElementById('json-preview-content').value;
     
+    // Parse the JSON to get the ID and update lastGeneratedTestId
+    try {
+        const testCase = JSON.parse(jsonStr);
+        const id = parseInt(testCase.id);
+        if (!isNaN(id)) {
+            lastGeneratedTestId = Math.max(lastGeneratedTestId, id);
+        }
+    } catch (e) {
+        console.error('Failed to parse test case JSON:', e);
+    }
+    
     // Get filename or generate random
     let filename = document.getElementById('export-filename').value.trim();
     if (!filename) {
@@ -1932,8 +2020,19 @@ function copyToClipboard() {
     // Get the edited JSON from the preview textarea
     const jsonStr = document.getElementById('json-preview-content').value;
     
+    // Parse the JSON to get the ID and update lastGeneratedTestId
+    try {
+        const testCase = JSON.parse(jsonStr);
+        const id = parseInt(testCase.id);
+        if (!isNaN(id)) {
+            lastGeneratedTestId = Math.max(lastGeneratedTestId, id);
+        }
+    } catch (e) {
+        console.error('Failed to parse test case JSON:', e);
+    }
+    
     // Get the button element that was clicked
-    const btn = document.querySelector('.copy-btn');
+    const btn = document.querySelector('.test-copy-btn');
     
     // Try modern clipboard API first, fallback to older method
     if (navigator.clipboard && window.isSecureContext) {
@@ -2179,22 +2278,25 @@ function openBulkExport() {
     // Populate with selected test cases
     populateBulkExportModal();
     modal.classList.add('show');
+    document.body.classList.add('modal-open');
 }
 
 function createBulkExportModal() {
     const modalHtml = `
         <div id="bulk-export-modal" class="modal">
-            <div class="modal-content bulk-export-modal" style="max-width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-content bulk-export-modal">
                 <span class="close-modal" onclick="closeBulkExportModal()">&times;</span>
                 <h2>Export Selected Test Cases</h2>
-                <div class="bulk-export-controls">
-                    <button onclick="expandAllBulkItems()" class="expand-all-btn">Expand All</button>
-                    <button onclick="collapseAllBulkItems()" class="collapse-all-btn">Collapse All</button>
-                    <button onclick="exportBulkTestCases()" class="export-btn">Export All as JSON</button>
-                    <button onclick="copyBulkToClipboard()" class="copy-btn">Copy All to Clipboard</button>
-                </div>
-                <div id="bulk-export-list">
-                    <!-- Selected test cases will be listed here -->
+                <div class="bulk-export-modal-scroll">
+                    <div class="bulk-export-controls">
+                        <button onclick="expandAllBulkItems()" class="expand-all-btn">Expand All</button>
+                        <button onclick="collapseAllBulkItems()" class="collapse-all-btn">Collapse All</button>
+                        <button onclick="exportBulkTestCases()" class="export-btn">Export All as JSON</button>
+                        <button onclick="copyBulkToClipboard()" class="copy-btn">Copy All to Clipboard</button>
+                    </div>
+                    <div id="bulk-export-list">
+                        <!-- Selected test cases will be listed here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -2538,6 +2640,7 @@ function closeBulkExportModal() {
     const modal = document.getElementById('bulk-export-modal');
     if (modal) {
         modal.classList.remove('show');
+        document.body.classList.remove('modal-open');
     }
 }
 
@@ -3078,7 +3181,11 @@ function showObjectKeyAutocomplete(input) {
     
     commonKeys.forEach(key => knownKeys.add(key));
     
-    showDropdown(input, Array.from(knownKeys), (value) => {
+    // Filter out properties that already exist in currentJsonObject
+    const existingKeys = Object.keys(currentJsonObject || {});
+    const availableKeys = Array.from(knownKeys).filter(key => !existingKeys.includes(key));
+    
+    showDropdown(input, availableKeys, (value) => {
         input.value = value;
         dropdown.style.display = 'none';
     });

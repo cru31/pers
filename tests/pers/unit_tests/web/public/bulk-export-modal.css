@@ -3,11 +3,13 @@
 .bulk-export-modal {
     width: 800px;
     max-width: 95vw;
+    height: 85vh;
     max-height: 85vh;
     padding: 15px;
-    overflow: visible !important;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .bulk-export-modal h2 {
@@ -16,6 +18,18 @@
     color: #e0e0e0;
     border-bottom: 2px solid #667eea;
     padding-bottom: 6px;
+    flex-shrink: 0;
+}
+
+/* Scrollable content wrapper */
+.bulk-export-modal-scroll {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0; /* Important for flex child scrolling */
+    overflow: hidden;
+    height: calc(85vh - 100px); /* Explicit height */
 }
 
 .bulk-export-modal .close-modal {
@@ -29,10 +43,10 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
-    margin-bottom: 10px;
     padding: 8px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .bulk-export-controls button {
@@ -87,9 +101,11 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0;
     padding: 0;
-    overflow-y: auto;
+    overflow-y: auto !important;
     overflow-x: hidden;
     background: rgba(0, 0, 0, 0.2);
+    min-height: 0; /* Allow shrinking for scrolling */
+    position: relative;
 }
 
 /* Individual Export Item */
