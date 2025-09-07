@@ -1768,19 +1768,35 @@ function checkForDuplicateParameters() {
 function checkDuplicatesRealtime(input) {
     const currentName = input.value.trim();
     
-    // Build a map of all parameter names
+    // Find the appropriate container (Test Case Editor modal)
+    const testEditorModal = document.getElementById('test-editor-modal');
+    if (!testEditorModal || testEditorModal.style.display === 'none') {
+        return; // Modal not open
+    }
+    
+    // Build a map of all parameter names within the Test Case Editor modal only
+    // Group by container to avoid cross-section duplicate detection
+    const containers = [
+        testEditorModal.querySelector('#single-parameters-container'),
+        testEditorModal.querySelector('#array-parameters-container'),
+        testEditorModal.querySelector('#object-parameters-container')
+    ];
+    
     const paramNames = new Map();
-    document.querySelectorAll('.param-row').forEach(row => {
-        const nameInput = row.querySelector('.param-name');
-        if (nameInput) {
-            const name = nameInput.value.trim();
-            if (name) {
-                if (!paramNames.has(name)) {
-                    paramNames.set(name, []);
+    containers.forEach(container => {
+        if (!container) return;
+        container.querySelectorAll('.param-row').forEach(row => {
+            const nameInput = row.querySelector('.param-name');
+            if (nameInput) {
+                const name = nameInput.value.trim();
+                if (name) {
+                    if (!paramNames.has(name)) {
+                        paramNames.set(name, []);
+                    }
+                    paramNames.get(name).push(nameInput);
                 }
-                paramNames.get(name).push(nameInput);
             }
-        }
+        });
     });
     
     // Update colors for all inputs
