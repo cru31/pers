@@ -1,3 +1,7 @@
+// Placeholder constants
+const ARRAY_PLACEHOLDER = 'Click to edit array';
+const OBJECT_PLACEHOLDER = 'Click to edit object';
+
 let allResults = [];
 let filteredResults = [];
 let sortColumn = null;
@@ -184,39 +188,8 @@ function createParameterRow(key = '', value = '', isArray = false, prefix = 'edi
 
 // Check for duplicate parameter when focus is lost
 function checkForDuplicateParam(input) {
-    const paramName = input.value.trim();
-    
-    if (paramName) {
-        // Find all parameter rows with the same name
-        const duplicateInputs = [];
-        document.querySelectorAll('.param-row').forEach(row => {
-            const nameInput = row.querySelector('.param-name');
-            if (nameInput && nameInput !== input && nameInput.value.trim() === paramName) {
-                duplicateInputs.push(nameInput);
-            }
-        });
-        
-        // If there are duplicates, show message box and refocus
-        if (duplicateInputs.length > 0) {
-            // Store the current value to ensure it's not lost
-            const currentValue = input.value;
-            
-            // Show alert message box
-            alert(`Parameter "${paramName}" already exists!\nPlease use a different name.`);
-            
-            // Ensure the value is still there and return focus with cursor at end
-            setTimeout(() => {
-                // Restore value if somehow it was lost
-                if (input.value !== currentValue) {
-                    input.value = currentValue;
-                }
-                input.focus();
-                // Set cursor position to the end of the text
-                const length = input.value.length;
-                input.setSelectionRange(length, length);
-            }, 50);
-        }
-    }
+    // Do nothing - duplicate checking is now done only on export/copy
+    // This function is kept for compatibility with existing event listeners
 }
 
 // Handle parameter name change - just update preview
@@ -1478,15 +1451,13 @@ function openTestEditor(testResult, mode = "testcase") {
     // Create a clean test case based on mode
     let cleanTestCase;
     
-    // Convert from result format to test case format
-    const testCaseParams = testResult.input_parameters || {};
-    
+    // Start with empty options - user should add only what they want
     cleanTestCase = {
         id: testResult.id,
         variationName: testResult.description || testResult.testType || `Test ${testResult.id}`,
-        options: testCaseParams,
+        options: {}, // Empty options - will be populated from form
         expectedBehavior: {
-            returnValue: testResult.expected_result || "success"
+            returnValue: testResult.expected_result || ""
         }
     };
     
@@ -1536,39 +1507,26 @@ function openTestEditor(testResult, mode = "testcase") {
     if (arrayContainer) arrayContainer.innerHTML = '';
     if (objectContainer) objectContainer.innerHTML = '';
     
-    // Only populate parameters if we have options
-    if (cleanTestCase.options) {
-        // For backward compatibility, check if old container exists
-        const oldContainer = document.getElementById('parameters-container');
-        if (oldContainer && (!singleContainer || !arrayContainer)) {
-            // Old structure, use old container
-            oldContainer.innerHTML = '';
-            Object.entries(cleanTestCase.options).forEach(([key, value]) => {
-                const isArray = Array.isArray(value);
-                const rowHtml = createParameterRow(key, value, isArray, 'edit', isArray);
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = rowHtml;
-                oldContainer.appendChild(tempDiv.firstElementChild);
-            });
-        } else if (singleContainer && arrayContainer) {
-            // New structure with separated containers
-            Object.entries(cleanTestCase.options).forEach(([key, value]) => {
-                const isArray = Array.isArray(value);
-                const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
-                
-                if (isArray) {
-                    // Add to array container
-                    addArrayParameterWithValue(key, value);
-                } else if (isObject) {
-                    // Add to object container
-                    addObjectParameterWithValue(key, value);
-                } else {
-                    // Add to single value container
-                    addParameterWithValue(key, value);
-                }
-            });
-        }
+    // Populate parameters from the test result
+    if (testResult.input_parameters) {
+        Object.entries(testResult.input_parameters).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+                // Add to array container
+                addArrayParameterWithValue(key, value);
+            } else if (typeof value === 'object' && value !== null) {
+                // Add to object container
+                addObjectParameterWithValue(key, value);
+            } else {
+                // Add to single value container
+                addParameterWithValue(key, value);
+            }
+        });
     }
+    
+    // Add reserve parameters after loading existing ones
+    ensureReserveParameter('single-parameters-container', addParameter);
+    ensureReserveParameter('array-parameters-container', addArrayParameter);
+    ensureReserveParameter('object-parameters-container', addObjectParameter);
     
     // Update JSON preview
     updateJsonPreview();
@@ -1591,6 +1549,28 @@ function closeTestEditor() {
     document.body.classList.remove('modal-open');
 }
 
+// Ensure reserve parameter - check only name field
+function ensureReserveParameter(containerId, addFunc) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const rows = container.querySelectorAll('.param-row');
+    let hasEmpty = false;
+    
+    // Check if any row has empty name
+    rows.forEach(row => {
+        const nameInput = row.querySelector('.param-name');
+        if (nameInput && nameInput.value.trim() === '') {
+            hasEmpty = true;
+        }
+    });
+    
+    // If no empty row, add one
+    if (!hasEmpty) {
+        addFunc();
+    }
+}
+
 function addParameter() {
     const container = document.getElementById('single-parameters-container');
     const rowHtml = createParameterRow('', '', false, 'edit', false, false);
@@ -1599,10 +1579,17 @@ function addParameter() {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = rowHtml;
     
-    // Add change handler to check for duplicates
+    // Get name input for reserve parameter check
     const newRow = tempDiv.firstElementChild;
     const nameInput = newRow.querySelector('.param-name');
-    nameInput.addEventListener('blur', () => checkForDuplicateParameter(nameInput));
+    
+    // Add reserve check when name is entered and check duplicates in real-time
+    nameInput.addEventListener('input', () => {
+        checkDuplicatesRealtime(nameInput);
+        if (nameInput.value.trim() !== '') {
+            ensureReserveParameter('single-parameters-container', addParameter);
+        }
+    });
     
     // Append the parsed element to the container
     container.appendChild(newRow);
@@ -1611,16 +1598,23 @@ function addParameter() {
 
 function addArrayParameter() {
     const container = document.getElementById('array-parameters-container');
-    const rowHtml = createParameterRow('', '', true, 'edit', true, false);
+    const rowHtml = createParameterRow('', ARRAY_PLACEHOLDER, true, 'edit', true, false);
     
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = rowHtml;
     
-    // Add change handler to check for duplicates
+    // Get name input for reserve parameter check
     const newRow = tempDiv.firstElementChild;
     const nameInput = newRow.querySelector('.param-name');
-    nameInput.addEventListener('blur', () => checkForDuplicateParameter(nameInput));
+    
+    // Add reserve check when name is entered and check duplicates in real-time
+    nameInput.addEventListener('input', () => {
+        checkDuplicatesRealtime(nameInput);
+        if (nameInput.value.trim() !== '') {
+            ensureReserveParameter('array-parameters-container', addArrayParameter);
+        }
+    });
     
     // Append the parsed element to the container
     container.appendChild(newRow);
@@ -1629,16 +1623,23 @@ function addArrayParameter() {
 
 function addObjectParameter() {
     const container = document.getElementById('object-parameters-container');
-    const rowHtml = createParameterRow('', '{}', false, 'edit', false, true);
+    const rowHtml = createParameterRow('', OBJECT_PLACEHOLDER, false, 'edit', false, true);
     
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = rowHtml;
     
-    // Add change handler to check for duplicates
+    // Get name input for reserve parameter check
     const newRow = tempDiv.firstElementChild;
     const nameInput = newRow.querySelector('.param-name');
-    nameInput.addEventListener('blur', () => checkForDuplicateParameter(nameInput));
+    
+    // Add reserve check when name is entered and check duplicates in real-time
+    nameInput.addEventListener('input', () => {
+        checkDuplicatesRealtime(nameInput);
+        if (nameInput.value.trim() !== '') {
+            ensureReserveParameter('object-parameters-container', addObjectParameter);
+        }
+    });
     
     // Append the parsed element to the container
     container.appendChild(newRow);
@@ -1722,25 +1723,79 @@ function addObjectParameterWithValue(key, value) {
     scheduleJsonPreviewUpdate();
 }
 
-function checkForDuplicateParameter(input) {
-    const paramName = input.value.trim();
-    if (!paramName) return;
+function checkForDuplicateParameters() {
+    // First, clear all previous duplicate markings
+    document.querySelectorAll('.param-name').forEach(input => {
+        input.style.color = '';
+        input.classList.remove('duplicate-param');
+    });
     
-    // Get all parameter names from both containers
-    const allParamNames = [];
+    // Collect all parameter names and find duplicates
+    const paramNames = new Map(); // Map<name, Array<inputElement>>
+    
     document.querySelectorAll('.param-row').forEach(row => {
         const nameInput = row.querySelector('.param-name');
-        if (nameInput && nameInput !== input) {
+        if (nameInput) {
             const name = nameInput.value.trim();
-            if (name) allParamNames.push(name);
+            if (name) {
+                if (!paramNames.has(name)) {
+                    paramNames.set(name, []);
+                }
+                paramNames.get(name).push(nameInput);
+            }
         }
     });
     
-    // Check for duplicate
-    if (allParamNames.includes(paramName)) {
-        showNotification(`Parameter "${paramName}" already exists!`, 'error');
-        input.value = '';
-        input.focus();
+    // Mark duplicates in red
+    let hasDuplicates = false;
+    for (const [name, inputs] of paramNames.entries()) {
+        if (inputs.length > 1) {
+            hasDuplicates = true;
+            // Mark all duplicate inputs in red
+            inputs.forEach(input => {
+                input.style.color = '#ff4444';
+                input.classList.add('duplicate-param');
+            });
+        }
+    }
+    
+    // Don't show notification - just mark in red
+    
+    return !hasDuplicates;
+}
+
+// Function to check duplicates in real-time when user edits
+function checkDuplicatesRealtime(input) {
+    const currentName = input.value.trim();
+    
+    // Build a map of all parameter names
+    const paramNames = new Map();
+    document.querySelectorAll('.param-row').forEach(row => {
+        const nameInput = row.querySelector('.param-name');
+        if (nameInput) {
+            const name = nameInput.value.trim();
+            if (name) {
+                if (!paramNames.has(name)) {
+                    paramNames.set(name, []);
+                }
+                paramNames.get(name).push(nameInput);
+            }
+        }
+    });
+    
+    // Update colors for all inputs
+    for (const [name, inputs] of paramNames.entries()) {
+        if (inputs.length === 1) {
+            // Not duplicate - normal color
+            inputs[0].style.color = '';
+            inputs[0].classList.remove('duplicate-param');
+        } else if (inputs.length > 1) {
+            // Duplicate - red color
+            inputs.forEach(inp => {
+                inp.style.color = '#ff4444';
+                inp.classList.add('duplicate-param');
+            });
+        }
     }
 }
 
@@ -1840,42 +1895,8 @@ function hideBulkAutocomplete(input) {
 
 // Check for duplicate bulk parameter when focus is lost
 function checkForDuplicateBulkParam(input) {
-    const paramName = input.value.trim();
-    
-    if (paramName) {
-        // Find all parameter rows with the same name in the same bulk export item
-        const container = input.closest('.bulk-export-item');
-        if (container) {
-            const duplicateInputs = [];
-            container.querySelectorAll('.param-row').forEach(row => {
-                const nameInput = row.querySelector('.param-name');
-                if (nameInput && nameInput !== input && nameInput.value.trim() === paramName) {
-                    duplicateInputs.push(nameInput);
-                }
-            });
-            
-            // If there are duplicates, show message box and refocus
-            if (duplicateInputs.length > 0) {
-                // Store the current value to ensure it's not lost
-                const currentValue = input.value;
-                
-                // Show alert message box
-                alert(`Parameter "${paramName}" already exists!\nPlease use a different name.`);
-                
-                // Ensure the value is still there and return focus with cursor at end
-                setTimeout(() => {
-                    // Restore value if somehow it was lost
-                    if (input.value !== currentValue) {
-                        input.value = currentValue;
-                    }
-                    input.focus();
-                    // Set cursor position to the end of the text
-                    const length = input.value.length;
-                    input.setSelectionRange(length, length);
-                }, 50);
-            }
-        }
-    }
+    // Do nothing - duplicate checking is now done only on export/copy
+    // This function is kept for compatibility with existing event listeners
 }
 
 // Handle bulk parameter name change - just update preview
@@ -1982,14 +2003,27 @@ function showParameterNameAutocomplete(input, isArrayParam = false, isObjectPara
     parameterNames = new Set([...parameterNames].filter(name => !usedParamNames.includes(name)));
     
     showDropdown(input, parameterNames, (value) => {
-        // Check for duplicate one more time before setting
-        if (usedParamNames.includes(value)) {
-            showNotification(`Parameter "${value}" already exists!`, 'error');
-            return;
-        }
-        
+        // Don't check for duplicate - just set the value
         input.value = value;
         scheduleJsonPreviewUpdate();
+        
+        // Check for reserve parameter after selecting from dropdown
+        const row = input.closest('.param-row');
+        if (row) {
+            const container = row.parentElement;
+            if (container) {
+                if (container.id === 'single-parameters-container') {
+                    ensureReserveParameter('single-parameters-container', addParameter);
+                } else if (container.id === 'array-parameters-container') {
+                    ensureReserveParameter('array-parameters-container', addArrayParameter);
+                } else if (container.id === 'object-parameters-container') {
+                    ensureReserveParameter('object-parameters-container', addObjectParameter);
+                }
+            }
+        }
+        
+        // Also check duplicates
+        checkDuplicatesRealtime(input);
     });
 }
 
@@ -2226,6 +2260,11 @@ function buildTestCaseJson() {
 }
 
 function exportTestCase() {
+    // Check for duplicate parameter names first
+    if (!checkForDuplicateParameters()) {
+        return; // Don't export if there are duplicates
+    }
+    
     // Get the edited JSON from the preview textarea
     const jsonStr = document.getElementById('json-preview-content').value;
     
@@ -2261,6 +2300,11 @@ function exportTestCase() {
 }
 
 function copyToClipboard() {
+    // Check for duplicate parameter names first
+    if (!checkForDuplicateParameters()) {
+        return; // Don't copy if there are duplicates
+    }
+    
     // Get the edited JSON from the preview textarea
     const jsonStr = document.getElementById('json-preview-content').value;
     
@@ -2837,68 +2881,68 @@ function populateBulkExportModal() {
         contentDiv.innerHTML = `
             <div class="bulk-item-form">
                 <!-- General Properties Section -->
-                <div class="section-divider">
-                    <h3 class="section-title">General Properties</h3>
-                    <div class="section-content">
-                        <div class="two-column-grid">
-                            <div class="form-group">
+                <div class="test-general-section">
+                    <div class="test-section-header">General Properties</div>
+                    <div class="test-section-content">
+                        <div class="test-properties-grid">
+                            <div class="test-form-group">
                                 <label>Category</label>
                                 <input type="text" id="bulk-category-${index}" value="${result.category || ''}" oninput="updateBulkJsonPreview()">
                             </div>
-                            <div class="form-group">
+                            <div class="test-form-group">
                                 <label>Test Type</label>
                                 <input type="text" id="bulk-test-type-${index}" value="${result.testType || ''}" oninput="updateBulkJsonPreview()">
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Expected Result</label>
-                            <div class="autocomplete-wrapper">
-                                <input type="text" id="bulk-expected-${index}" class="autocomplete-input" value="${result.expected_result || ''}"
-                                       oninput="showBulkExpectedAutocomplete(this); updateBulkJsonPreview()"
-                                       onfocus="closeAllDropdowns(); showBulkExpectedAutocomplete(this)">
-                                <div class="autocomplete-dropdown" style="display: none;"></div>
+                            <div class="test-form-group">
+                                <label>Expected Return</label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="bulk-expected-${index}" class="autocomplete-input" value="${result.expected_result || ''}"
+                                           oninput="showBulkExpectedAutocomplete(this); updateBulkJsonPreview()"
+                                           onfocus="closeAllDropdowns(); showBulkExpectedAutocomplete(this)">
+                                    <div class="autocomplete-dropdown" style="display: none;"></div>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Description</label>
+                        <div class="test-form-group full-width">
+                            <label>Variation Name</label>
                             <textarea id="bulk-description-${index}" rows="3" oninput="updateBulkJsonPreview()"></textarea>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Parameters Section -->
-                <div class="section-divider">
-                    <h3 class="section-title">Parameters</h3>
-                    <div class="section-content">
+                <!-- Options Section -->
+                <div class="test-parameters-section">
+                    <div class="test-section-header">Options</div>
+                    <div class="test-parameters-content">
                         <!-- Single Value Parameters -->
-                        <div class="param-subsection">
-                            <div class="param-section-header">
-                                <button onclick="addBulkParameter(${index}, false, false)" class="add-param-btn">Add</button>
+                        <div class="test-param-type">
+                            <div class="test-param-header">
                                 <label>Single Value Parameters</label>
+                                <button onclick="addBulkParameter(${index}, false, false)" class="test-add-param-btn">Add</button>
                             </div>
-                            <div id="bulk-single-params-${index}" class="param-container">
+                            <div id="bulk-single-params-${index}" class="test-param-container">
                                 ${singleParametersHtml}
                             </div>
                         </div>
                         
                         <!-- Array Parameters -->
-                        <div class="param-subsection">
-                            <div class="param-section-header">
-                                <button onclick="addBulkParameter(${index}, true, false)" class="add-param-btn">Add</button>
+                        <div class="test-param-type">
+                            <div class="test-param-header">
                                 <label>Array Parameters</label>
+                                <button onclick="addBulkParameter(${index}, true, false)" class="test-add-param-btn">Add</button>
                             </div>
-                            <div id="bulk-array-params-${index}" class="param-container">
+                            <div id="bulk-array-params-${index}" class="test-param-container">
                                 ${arrayParametersHtml}
                             </div>
                         </div>
                         
                         <!-- Object Parameters -->
-                        <div class="param-subsection">
-                            <div class="param-section-header">
-                                <button onclick="addBulkParameter(${index}, false, true)" class="add-param-btn">Add</button>
+                        <div class="test-param-type">
+                            <div class="test-param-header">
                                 <label>Object Parameters</label>
+                                <button onclick="addBulkParameter(${index}, false, true)" class="test-add-param-btn">Add</button>
                             </div>
-                            <div id="bulk-object-params-${index}" class="param-container">
+                            <div id="bulk-object-params-${index}" class="test-param-container">
                                 ${objectParametersHtml}
                             </div>
                         </div>
@@ -2909,7 +2953,24 @@ function populateBulkExportModal() {
         
         itemDiv.appendChild(headerDiv);
         itemDiv.appendChild(contentDiv);
+        itemDiv.id = `bulk-export-item-${index}`;
         container.appendChild(itemDiv);
+        
+        // Add reserve parameters for this item
+        const singleContainer = document.getElementById(`bulk-single-params-${index}`);
+        const arrayContainer = document.getElementById(`bulk-array-params-${index}`);
+        const objectContainer = document.getElementById(`bulk-object-params-${index}`);
+        
+        ensureBulkReserveParameter(singleContainer, index, false, false);
+        ensureBulkReserveParameter(arrayContainer, index, true, false);
+        ensureBulkReserveParameter(objectContainer, index, false, true);
+        
+        // Add event listeners to existing parameter inputs for real-time duplicate check
+        itemDiv.querySelectorAll('.param-name').forEach(input => {
+            input.addEventListener('input', () => {
+                checkDuplicatesRealtimeBulk(input, index);
+            });
+        });
     });
     
     // Update JSON preview
@@ -2963,6 +3024,63 @@ function closeBulkExportModal() {
     }
 }
 
+// Ensure bulk reserve parameter
+function ensureBulkReserveParameter(container, index, isArray = false, isObject = false) {
+    if (!container) return;
+    
+    const rows = container.querySelectorAll('.param-row');
+    let hasEmpty = false;
+    
+    // Check if any row has empty name
+    rows.forEach(row => {
+        const nameInput = row.querySelector('.param-name');
+        if (nameInput && nameInput.value.trim() === '') {
+            hasEmpty = true;
+        }
+    });
+    
+    // If no empty row, add one
+    if (!hasEmpty) {
+        addBulkParameter(index, isArray, isObject);
+    }
+}
+
+// Check duplicates in real-time for bulk export
+function checkDuplicatesRealtimeBulk(input, index) {
+    const container = document.querySelector(`#bulk-export-item-${index}`);
+    if (!container) return;
+    
+    // Build a map of all parameter names in this bulk item
+    const paramNames = new Map();
+    container.querySelectorAll('.param-row').forEach(row => {
+        const nameInput = row.querySelector('.param-name');
+        if (nameInput) {
+            const name = nameInput.value.trim();
+            if (name) {
+                if (!paramNames.has(name)) {
+                    paramNames.set(name, []);
+                }
+                paramNames.get(name).push(nameInput);
+            }
+        }
+    });
+    
+    // Update colors for all inputs
+    for (const [name, inputs] of paramNames.entries()) {
+        if (inputs.length === 1) {
+            // Not duplicate - normal color
+            inputs[0].style.color = '';
+            inputs[0].classList.remove('duplicate-param');
+        } else if (inputs.length > 1) {
+            // Duplicate - red color
+            inputs.forEach(inp => {
+                inp.style.color = '#ff4444';
+                inp.classList.add('duplicate-param');
+            });
+        }
+    }
+}
+
 function addBulkParameter(index, isArray = false, isObject = false) {
     let container;
     if (isArray) {
@@ -2973,17 +3091,31 @@ function addBulkParameter(index, isArray = false, isObject = false) {
         container = document.getElementById(`bulk-single-params-${index}`);
     }
     
-    const initialValue = isObject ? '{}' : '';
+    // Use placeholder for array/object
+    let initialValue = '';
+    if (isArray) {
+        initialValue = ARRAY_PLACEHOLDER;
+    } else if (isObject) {
+        initialValue = OBJECT_PLACEHOLDER;
+    }
+    
     const rowHtml = createParameterRow('', initialValue, isArray, 'bulk', isArray, isObject);
     
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = rowHtml;
     
-    // Add change handler to check for duplicates
+    // Get name input for reserve parameter check
     const newRow = tempDiv.firstElementChild;
     const nameInput = newRow.querySelector('.param-name');
-    nameInput.addEventListener('blur', () => checkForDuplicateParameter(nameInput));
+    
+    // Add event listeners for real-time duplicate check and reserve
+    nameInput.addEventListener('input', () => {
+        checkDuplicatesRealtimeBulk(nameInput, index);
+        if (nameInput.value.trim() !== '') {
+            ensureBulkReserveParameter(container, index, isArray, isObject);
+        }
+    });
     
     // Append the parsed element to the container
     container.appendChild(newRow);
@@ -2991,6 +3123,41 @@ function addBulkParameter(index, isArray = false, isObject = false) {
 }
 
 function exportBulkTestCases() {
+    // Check for duplicates in all bulk items
+    let hasDuplicates = false;
+    document.querySelectorAll('.bulk-export-item').forEach(item => {
+        const index = item.dataset.index;
+        const paramNames = new Map();
+        
+        item.querySelectorAll('.param-row').forEach(row => {
+            const nameInput = row.querySelector('.param-name');
+            if (nameInput) {
+                const name = nameInput.value.trim();
+                if (name) {
+                    if (!paramNames.has(name)) {
+                        paramNames.set(name, []);
+                    }
+                    paramNames.get(name).push(nameInput);
+                }
+            }
+        });
+        
+        // Mark duplicates
+        for (const [name, inputs] of paramNames.entries()) {
+            if (inputs.length > 1) {
+                hasDuplicates = true;
+                inputs.forEach(inp => {
+                    inp.style.color = '#ff4444';
+                    inp.classList.add('duplicate-param');
+                });
+            }
+        }
+    });
+    
+    if (hasDuplicates) {
+        return; // Don't export if there are duplicates
+    }
+    
     const testCases = buildBulkTestCases();
     
     // Create and download JSON file
@@ -3009,6 +3176,41 @@ function exportBulkTestCases() {
 }
 
 function copyBulkToClipboard() {
+    // Check for duplicates in all bulk items
+    let hasDuplicates = false;
+    document.querySelectorAll('.bulk-export-item').forEach(item => {
+        const index = item.dataset.index;
+        const paramNames = new Map();
+        
+        item.querySelectorAll('.param-row').forEach(row => {
+            const nameInput = row.querySelector('.param-name');
+            if (nameInput) {
+                const name = nameInput.value.trim();
+                if (name) {
+                    if (!paramNames.has(name)) {
+                        paramNames.set(name, []);
+                    }
+                    paramNames.get(name).push(nameInput);
+                }
+            }
+        });
+        
+        // Mark duplicates
+        for (const [name, inputs] of paramNames.entries()) {
+            if (inputs.length > 1) {
+                hasDuplicates = true;
+                inputs.forEach(inp => {
+                    inp.style.color = '#ff4444';
+                    inp.classList.add('duplicate-param');
+                });
+            }
+        }
+    });
+    
+    if (hasDuplicates) {
+        return; // Don't copy if there are duplicates
+    }
+    
     const testCases = buildBulkTestCases();
     
     const jsonContent = JSON.stringify(testCases, null, 2);
@@ -3091,14 +3293,19 @@ function openArrayEditor(inputElement, testIndex, paramName) {
     
     // Parse current array value
     const currentValue = inputElement.value.trim();
-    try {
-        // Check if it's already JSON format
-        if (currentValue.startsWith('[')) {
-            currentArrayItems = JSON.parse(currentValue);
-        } else {
-            // Parse comma-separated format like: "item1", "item2", item3
-            currentArrayItems = [];
-            if (currentValue) {
+    
+    // Check if it's the placeholder text
+    if (currentValue === ARRAY_PLACEHOLDER) {
+        currentArrayItems = [];
+    } else {
+        try {
+            // Check if it's already JSON format
+            if (currentValue.startsWith('[')) {
+                currentArrayItems = JSON.parse(currentValue);
+            } else {
+                // Parse comma-separated format like: "item1", "item2", item3
+                currentArrayItems = [];
+                if (currentValue) {
                 // Use regex to match items, handling quoted strings
                 const regex = /"([^"]*)"|\S+/g;
                 let match;
@@ -3113,11 +3320,12 @@ function openArrayEditor(inputElement, testIndex, paramName) {
             }
         }
         
-        if (!Array.isArray(currentArrayItems)) {
+            if (!Array.isArray(currentArrayItems)) {
+                currentArrayItems = [];
+            }
+        } catch (e) {
             currentArrayItems = [];
         }
-    } catch (e) {
-        currentArrayItems = [];
     }
     
     // Populate array editor
@@ -3239,6 +3447,9 @@ function saveArrayChanges() {
         if (hasChanges) {
             showNotification('Array updated successfully');
         }
+        
+        // Check for reserve parameter
+        ensureReserveParameter('array-parameters-container', addArrayParameter);
     } else {
         closeArrayEditor();
     }
@@ -3456,6 +3667,9 @@ function saveJsonObjectChanges() {
         
         closeJsonObjectEditor();
         showNotification('JSON object updated successfully');
+        
+        // Check for reserve parameter
+        ensureReserveParameter('object-parameters-container', addObjectParameter);
     } else {
         closeJsonObjectEditor();
     }

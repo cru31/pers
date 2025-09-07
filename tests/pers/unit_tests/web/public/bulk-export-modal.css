@@ -371,3 +371,18 @@
 .bulk-item-content .autocomplete-dropdown {
     z-index: 10005 !important;
 }
+
+/* Apply Test Case Editor styles to bulk export items */
+.bulk-item-content .test-general-section,
+.bulk-item-content .test-parameters-section,
+.bulk-item-content .test-section-header,
+.bulk-item-content .test-section-content,
+.bulk-item-content .test-properties-grid,
+.bulk-item-content .test-form-group,
+.bulk-item-content .test-param-type,
+.bulk-item-content .test-param-header,
+.bulk-item-content .test-param-container,
+.bulk-item-content .test-add-param-btn,
+.bulk-item-content .test-parameters-content {
+    /* These classes are defined in styles.css and will be applied */
+}
