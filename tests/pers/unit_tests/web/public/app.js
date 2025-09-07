@@ -1423,6 +1423,9 @@ function loadJsonFile(file) {
                 }
             });
             
+            // Collect parameter values for autocomplete from actual test data
+            collectParameterValues(allResults);
+            
             updateSummary(data.metadata);
             populateCategoryFilter();
             filteredResults = [...allResults];
@@ -2700,7 +2703,7 @@ function buildBulkTestCases() {
             variationName: descriptionInput ? descriptionInput.value : `Test ${autoId}`,
             options: params,
             expectedBehavior: {
-                returnValue: expectedInput ? expectedInput.value : (result.expected_result || 'success')
+                returnValue: expectedInput ? expectedInput.value : (result.expected_result || '')
             }
         };
         
@@ -3480,22 +3483,6 @@ function showObjectKeyAutocomplete(input) {
         }
     });
     
-    // Add common WebGPU object properties
-    const commonKeys = [
-        'maxTextureDimension1D', 'maxTextureDimension2D', 'maxTextureDimension3D',
-        'maxTextureArrayLayers', 'maxBindGroups', 'maxBindingsPerBindGroup',
-        'maxDynamicUniformBuffersPerPipelineLayout', 'maxDynamicStorageBuffersPerPipelineLayout',
-        'maxSampledTexturesPerShaderStage', 'maxSamplersPerShaderStage',
-        'maxStorageBuffersPerShaderStage', 'maxStorageTexturesPerShaderStage',
-        'maxUniformBuffersPerShaderStage', 'maxUniformBufferBindingSize',
-        'maxStorageBufferBindingSize', 'maxVertexBuffers', 'maxVertexAttributes',
-        'maxVertexBufferArrayStride', 'maxInterStageShaderVariables',
-        'maxComputeWorkgroupStorageSize', 'maxComputeInvocationsPerWorkgroup',
-        'maxComputeWorkgroupSizeX', 'maxComputeWorkgroupSizeY', 'maxComputeWorkgroupSizeZ',
-        'maxComputeWorkgroupsPerDimension'
-    ];
-    
-    commonKeys.forEach(key => knownKeys.add(key));
     
     // Filter out properties that already exist in currentJsonObject
     const existingKeys = Object.keys(currentJsonObject || {});
@@ -3525,15 +3512,7 @@ function showObjectValueAutocomplete(input, propertyKey) {
         knownValues = objectPropertyValues.get(fullKey);
     }
     
-    // Add common values based on property name
-    if (propertyKey.includes('max') || propertyKey.includes('size') || propertyKey.includes('count')) {
-        // Add common size/limit values
-        [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 134217728].forEach(v => knownValues.add(String(v)));
-    }
     
-    // Add boolean values for boolean-like properties
-    knownValues.add('true');
-    knownValues.add('false');
     
     showDropdown(input, Array.from(knownValues), (value) => {
         input.value = value;
@@ -3559,3 +3538,48 @@ function toggleLogSource(logId) {
         }
     }
 }
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Try to load default test results if available
+    const defaultJsonPath = 'result.json';
+    fetch(defaultJsonPath)
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('No default JSON file');
+        })
+        .then(data => {
+            // Update data
+            allResults = data.results || [];
+            
+            // Initialize lastGeneratedTestId based on existing test IDs
+            allResults.forEach(result => {
+                const id = parseInt(result.id);
+                if (!isNaN(id)) {
+                    lastGeneratedTestId = Math.max(lastGeneratedTestId, id);
+                }
+            });
+            
+            // Collect parameter values for autocomplete from actual test data
+            collectParameterValues(allResults);
+            
+            updateSummary(data.metadata);
+            populateCategoryFilter();
+            filteredResults = [...allResults];
+            displayResults();
+            createFullLogsView();
+            
+            // Update session info
+            document.getElementById('session-info').textContent = 'Default: result.json';
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+        })
+        .catch(error => {
+            // No default file, just hide loading
+            document.getElementById('loading').style.display = 'none';
+            console.log('No default result.json file found');
+        });
+});
