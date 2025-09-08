@@ -21,7 +21,7 @@ TriangleRenderer::~TriangleRenderer() {
     cleanup();
 }
 
-bool TriangleRenderer::initialize(std::shared_ptr<pers::IInstance> instance, const glm::ivec2& size) {
+bool TriangleRenderer::initialize(const std::shared_ptr<pers::IInstance>& instance, const glm::ivec2& size) {
     _windowSize = size;
     _instance = instance;
     
@@ -44,61 +44,107 @@ bool TriangleRenderer::initialize(std::shared_ptr<pers::IInstance> instance, con
     return true;
 }
 
-void TriangleRenderer::setSurface(const pers::NativeSurfaceHandle& surface) {
-    _surface = surface;
-    
+bool TriangleRenderer::initializeGraphics(const pers::NativeSurfaceHandle& surface) {
+    // Step 1: Set surface
+    setSurface(surface);
     if (!_surface.isValid()) {
         LOG_ERROR("TriangleRenderer",
             "Invalid surface provided");
-        return;
+        return false;
     }
     
+    // Step 2: Initialize device
     LOG_INFO("TriangleRenderer",
-        "Surface set, requesting physical device...");
+        "Requesting physical device...");
     
-    // Now that we have a surface, request a compatible adapter
-    if (!requestPhysicalDevice()) {
+    auto physicalDevice = requestPhysicalDevice(surface);
+    if (!physicalDevice) {
         LOG_ERROR("TriangleRenderer",
             "Failed to request physical device");
-        return;
+        return false;
     }
+    setPhysicalDevice(physicalDevice);
     
-    // Create logical device
-    if (!createLogicalDevice()) {
+    auto logicalDevice = createLogicalDevice(physicalDevice);
+    if (!logicalDevice) {
         LOG_ERROR("TriangleRenderer",
             "Failed to create logical device");
-        return;
+        return false;
     }
+    setLogicalDevice(logicalDevice);
+    
+    // Get and set queue
+    auto queue = logicalDevice->getQueue();
+    if (!queue) {
+        LOG_ERROR("TriangleRenderer",
+            "Failed to get queue from device");
+        return false;
+    }
+    setQueue(queue);
+    
+    // Step 3: Create swap chain
+    LOG_INFO("TriangleRenderer",
+        "Creating swap chain...");
+    
+    auto swapChain = createSwapChain(logicalDevice, surface);
+    if (!swapChain) {
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create swap chain");
+        return false;
+    }
+    setSwapChain(swapChain);
     
     LOG_INFO("TriangleRenderer",
-        "Device initialization complete!");
+        "Graphics initialization complete!");
+    return true;
 }
 
-bool TriangleRenderer::requestPhysicalDevice() {
-    if (!_instance || !_surface.isValid()) {
+// Setter functions
+void TriangleRenderer::setSurface(const pers::NativeSurfaceHandle& surface) {
+    _surface = surface;
+}
+
+void TriangleRenderer::setPhysicalDevice(const std::shared_ptr<pers::IPhysicalDevice>& physicalDevice) {
+    _physicalDevice = physicalDevice;
+}
+
+void TriangleRenderer::setLogicalDevice(const std::shared_ptr<pers::ILogicalDevice>& device) {
+    _device = device;
+}
+
+void TriangleRenderer::setQueue(const std::shared_ptr<pers::IQueue>& queue) {
+    _queue = queue;
+}
+
+void TriangleRenderer::setSwapChain(const std::shared_ptr<pers::ISwapChain>& swapChain) {
+    _swapChain = swapChain;
+}
+
+std::shared_ptr<pers::IPhysicalDevice> TriangleRenderer::requestPhysicalDevice(const pers::NativeSurfaceHandle& surface) {
+    if (!_instance || !surface.isValid()) {
         LOG_ERROR("TriangleRenderer",
             "Instance or surface not ready");
-        return false;
+        return nullptr;
     }
     
     // Request adapter compatible with our surface
     pers::PhysicalDeviceOptions options;
     options.powerPreference = pers::PowerPreference::HighPerformance;
-    options.compatibleSurface = _surface;  // Request adapter compatible with this surface
+    options.compatibleSurface = surface;  // Request adapter compatible with this surface
     
     LOG_INFO("TriangleRenderer",
         "Requesting physical device with high performance preference...");
     
-    _physicalDevice = _instance->requestPhysicalDevice(options);
+    auto physicalDevice = _instance->requestPhysicalDevice(options);
     
-    if (!_physicalDevice) {
+    if (!physicalDevice) {
         LOG_ERROR("TriangleRenderer",
             "Failed to get physical device");
-        return false;
+        return nullptr;
     }
     
     // Print device capabilities
-    auto caps = _physicalDevice->getCapabilities();
+    auto caps = physicalDevice->getCapabilities();
     LOG_INFO("TriangleRenderer",
         "Physical device obtained:");
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
@@ -113,23 +159,23 @@ bool TriangleRenderer::requestPhysicalDevice() {
         "  - Supports Compute: %s", caps.supportsCompute ? "Yes" : "No");
     
     // Check surface support
-    if (!_physicalDevice->supportsSurface(_surface)) {
+    if (!physicalDevice->supportsSurface(surface)) {
         LOG_ERROR("TriangleRenderer",
             "Physical device doesn't support the surface!");
-        return false;
+        return nullptr;
     }
     
     LOG_INFO("TriangleRenderer",
         "Physical device supports the surface");
     
-    return true;
+    return physicalDevice;
 }
 
-bool TriangleRenderer::createLogicalDevice() {
-    if (!_physicalDevice) {
+std::shared_ptr<pers::ILogicalDevice> TriangleRenderer::createLogicalDevice(const std::shared_ptr<pers::IPhysicalDevice>& physicalDevice) {
+    if (!physicalDevice) {
         LOG_ERROR("TriangleRenderer",
-            "Physical device not ready");
-        return false;
+            "Physical device not provided");
+        return nullptr;
     }
     
     // Setup device descriptor
@@ -148,37 +194,25 @@ bool TriangleRenderer::createLogicalDevice() {
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
         "  - Timeout: %lld ms", deviceDesc.timeout.count());
     
-    _device = _physicalDevice->createLogicalDevice(deviceDesc);
+    auto device = physicalDevice->createLogicalDevice(deviceDesc);
     
-    if (!_device) {
+    if (!device) {
         LOG_ERROR("TriangleRenderer",
             "Failed to create logical device");
-        return false;
+        return nullptr;
     }
     
     LOG_INFO("TriangleRenderer",
         "Logical device created successfully");
     
-    // Get the queue
-    _queue = _device->getQueue();
-    
-    if (!_queue) {
-        LOG_ERROR("TriangleRenderer",
-            "Failed to get queue from device");
-        return false;
-    }
-    
-    LOG_INFO("TriangleRenderer",
-        "Queue obtained successfully");
-    
-    return true;
+    return device;
 }
 
-bool TriangleRenderer::createSwapChain() {
-    if (!_device || !_surface.isValid()) {
+std::shared_ptr<pers::ISwapChain> TriangleRenderer::createSwapChain(const std::shared_ptr<pers::ILogicalDevice>& device, const pers::NativeSurfaceHandle& surface) {
+    if (!device || !surface.isValid()) {
         LOG_ERROR("TriangleRenderer",
             "Device or surface not ready");
-        return false;
+        return nullptr;
     }
     
     // Create swap chain descriptor
@@ -194,18 +228,18 @@ bool TriangleRenderer::createSwapChain() {
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
         "Creating swap chain: %dx%d", _windowSize.x, _windowSize.y);
     
-    _swapChain = _device->createSwapChain(_surface, swapChainDesc);
+    auto swapChain = device->createSwapChain(surface, swapChainDesc);
     
-    if (!_swapChain) {
+    if (!swapChain) {
         LOG_ERROR("TriangleRenderer",
             "Failed to create swap chain");
-        return false;
+        return nullptr;
     }
     
     LOG_INFO("TriangleRenderer",
         "Swap chain created successfully");
     
-    return true;
+    return swapChain;
 }
 
 bool TriangleRenderer::createTriangleResources() {
@@ -223,11 +257,6 @@ bool TriangleRenderer::createTriangleResources() {
     if (!factory) {
         LOG_ERROR("TriangleRenderer",
             "Failed to get resource factory");
-        return false;
-    }
-    
-    // Create swap chain first
-    if (!createSwapChain()) {
         return false;
     }
     

@@ -21,13 +21,13 @@ public:
     ~TriangleRenderer();
     
     // Initialize the renderer with instance and size
-    bool initialize(std::shared_ptr<pers::IInstance> instance, const glm::ivec2& size);
+    bool initialize(const std::shared_ptr<pers::IInstance>& instance, const glm::ivec2& size);
     
     // Get the graphics instance (for surface creation)
     std::shared_ptr<pers::IInstance> getInstance() const { return _instance; }
     
-    // Set the surface (created by the app)
-    void setSurface(const pers::NativeSurfaceHandle& surface);
+    // Initialize graphics (surface, device, swapchain)
+    bool initializeGraphics(const pers::NativeSurfaceHandle& surface);
     
     // Create triangle resources (vertex buffer, shaders, pipeline)
     bool createTriangleResources();
@@ -42,10 +42,17 @@ public:
     void cleanup();
     
 private:
+    // Setters for storing objects
+    void setSurface(const pers::NativeSurfaceHandle& surface);
+    void setPhysicalDevice(const std::shared_ptr<pers::IPhysicalDevice>& physicalDevice);
+    void setLogicalDevice(const std::shared_ptr<pers::ILogicalDevice>& device);
+    void setQueue(const std::shared_ptr<pers::IQueue>& queue);
+    void setSwapChain(const std::shared_ptr<pers::ISwapChain>& swapChain);
+    
     // Device initialization helpers
-    bool requestPhysicalDevice();
-    bool createLogicalDevice();
-    bool createSwapChain();
+    std::shared_ptr<pers::IPhysicalDevice> requestPhysicalDevice(const pers::NativeSurfaceHandle& surface);
+    std::shared_ptr<pers::ILogicalDevice> createLogicalDevice(const std::shared_ptr<pers::IPhysicalDevice>& physicalDevice);
+    std::shared_ptr<pers::ISwapChain> createSwapChain(const std::shared_ptr<pers::ILogicalDevice>& device, const pers::NativeSurfaceHandle& surface);
     
 private:
     glm::ivec2 _windowSize = glm::ivec2(800, 600);

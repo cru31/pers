@@ -47,7 +47,7 @@ bool PersTriangleApp::initializeRenderer() {
         return false;
     }
     
-    // Create surface using base class helper and set it on renderer
+    // Create surface using base class helper and initialize graphics
     pers::NativeSurfaceHandle surface = createSurface();
     if (!surface.isValid()) {
         LOG_ERROR("PersTriangleApp",
@@ -55,7 +55,11 @@ bool PersTriangleApp::initializeRenderer() {
         return false;
     }
     
-    _renderer->setSurface(surface);
+    if (!_renderer->initializeGraphics(surface)) {
+        LOG_ERROR("PersTriangleApp",
+            "Failed to initialize graphics");
+        return false;
+    }
     
     return true;
 }
