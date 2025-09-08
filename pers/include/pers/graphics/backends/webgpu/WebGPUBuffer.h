@@ -22,6 +22,9 @@ public:
     WGPUBuffer getNativeHandle() const;
     
 private:
+    // Helper method to get mapped range
+    void* getMappedRange(uint64_t offset, uint64_t size);
+    
     uint64_t _size;
     BufferUsage _usage;
     std::string _debugName;

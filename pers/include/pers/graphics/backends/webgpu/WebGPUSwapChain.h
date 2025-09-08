@@ -32,6 +32,10 @@ public:
     TextureFormat getFormat() const override;
     SurfaceCapabilities querySurfaceCapabilities(
         const std::shared_ptr<IPhysicalDevice>& physicalDevice) const override;
+    void setDepthBufferEnabled(bool enabled) override;
+    std::shared_ptr<ITextureView> getDepthTextureView() override;
+    std::shared_ptr<RenderPassDepthStencilAttachment> getDepthStencilAttachment(
+        const DepthStencilOptions& options = {}) override;
     
     /**
      * @brief Query surface capabilities from the device
@@ -44,6 +48,8 @@ public:
 private:
     void configureSurface();
     void releaseCurrentTexture();
+    void createDepthTexture();
+    void releaseDepthTexture();
     
     static WGPUTextureFormat convertToWGPUFormat(TextureFormat format);
     static WGPUPresentMode convertToWGPUPresentMode(PresentMode mode);
@@ -65,6 +71,12 @@ private:
     WGPUTextureView _currentTextureView = nullptr;
     std::shared_ptr<WebGPUTextureView> _currentTextureViewWrapper;
     bool _hasCurrentTexture = false;
+    
+    // Depth buffer management
+    bool _depthBufferEnabled = true;  // Enabled by default for 3D rendering
+    WGPUTexture _depthTexture = nullptr;
+    WGPUTextureView _depthTextureView = nullptr;
+    std::shared_ptr<WebGPUTextureView> _depthTextureViewWrapper;
 };
 
 } // namespace pers

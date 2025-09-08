@@ -12,6 +12,17 @@ namespace pers {
 // Note: TextureUsage is defined in GraphicsTypes.h
 
 /**
+ * @brief MSAA sample count levels
+ */
+enum class MSAALevel {
+    None = 1,    // No MSAA
+    X2 = 2,      // 2x MSAA
+    X4 = 4,      // 4x MSAA
+    X8 = 8,      // 8x MSAA
+    X16 = 16     // 16x MSAA
+};
+
+/**
  * @brief Presentation mode for SwapChain
  */
 enum class PresentMode {
@@ -68,6 +79,9 @@ struct SwapChainDesc {
     PresentMode presentMode = PresentMode::Fifo;
     TextureUsageFlags usage = static_cast<TextureUsageFlags>(TextureUsage::RenderAttachment);
     CompositeAlphaMode alphaMode = CompositeAlphaMode::Opaque;
+    
+    // MSAA level (defaults to no MSAA)
+    MSAALevel msaaLevel = MSAALevel::None;
     
     // Optional
     std::string debugName;

@@ -39,6 +39,7 @@ WebGPUSwapChain::WebGPUSwapChain(const std::shared_ptr<WebGPULogicalDevice>& dev
 
 WebGPUSwapChain::~WebGPUSwapChain() {
     releaseCurrentTexture();
+    releaseDepthTexture();
     
     // Surface is not owned by SwapChain, so we don't release it
     
@@ -119,12 +120,13 @@ std::shared_ptr<ITextureView> WebGPUSwapChain::getCurrentTextureView() {
         return nullptr;
     }
     
-    // Create wrapper for the texture view
+    // Create wrapper for the texture view (mark as SwapChain texture)
     _currentTextureViewWrapper = std::make_shared<WebGPUTextureView>(
         _currentTextureView,
         _desc.width,
         _desc.height,
-        _desc.format
+        _desc.format,
+        true  // isSwapChainTexture
     );
     
     _hasCurrentTexture = true;
@@ -157,6 +159,9 @@ void WebGPUSwapChain::resize(uint32_t width, uint32_t height) {
     
     // Release current texture if any
     releaseCurrentTexture();
+    
+    // Release depth texture for recreation
+    releaseDepthTexture();
     
     // Update descriptor
     _desc.width = width;
@@ -333,6 +338,141 @@ CompositeAlphaMode WebGPUSwapChain::convertFromWGPUAlphaMode(WGPUCompositeAlphaM
         case WGPUCompositeAlphaMode_Inherit: return CompositeAlphaMode::Inherit;
         default: return CompositeAlphaMode::Auto;
     }
+}
+
+void WebGPUSwapChain::createDepthTexture() {
+    // Release any existing depth texture
+    releaseDepthTexture();
+    
+    if (!_depthBufferEnabled) {
+        return;
+    }
+    
+    auto device = _device.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUSwapChain", "Device expired during createDepthTexture");
+        return;
+    }
+    
+    // Get sample count from MSAA level
+    uint32_t sampleCount = static_cast<uint32_t>(_desc.msaaLevel);
+    
+    // Create depth texture
+    WGPUTextureDescriptor depthDesc = {};
+    depthDesc.label = WGPUStringView{.data = "SwapChain Depth Texture", .length = 24};
+    depthDesc.usage = WGPUTextureUsage_RenderAttachment;
+    depthDesc.dimension = WGPUTextureDimension_2D;
+    depthDesc.size = {_desc.width, _desc.height, 1};
+    depthDesc.format = WGPUTextureFormat_Depth24PlusStencil8;
+    depthDesc.mipLevelCount = 1;
+    depthDesc.sampleCount = sampleCount;
+    
+    _depthTexture = wgpuDeviceCreateTexture(device->getNativeDeviceHandle().as<WGPUDevice>(), &depthDesc);
+    
+    if (!_depthTexture) {
+        LOG_ERROR("WebGPUSwapChain", "Failed to create depth texture");
+        return;
+    }
+    
+    // Create depth texture view
+    WGPUTextureViewDescriptor viewDesc = {};
+    viewDesc.label = WGPUStringView{.data = "SwapChain Depth View", .length = 20};
+    viewDesc.format = WGPUTextureFormat_Depth24PlusStencil8;
+    viewDesc.dimension = WGPUTextureViewDimension_2D;
+    viewDesc.baseMipLevel = 0;
+    viewDesc.mipLevelCount = 1;
+    viewDesc.baseArrayLayer = 0;
+    viewDesc.arrayLayerCount = 1;
+    viewDesc.aspect = WGPUTextureAspect_All;
+    
+    _depthTextureView = wgpuTextureCreateView(_depthTexture, &viewDesc);
+    
+    if (!_depthTextureView) {
+        LOG_ERROR("WebGPUSwapChain", "Failed to create depth texture view");
+        wgpuTextureRelease(_depthTexture);
+        _depthTexture = nullptr;
+        return;
+    }
+    
+    // Create wrapper for the depth texture view (not a SwapChain texture)
+    _depthTextureViewWrapper = std::make_shared<WebGPUTextureView>(
+        _depthTextureView,
+        _desc.width,
+        _desc.height,
+        TextureFormat::Depth24PlusStencil8,
+        false  // isSwapChainTexture
+    );
+    
+    LOG_DEBUG("WebGPUSwapChain", 
+        "Created depth buffer: " + std::to_string(_desc.width) + "x" + std::to_string(_desc.height) +
+        " with " + std::to_string(sampleCount) + "x MSAA");
+}
+
+void WebGPUSwapChain::releaseDepthTexture() {
+    _depthTextureViewWrapper.reset();
+    
+    if (_depthTextureView) {
+        wgpuTextureViewRelease(_depthTextureView);
+        _depthTextureView = nullptr;
+    }
+    
+    if (_depthTexture) {
+        wgpuTextureRelease(_depthTexture);
+        _depthTexture = nullptr;
+    }
+}
+
+void WebGPUSwapChain::setDepthBufferEnabled(bool enabled) {
+    if (_depthBufferEnabled == enabled) {
+        return;
+    }
+    
+    _depthBufferEnabled = enabled;
+    
+    if (!enabled) {
+        releaseDepthTexture();
+    }
+    // If enabled, depth texture will be created on next getDepthTextureView() call
+}
+
+std::shared_ptr<ITextureView> WebGPUSwapChain::getDepthTextureView() {
+    if (!_depthBufferEnabled) {
+        return nullptr;
+    }
+    
+    // Lazy creation of depth texture
+    if (!_depthTextureViewWrapper) {
+        createDepthTexture();
+    }
+    
+    return _depthTextureViewWrapper;
+}
+
+std::shared_ptr<RenderPassDepthStencilAttachment> WebGPUSwapChain::getDepthStencilAttachment(
+    const DepthStencilOptions& options) {
+    
+    if (!_depthBufferEnabled) {
+        return nullptr;
+    }
+    
+    // Ensure depth texture is created
+    auto depthView = getDepthTextureView();
+    if (!depthView) {
+        return nullptr;
+    }
+    
+    auto attachment = std::make_shared<RenderPassDepthStencilAttachment>();
+    attachment->view = depthView;
+    attachment->depthLoadOp = options.depthLoadOp;
+    attachment->depthStoreOp = options.depthStoreOp;
+    attachment->depthClearValue = options.depthClearValue;
+    attachment->depthReadOnly = options.depthReadOnly;
+    attachment->stencilLoadOp = options.stencilLoadOp;
+    attachment->stencilStoreOp = options.stencilStoreOp;
+    attachment->stencilClearValue = options.stencilClearValue;
+    attachment->stencilReadOnly = options.stencilReadOnly;
+    
+    return attachment;
 }
 
 } // namespace pers

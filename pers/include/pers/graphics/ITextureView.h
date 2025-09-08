@@ -32,6 +32,12 @@ public:
      * @return Texture format enum
      */
     virtual TextureFormat getFormat() const = 0;
+    
+    /**
+     * @brief Check if this texture view is from a SwapChain
+     * @return True if this is a SwapChain texture view
+     */
+    virtual bool isSwapChainTexture() const { return false; }
 };
 
 } // namespace pers

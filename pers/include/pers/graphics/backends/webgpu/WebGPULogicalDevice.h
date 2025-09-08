@@ -52,12 +52,17 @@ public:
     
     // Native handle access
     NativeDeviceHandle getNativeDeviceHandle() const override;
+    
+    // SwapChain management (for depth buffer auto-linking)
+    void setCurrentSwapChain(const std::shared_ptr<ISwapChain>& swapChain);
+    std::shared_ptr<ISwapChain> getCurrentSwapChain() const;
 
 private:
     WGPUDevice _device = nullptr;
     WGPUAdapter _adapter = nullptr;  // Keep reference for queries
     std::shared_ptr<IQueue> _defaultQueue;  // WebGPU has single queue
     mutable std::shared_ptr<IResourceFactory> _resourceFactory;  // Cached factory
+    std::weak_ptr<ISwapChain> _currentSwapChain;  // Track current SwapChain for auto depth buffer
     
     bool createDefaultQueue();
 };

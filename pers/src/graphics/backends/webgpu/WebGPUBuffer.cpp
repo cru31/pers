@@ -78,7 +78,7 @@ WebGPUBuffer::WebGPUBuffer(const BufferDesc& desc, WGPUDevice device)
         
         // If mapped at creation, get the mapped pointer
         if (desc.mappedAtCreation) {
-            _mappedData = wgpuBufferGetMappedRange(_buffer, 0, _size);
+            _mappedData = getMappedRange(0, _size);
         }
     }
 }
@@ -102,19 +102,32 @@ BufferUsage WebGPUBuffer::getUsage() const {
     return _usage;
 }
 
+void* WebGPUBuffer::getMappedRange(uint64_t offset, uint64_t size) {
+    if (!_buffer) return nullptr;
+    
+    uint64_t mapSize = size > 0 ? size : (_size - offset);
+    void* ptr = wgpuBufferGetMappedRange(_buffer, offset, mapSize);
+    
+    if (!ptr) {
+        Logger::Instance().LogFormat(LogLevel::Warning, "WebGPUBuffer",
+            PERS_SOURCE_LOC, "Failed to get mapped range for buffer '%s'", 
+            _debugName.c_str());
+    }
+    
+    return ptr;
+}
+
 void* WebGPUBuffer::map(uint64_t offset, uint64_t size) {
     if (!_buffer) return nullptr;
-    if (_mappedData) return static_cast<uint8_t*>(_mappedData) + offset;
     
-    // Determine size to map
-    uint64_t mapSize = size > 0 ? size : (_size - offset);
+    // If already mapped, return the existing pointer with offset
+    if (_mappedData) {
+        return static_cast<uint8_t*>(_mappedData) + offset;
+    }
     
-    // WebGPU async map - for now we use sync wrapper
-    TODO_OR_DIE("WebGPUBuffer::map",
-                   "Implement proper async mapping with callbacks");
-    
-    // For now, return nullptr as async mapping needs proper implementation
-    return nullptr;
+    // Try to get mapped range (works for buffers created with mappedAtCreation=true)
+    _mappedData = getMappedRange(offset, size);
+    return _mappedData;
 }
 
 void WebGPUBuffer::unmap() {

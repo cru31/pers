@@ -5,12 +5,14 @@ namespace pers {
 WebGPUTextureView::WebGPUTextureView(WGPUTextureView textureView,
                                      uint32_t width,
                                      uint32_t height,
-                                     TextureFormat format)
+                                     TextureFormat format,
+                                     bool isSwapChainTexture)
     : _textureView(textureView)
     , _width(width)
     , _height(height)
     , _format(format)
-    , _ownsHandle(false) { // SwapChain manages the lifetime
+    , _ownsHandle(false) // SwapChain manages the lifetime
+    , _isSwapChainTexture(isSwapChainTexture) {
 }
 
 WebGPUTextureView::~WebGPUTextureView() {
@@ -29,6 +31,10 @@ void WebGPUTextureView::getDimensions(uint32_t& width, uint32_t& height) const {
 
 TextureFormat WebGPUTextureView::getFormat() const {
     return _format;
+}
+
+bool WebGPUTextureView::isSwapChainTexture() const {
+    return _isSwapChainTexture;
 }
 
 } // namespace pers

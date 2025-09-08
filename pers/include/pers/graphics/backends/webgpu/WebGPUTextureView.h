@@ -16,11 +16,13 @@ public:
      * @param width Width of the texture
      * @param height Height of the texture
      * @param format Texture format
+     * @param isSwapChainTexture True if this texture is from a SwapChain
      */
     WebGPUTextureView(WGPUTextureView textureView,
                       uint32_t width,
                       uint32_t height,
-                      TextureFormat format);
+                      TextureFormat format,
+                      bool isSwapChainTexture = false);
     
     ~WebGPUTextureView() override;
     
@@ -28,6 +30,7 @@ public:
     NativeTextureViewHandle getNativeTextureViewHandle() const override;
     void getDimensions(uint32_t& width, uint32_t& height) const override;
     TextureFormat getFormat() const override;
+    bool isSwapChainTexture() const override;
     
 private:
     WGPUTextureView _textureView;
@@ -35,6 +38,7 @@ private:
     uint32_t _height;
     TextureFormat _format;
     bool _ownsHandle; // Whether we should release the handle on destruction
+    bool _isSwapChainTexture; // Whether this texture view is from a SwapChain
 };
 
 } // namespace pers

@@ -409,6 +409,9 @@ void TriangleRenderer::renderFrame() {
     colorAttachment.clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };  // Clear to black
     renderPassDesc.colorAttachments.push_back(colorAttachment);
     
+    // Add depth attachment from SwapChain
+    renderPassDesc.depthStencilAttachment = _swapChain->getDepthStencilAttachment();
+    
     auto renderPass = commandEncoder->beginRenderPass(renderPassDesc);
     if (!renderPass) {
         LOG_ERROR("TriangleRenderer",
@@ -460,7 +463,10 @@ void TriangleRenderer::onResize(int width, int height) {
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
         "Resized to: %dx%d", _windowSize.x, _windowSize.y);
     
-    // TODO: Recreate swap chain with new size
+    // Resize swap chain with new size
+    if (_swapChain) {
+        _swapChain->resize(width, height);
+    }
 }
 
 void TriangleRenderer::cleanup() {
