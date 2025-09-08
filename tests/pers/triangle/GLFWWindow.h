@@ -23,6 +23,7 @@ public:
     void pollEvents() override;
     void setResizeCallback(ResizeCallback callback) override;
     void setKeyCallback(KeyCallback callback) override;
+    void setRefreshCallback(RefreshCallback callback) override;
     
     pers::NativeWindowHandle getNativeHandle() const override;
     
@@ -33,9 +34,11 @@ private:
     // Static callbacks that forward to instance methods
     static void onFramebufferSize(GLFWwindow* window, int width, int height);
     static void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void onWindowRefresh(GLFWwindow* window);
     
 private:
     GLFWwindow* _window = nullptr;
     ResizeCallback _resizeCallback;
     KeyCallback _keyCallback;
+    RefreshCallback _refreshCallback;
 };

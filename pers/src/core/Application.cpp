@@ -109,6 +109,11 @@ bool Application::setupWindowCallbacks() {
         handleKeyPress(key, scancode, action, mods);
     });
     
+    // Set refresh callback to render during window resize
+    _window->setRefreshCallback([this]() {
+        onRender();
+    });
+    
     return true;
 }
 
@@ -185,6 +190,8 @@ void Application::cleanup() {
 void Application::handleResize(int width, int height) {
     // Forward to virtual method
     onResize(width, height);
+    // Also render immediately after resize
+    onRender();
 }
 
 void Application::handleKeyPress(int key, int scancode, int action, int mods) {

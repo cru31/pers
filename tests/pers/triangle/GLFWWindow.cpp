@@ -44,6 +44,7 @@ bool GLFWWindow::create(int width, int height, const char* title) {
     glfwSetWindowUserPointer(_window, this);
     glfwSetFramebufferSizeCallback(_window, onFramebufferSize);
     glfwSetKeyCallback(_window, onKeyPress);
+    glfwSetWindowRefreshCallback(_window, onWindowRefresh);
     
     std::cout << "[GLFWWindow] Window created: " << width << "x" << height << std::endl;
     return true;
@@ -90,6 +91,10 @@ void GLFWWindow::setResizeCallback(ResizeCallback callback) {
 
 void GLFWWindow::setKeyCallback(KeyCallback callback) {
     _keyCallback = callback;
+}
+
+void GLFWWindow::setRefreshCallback(RefreshCallback callback) {
+    _refreshCallback = callback;
 }
 
 pers::NativeWindowHandle GLFWWindow::getNativeHandle() const {
@@ -147,5 +152,12 @@ void GLFWWindow::onKeyPress(GLFWwindow* window, int key, int scancode, int actio
     GLFWWindow* self = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
     if (self && self->_keyCallback) {
         self->_keyCallback(key, scancode, action, mods);
+    }
+}
+
+void GLFWWindow::onWindowRefresh(GLFWwindow* window) {
+    GLFWWindow* self = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+    if (self && self->_refreshCallback) {
+        self->_refreshCallback();
     }
 }

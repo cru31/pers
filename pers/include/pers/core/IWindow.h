@@ -8,6 +8,7 @@
 // Window event callbacks
 using ResizeCallback = std::function<void(int width, int height)>;
 using KeyCallback = std::function<void(int key, int scancode, int action, int mods)>;
+using RefreshCallback = std::function<void()>;
 
 /**
  * @brief Window interface for abstracting windowing system
@@ -34,6 +35,7 @@ public:
     virtual void pollEvents() = 0;
     virtual void setResizeCallback(ResizeCallback callback) = 0;
     virtual void setKeyCallback(KeyCallback callback) = 0;
+    virtual void setRefreshCallback(RefreshCallback callback) = 0;
     
     // Platform-specific handle extraction
     // Returns platform-specific window handle for surface creation
