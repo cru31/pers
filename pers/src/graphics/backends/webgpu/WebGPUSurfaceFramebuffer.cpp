@@ -3,6 +3,7 @@
 #include "pers/graphics/backends/webgpu/WebGPUTextureView.h"
 #include "pers/graphics/backends/webgpu/WebGPUConverters.h"
 #include "pers/utils/Logger.h"
+#include <cstring>
 
 namespace pers {
 
@@ -78,8 +79,16 @@ void WebGPUSurfaceFramebuffer::releaseCurrentTexture() {
 bool WebGPUSurfaceFramebuffer::acquireNextImage() {
     if (_acquired) {
         LOG_WARNING("WebGPUSurfaceFramebuffer", 
-            "Attempting to acquire image when one is already acquired");
-        return false;
+            "Attempting to acquire image when one is already acquired. Call present() first or release the current image.");
+        // Release current resources before acquiring new ones
+        if (_currentColorView) {
+            _currentColorView.reset();
+        }
+        if (_currentTexture.texture) {
+            wgpuTextureRelease(_currentTexture.texture);
+            _currentTexture.texture = nullptr;
+        }
+        _acquired = false;
     }
     
     // Get the next texture from the surface
@@ -107,7 +116,8 @@ bool WebGPUSurfaceFramebuffer::acquireNextImage() {
     
     // Create texture view for the acquired texture
     WGPUTextureViewDescriptor viewDesc = {};
-    viewDesc.label = WGPUStringView{.data = "Surface Color View", .length = 18};
+    const char* labelStr = "Surface Color View";
+    viewDesc.label = WGPUStringView{.data = labelStr, .length = strlen(labelStr)};
     viewDesc.format = _surfaceConfig.format;
     viewDesc.dimension = WGPUTextureViewDimension_2D;
     viewDesc.baseMipLevel = 0;
@@ -121,6 +131,8 @@ bool WebGPUSurfaceFramebuffer::acquireNextImage() {
     auto device = _device.lock();
     if (!device) {
         wgpuTextureViewRelease(view);
+        wgpuTextureRelease(_currentTexture.texture);
+        _currentTexture.texture = nullptr;
         LOG_ERROR("WebGPUSurfaceFramebuffer", "Device expired during texture view creation");
         return false;
     }
