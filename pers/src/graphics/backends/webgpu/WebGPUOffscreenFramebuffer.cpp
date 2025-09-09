@@ -252,8 +252,16 @@ bool WebGPUOffscreenFramebuffer::resize(uint32_t width, uint32_t height) {
     
     // Check if creation succeeded
     if (_config.colorFormats.size() != _colorViews.size()) {
-        LOG_ERROR("WebGPUOffscreenFramebuffer", "Failed to recreate textures after resize");
+        LOG_ERROR("WebGPUOffscreenFramebuffer", "Failed to recreate color textures after resize");
         return false;
+    }
+    
+    // Check depth texture if configured
+    if (_config.depthFormat != TextureFormat::Undefined) {
+        if (!_depthTexture || !_depthView) {
+            LOG_ERROR("WebGPUOffscreenFramebuffer", "Failed to recreate depth texture after resize");
+            return false;
+        }
     }
     
     return true;
