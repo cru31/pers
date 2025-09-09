@@ -13,7 +13,7 @@ namespace webgpu {
 
 class WebGPUResourceFactory final : public IResourceFactory {
 public:
-    explicit WebGPUResourceFactory(const std::weak_ptr<WebGPULogicalDevice>& logicalDevice);
+    explicit WebGPUResourceFactory(const std::shared_ptr<WebGPULogicalDevice>& logicalDevice);
     ~WebGPUResourceFactory() override;
     
     // IResourceFactory interface

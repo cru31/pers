@@ -11,9 +11,9 @@
 namespace pers {
 namespace webgpu {
 
-WebGPUResourceFactory::WebGPUResourceFactory(const std::weak_ptr<WebGPULogicalDevice>& logicalDevice) 
+WebGPUResourceFactory::WebGPUResourceFactory(const std::shared_ptr<WebGPULogicalDevice>& logicalDevice) 
     : _logicalDevice(logicalDevice) {
-    if (!_logicalDevice.expired()) {
+    if (logicalDevice) {
         LOG_INFO("WebGPUResourceFactory",
             "Created resource factory");
     }
