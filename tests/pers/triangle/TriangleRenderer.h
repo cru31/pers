@@ -13,6 +13,8 @@ namespace pers {
     class ISwapChain;
     class IBuffer;
     class IRenderPipeline;
+    class ISurfaceFramebuffer;
+    class IFramebuffer;
 }
 
 class TriangleRenderer {
@@ -66,6 +68,8 @@ private:
     
     // Rendering resources
     std::shared_ptr<pers::ISwapChain> _swapChain;
+    std::shared_ptr<pers::ISurfaceFramebuffer> _surfaceFramebuffer;  // New framebuffer architecture
+    std::shared_ptr<pers::IFramebuffer> _depthFramebuffer;  // Separate depth buffer
     std::shared_ptr<pers::IBuffer> _vertexBuffer;
     std::shared_ptr<pers::IRenderPipeline> _renderPipeline;
 };

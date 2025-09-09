@@ -5,6 +5,7 @@
 #include "pers/graphics/IQueue.h"
 #include "pers/graphics/ICommandEncoder.h"
 #include "pers/graphics/ISwapChain.h"
+#include "pers/graphics/IFramebuffer.h"
 #include "pers/graphics/IResourceFactory.h"
 #include "pers/graphics/IBuffer.h"
 #include "pers/graphics/IShaderModule.h"
@@ -93,6 +94,49 @@ bool TriangleRenderer::initializeGraphics(const pers::NativeSurfaceHandle& surfa
         return false;
     }
     setSwapChain(swapChain);
+    
+    // Step 4: Create framebuffers using the new architecture
+    LOG_INFO("TriangleRenderer",
+        "Creating framebuffers...");
+    
+    // Get resource factory from logical device
+    auto resourceFactory = logicalDevice->getResourceFactory();
+    if (!resourceFactory) {
+        LOG_ERROR("TriangleRenderer",
+            "Failed to get resource factory from device");
+        return false;
+    }
+    
+    // Create surface framebuffer using IResourceFactory interface
+    _surfaceFramebuffer = resourceFactory->createSurfaceFramebuffer(
+        surface,
+        _windowSize.x,
+        _windowSize.y,
+        pers::TextureFormat::BGRA8Unorm);
+    
+    if (!_surfaceFramebuffer) {
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create surface framebuffer");
+        return false;
+    }
+    
+    // Create depth framebuffer
+    _depthFramebuffer = resourceFactory->createDepthOnlyFramebuffer(
+        _windowSize.x,
+        _windowSize.y,
+        pers::TextureFormat::Depth24Plus);
+    
+    if (!_depthFramebuffer) {
+        LOG_ERROR("TriangleRenderer",
+            "Failed to create depth framebuffer");
+        return false;
+    }
+    
+    // Set the depth framebuffer for the surface
+    _surfaceFramebuffer->setDepthFramebuffer(_depthFramebuffer);
+    
+    LOG_INFO("TriangleRenderer",
+        "Framebuffers created successfully");
     
     LOG_INFO("TriangleRenderer",
         "Graphics initialization complete!");

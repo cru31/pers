@@ -2,29 +2,30 @@
 #include "pers/graphics/backends/webgpu/WebGPUBuffer.h"
 #include "pers/graphics/backends/webgpu/WebGPUShaderModule.h"
 #include "pers/graphics/backends/webgpu/WebGPURenderPipeline.h"
+#include "pers/graphics/backends/webgpu/WebGPULogicalDevice.h"
+#include "pers/graphics/backends/webgpu/WebGPUFramebufferFactory.h"
+#include "pers/graphics/backends/webgpu/WebGPUOffscreenFramebuffer.h"
 #include "pers/utils/Logger.h"
 #include <webgpu/webgpu.h>
 
 namespace pers {
 namespace webgpu {
 
-WebGPUResourceFactory::WebGPUResourceFactory(WGPUDevice device) 
-    : _device(device) {
-    if (_device) {
-        wgpuDeviceAddRef(_device);
+WebGPUResourceFactory::WebGPUResourceFactory(const std::weak_ptr<WebGPULogicalDevice>& logicalDevice) 
+    : _logicalDevice(logicalDevice) {
+    if (!_logicalDevice.expired()) {
         LOG_INFO("WebGPUResourceFactory",
             "Created resource factory");
     }
 }
 
 WebGPUResourceFactory::~WebGPUResourceFactory() {
-    if (_device) {
-        wgpuDeviceRelease(_device);
-    }
+    // No need to release device, shared_ptr handles it
 }
 
 std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& desc) {
-    if (!_device) {
+    auto device = _logicalDevice.lock();
+    if (!device) {
         LOG_ERROR("WebGPUResourceFactory",
             "Cannot create buffer without device");
         return nullptr;
@@ -37,7 +38,8 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& d
         return nullptr;
     }
     
-    return std::make_shared<WebGPUBuffer>(desc, _device);
+    WGPUDevice wgpuDevice = device->getNativeDeviceHandle().as<WGPUDevice>();
+    return std::make_shared<WebGPUBuffer>(desc, wgpuDevice);
 }
 
 std::shared_ptr<ITexture> WebGPUResourceFactory::createTexture(const TextureDesc& desc) {
@@ -61,7 +63,8 @@ std::shared_ptr<ISampler> WebGPUResourceFactory::createSampler(const SamplerDesc
 }
 
 std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const ShaderModuleDesc& desc) {
-    if (!_device) {
+    auto device = _logicalDevice.lock();
+    if (!device) {
         LOG_ERROR("WebGPUResourceFactory",
             "Cannot create shader module without device");
         return nullptr;
@@ -70,7 +73,8 @@ std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const S
     auto shader = std::make_shared<WebGPUShaderModule>(desc);
     
     // Create the actual WebGPU shader module
-    shader->createShaderModule(_device);
+    WGPUDevice wgpuDevice = device->getNativeDeviceHandle().as<WGPUDevice>();
+    shader->createShaderModule(wgpuDevice);
     
     if (!shader->isValid()) {
         Logger::Instance().LogFormat(LogLevel::Error, "WebGPUResourceFactory",
@@ -82,13 +86,74 @@ std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const S
 }
 
 std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(const RenderPipelineDesc& desc) {
-    if (!_device) {
+    auto device = _logicalDevice.lock();
+    if (!device) {
         LOG_ERROR("WebGPUResourceFactory",
             "Cannot create render pipeline without device");
         return nullptr;
     }
     
-    return std::make_shared<WebGPURenderPipeline>(desc, _device);
+    WGPUDevice wgpuDevice = device->getNativeDeviceHandle().as<WGPUDevice>();
+    return std::make_shared<WebGPURenderPipeline>(desc, wgpuDevice);
+}
+
+std::shared_ptr<ISurfaceFramebuffer> WebGPUResourceFactory::createSurfaceFramebuffer(
+    const NativeSurfaceHandle& surface,
+    uint32_t width,
+    uint32_t height,
+    TextureFormat format) {
+    
+    auto device = _logicalDevice.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create surface framebuffer without device");
+        return nullptr;
+    }
+    
+    WGPUSurface wgpuSurface = surface.as<WGPUSurface>();
+    return WebGPUFramebufferFactory::createSurfaceFramebuffer(
+        device, wgpuSurface, width, height, format);
+}
+
+std::shared_ptr<IFramebuffer> WebGPUResourceFactory::createOffscreenFramebuffer(
+    const OffscreenFramebufferDesc& desc) {
+    
+    auto device = _logicalDevice.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create offscreen framebuffer without device");
+        return nullptr;
+    }
+    
+    // Convert from IResourceFactory desc to WebGPU desc
+    OffscreenFramebufferConfig config;
+    config.width = desc.width;
+    config.height = desc.height;
+    config.sampleCount = desc.sampleCount;
+    config.colorFormats = desc.colorFormats;
+    config.depthFormat = desc.depthFormat;
+    config.colorUsage = desc.colorUsage;
+    config.depthUsage = desc.depthUsage;
+    
+    return WebGPUFramebufferFactory::createOffscreenFramebuffer(device, config);
+}
+
+std::shared_ptr<IFramebuffer> WebGPUResourceFactory::createDepthOnlyFramebuffer(
+    uint32_t width,
+    uint32_t height,
+    TextureFormat format,
+    uint32_t sampleCount,
+    TextureUsage usage) {
+    
+    auto device = _logicalDevice.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create depth-only framebuffer without device");
+        return nullptr;
+    }
+    
+    return WebGPUFramebufferFactory::createDepthOnlyFramebuffer(
+        device, width, height, format, sampleCount, usage);
 }
 
 } // namespace webgpu
