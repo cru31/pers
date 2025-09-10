@@ -1,0 +1,104 @@
+@startuml DeviceBuffer Timeline
+
+title DeviceBuffer - GPU-Only Buffer Timeline
+
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "Application\n(CPU)" as App
+participant "DeviceBuffer" as DB
+participant "Staging Buffer" as SB
+participant "Command\nEncoder" as Cmd
+participant "GPU\nQueue" as Queue
+participant "VRAM" as VRAM
+participant "GPU\nShaders" as Shaders
+
+== DeviceBuffer Creation ==
+
+App -> DB : new DeviceBuffer()\n[usage: Vertex|Index]
+DB -> VRAM : Allocate GPU memory
+activate VRAM #FFF3E0
+note right: Allocate in\nDevice Local memory\nHighest performance
+
+DB --> App : DeviceBuffer handle
+note left: GPU memory ready\nNo CPU access
+
+== Data Upload via Staging ==
+
+App -> SB : Create staging buffer\n[mappedAtCreation=true]
+activate SB #E3F2FD
+SB --> App : void* ptr
+
+App -> SB : Write vertex data
+note right: CPU writes to\nstaging buffer
+
+App -> SB : finalize()
+deactivate SB
+
+== GPU Transfer ==
+
+App -> Cmd : Begin commands
+App -> Cmd : copyBufferToBuffer(SB→DB)
+App -> Cmd : End commands
+
+Cmd -> Queue : Submit
+
+Queue -> SB : DMA Read
+activate SB #E3F2FD
+SB --> Queue : Data
+deactivate SB
+
+Queue -> VRAM : DMA Write
+note right: Transfer via PCIe\n16-32 GB/s
+
+== GPU Rendering ==
+
+Shaders -> VRAM : Read vertices
+VRAM --> Shaders : Vertex data
+note right: Direct access\n500GB-1TB/s\nL1/L2 cached
+
+Shaders -> Shaders : Process vertices
+Shaders -> Shaders : Rasterize
+Shaders -> Shaders : Fragment shading
+
+== Performance Characteristics ==
+
+note over App, VRAM
+**DeviceBuffer Performance:**
+• **Allocation**: ~1ms
+• **Upload**: One-time cost
+• **GPU Access**: 500GB-1TB/s
+• **Cache Hit Rate**: >90% typical
+• **Latency**: ~300 GPU cycles
+• **CPU Access**: None (by design)
+• **Persistence**: Lifetime of app
+end note
+
+== Use Cases ==
+
+note over DB
+**Ideal for:**
+• Static meshes
+• Texture data
+• Index buffers
+• Constant lookup tables
+• Shadow map data
+• Frame buffer attachments
+• Any GPU-only data
+end note
+
+== Memory Hierarchy ==
+
+note over VRAM, Shaders
+**GPU Memory Access:**
+1. L1 Cache: 128KB/SM, 10+ TB/s
+2. L2 Cache: 6MB shared, 3-4 TB/s
+3. VRAM: 8-24GB, 500GB-1TB/s
+4. PCIe: Staging only, 16-32 GB/s
+
+DeviceBuffer stays in VRAM
+Maximizes cache efficiency
+end note
+
+@enduml

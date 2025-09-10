@@ -1,0 +1,90 @@
+@startuml ReadbackBuffer Timeline
+
+title ReadbackBuffer - GPU to CPU Transfer Timeline
+
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "Application\n(CPU)" as App
+participant "Compute\nShader" as CS
+participant "GPU\nBuffer" as GB
+participant "Readback\nBuffer" as RB
+participant "GPU\nQueue" as Queue
+participant "Fence" as Fence
+
+== GPU Compute Phase ==
+
+App -> CS : dispatch(workgroups)
+CS -> GB : Write compute results
+activate GB #orange
+note right: Compute shader\nprocesses data\nin VRAM
+
+== Readback Buffer Creation ==
+
+App -> RB : new ReadbackBuffer()\n[usage: MapRead|CopyDst]
+activate RB #lightblue
+note right: Allocate in\nHost Cached memory\nfor CPU reads
+
+== GPU to CPU Copy ==
+
+App -> Queue : copyBufferToBuffer(GB → RB)
+Queue -> GB : DMA Read
+GB -->> RB : GPU DMA Transfer
+deactivate GB
+note right: Async copy via\nPCIe bus\n16-32 GB/s
+
+== Synchronization ==
+
+App -> RB : readAsync()
+RB -> Fence : Wait for GPU completion
+activate Fence #red
+
+Queue -> Fence : Signal when copy done
+Fence -->> RB : Completion signal
+deactivate Fence
+
+RB -> RB : mapAsync(Read)
+RB --> App : future<MappedData>
+
+== CPU Processing ==
+
+App -> App : MappedData.get()
+note right: Data ready for\nCPU processing\nCached for fast reads
+
+App -> App : Process results
+note right: Read from\nCPU cache hierarchy\nL1/L2/L3
+
+note over App: RAII auto-unmap\nwhen MappedData\ndestroyed
+
+deactivate RB
+
+== Performance Characteristics ==
+
+note over App,RB
+**ReadbackBuffer Performance:**
+• **Creation**: ~0.1ms
+• **GPU Copy**: Depends on size
+• **Fence Wait**: 1-2 frames typical
+• **Map Time**: ~0.1ms (after fence)
+• **Read Speed**: CPU cached (fast)
+• **Transfer**: 16-32 GB/s (PCIe)
+• **CPU Blocking**: Fence wait only
+• **GPU Blocking**: None
+end note
+
+== Use Cases ==
+
+note over RB
+**Ideal for:**
+• Physics simulation results
+• AI/ML inference outputs
+• Occlusion query results
+• Timestamp queries
+• Screenshot capture
+• Debug data extraction
+• GPU profiling data
+• Compute shader outputs
+end note
+
+@enduml

@@ -1,0 +1,199 @@
+@startuml GPU Memory Architecture and Buffer Placement
+
+title GPU/CPU Memory Architecture - Where Buffers Live
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam backgroundColor #FAFAFA
+
+' ==========================================
+' Physical Memory Architecture
+' ==========================================
+package "Physical Hardware Architecture" {
+    
+    ' CPU Side
+    component "CPU" as CPU {
+        rectangle "L1 Cache\n64KB" as L1 #lightblue
+        rectangle "L2 Cache\n256KB" as L2 #lightblue
+        rectangle "L3 Cache\n32MB" as L3 #lightblue
+    }
+    
+    ' System RAM
+    component "System RAM (DDR4/5)" as RAM {
+        rectangle "Host Visible\nMemory Pool\n16-32GB" as HostVisible #E3F2FD
+        rectangle "Host Cached\nMemory Pool" as HostCached #E3F2FD
+        rectangle "Write-Combined\nMemory Pool" as WriteCombined #B3E5FC
+    }
+    
+    ' PCIe Bus
+    component "PCIe 4.0 x16\n32GB/s Bidirectional" as PCIe #FFE0B2
+    
+    ' GPU Side
+    component "GPU" as GPU {
+        rectangle "L1 Cache\n128KB/SM" as GL1 #FFF3E0
+        rectangle "L2 Cache\n6MB" as GL2 #FFF3E0
+    }
+    
+    ' VRAM
+    component "VRAM (GDDR6/X)" as VRAM {
+        rectangle "Device Local\nMemory Pool\n8-24GB\n500GB-1TB/s" as DeviceLocal #FFF3E0
+        rectangle "BAR/ReBAR\nVisible Region\n256MB-16GB" as BAR #FFECB3
+    }
+    
+    ' Connections
+    CPU =[#blue,bold]= RAM : "50-100 GB/s"
+    RAM =[#orange,bold]= PCIe : "DMA Controllers"
+    PCIe =[#orange,bold]= GPU : "16 lanes"
+    GPU =[#green,bold]= VRAM : "500GB-1TB/s"
+    
+    L1 --> L2 : miss
+    L2 --> L3 : miss
+    L3 --> RAM : miss
+    
+    GL1 --> GL2 : miss
+    GL2 --> VRAM : miss
+}
+
+' ==========================================
+' Buffer Type Memory Placement
+' ==========================================
+package "Buffer Memory Placement Strategy" {
+    
+    note as N1
+        **Memory Pool Selection Criteria:**
+        • **Device Local**: GPU-only access, maximum performance
+        • **Host Visible**: CPU write, GPU read
+        • **Host Cached**: CPU read, GPU write  
+        • **Write-Combined**: Sequential CPU writes
+        • **BAR/ReBAR**: Direct CPU→GPU without copy
+    end note
+    
+    ' DeviceBuffer placement
+    component "DeviceBuffer Placement" as DBP {
+        rectangle "**DeviceBuffer**\n• Location: VRAM (Device Local)\n• CPU Access: ❌ None\n• GPU Access: ✅ Direct + Cached\n• Bandwidth: 500GB-1TB/s\n• Size: Unlimited (up to VRAM)" as DBInfo #FFF3E0
+    }
+    
+    ' ImmediateStagingBuffer placement
+    component "ImmediateStagingBuffer Placement" as ISBP {
+        rectangle "**ImmediateStagingBuffer**\n• Location: System RAM (Host Visible)\n• CPU Access: ✅ Write (mapped at creation)\n• GPU Access: ✅ Read via PCIe\n• Bandwidth: 16-32GB/s\n• Size: <256MB optimal" as ISBInfo #E3F2FD
+    }
+    
+    ' DeferredStagingBuffer placement
+    component "DeferredStagingBuffer Placement" as DSBP {
+        rectangle "**DeferredStagingBuffer**\n• Location: System RAM (Host Visible)\n• CPU Access: ✅ Async Write\n• GPU Access: ✅ Read via PCIe\n• Bandwidth: 16-32GB/s\n• Size: <64MB optimal" as DSBInfo #E3F2FD
+    }
+    
+    ' ReadbackBuffer placement
+    component "ReadbackBuffer Placement" as RBP {
+        rectangle "**ReadbackBuffer**\n• Location: System RAM (Host Cached)\n• CPU Access: ✅ Cached Read\n• GPU Access: ✅ Write via DMA\n• Bandwidth: 16-32GB/s\n• Size: <16MB optimal" as RBInfo #B3E5FC
+    }
+    
+    ' DynamicBuffer placement
+    component "DynamicBuffer Placement" as DYNP {
+        rectangle "**DynamicBuffer**\n• Location: BAR or Host Visible\n• CPU Access: ✅ Write each frame\n• GPU Access: ✅ Direct or PCIe\n• Bandwidth: 16-32GB/s\n• Size: <4MB per buffer" as DYNInfo #FFECB3
+    }
+}
+
+' ==========================================
+' Data Flow Patterns
+' ==========================================
+package "Common Data Flow Patterns" {
+    
+    ' Pattern 1: Asset Loading
+    component "Asset Loading Pattern" as ALP {
+        node "Disk/Network" as Disk1
+        node "CPU Memory" as CPU1
+        node "Staging Buffer\n(Host Visible)" as Stage1
+        node "GPU Buffer\n(Device Local)" as GPU1
+        
+        Disk1 -[#blue]-> CPU1 : "1. Load"
+        CPU1 -[#blue]-> Stage1 : "2. Copy"
+        Stage1 -[#green,bold]-> GPU1 : "3. GPU Copy"
+    }
+    
+    ' Pattern 2: Streaming
+    component "Streaming Pattern" as SP {
+        node "Stream Source" as Stream2
+        node "Ring of\nStaging Buffers" as Ring2
+        node "GPU Textures\n(Device Local)" as GPU2
+        
+        Stream2 -[#blue]-> Ring2 : "Continuous"
+        Ring2 -[#green,bold]-> GPU2 : "Async Upload"
+    }
+    
+    ' Pattern 3: Compute Readback
+    component "Compute Readback Pattern" as CRP {
+        node "GPU Compute\n(Device Local)" as Compute3
+        node "Readback Buffer\n(Host Cached)" as Read3
+        node "CPU Analysis" as CPU3
+        
+        Compute3 -[#orange,bold]-> Read3 : "GPU Write"
+        Read3 -[#blue]-> CPU3 : "CPU Read"
+    }
+    
+    ' Pattern 4: Frame Updates
+    component "Per-Frame Update Pattern" as FUP {
+        node "CPU\nFrame Logic" as CPU4
+        node "Triple Buffer\n(BAR/Host Visible)" as Triple4
+        node "GPU\nShaders" as GPU4
+        
+        CPU4 -[#blue]-> Triple4 : "Update N+2"
+        Triple4 -[#orange]-> GPU4 : "Read N"
+    }
+}
+
+' ==========================================
+' Memory Bandwidth Comparison
+' ==========================================
+package "Bandwidth Hierarchy" {
+    note as BandwidthNote
+        **Bandwidth Comparison (Typical):**
+        
+        | Path | Bandwidth | Latency | Use Case |
+        |------|-----------|---------|----------|
+        | GPU L1 Cache | 10+ TB/s | ~30 cycles | Register spill |
+        | GPU L2 Cache | 3-4 TB/s | ~200 cycles | Texture cache |
+        | GPU ↔ VRAM | 500GB-1TB/s | ~300 cycles | Frame buffer |
+        | CPU ↔ RAM | 50-100 GB/s | ~100ns | Application data |
+        | RAM ↔ GPU (PCIe) | 16-32 GB/s | ~1μs | Data upload |
+        | Disk ↔ RAM | 0.5-7 GB/s | ~100μs | Asset loading |
+        
+        **Optimization Rules:**
+        1. Keep data in VRAM (DeviceBuffer) for GPU work
+        2. Use staging buffers for one-time uploads
+        3. Use BAR for frequently updated small data
+        4. Batch transfers to amortize PCIe overhead
+        5. Overlap transfers with compute/render
+    end note
+}
+
+' ==========================================
+' Platform-Specific Notes
+' ==========================================
+package "Platform Variations" {
+    note as PlatformNote
+        **Platform-Specific Considerations:**
+        
+        **Windows (WDDM 2.0+):**
+        • Resizable BAR up to full VRAM
+        • WDDM manages memory residency
+        • GPU memory overcommit supported
+        
+        **Linux:**
+        • Direct memory management
+        • Better PCIe bandwidth utilization
+        • Lower driver overhead
+        
+        **Integrated GPUs (APU):**
+        • Shared memory architecture
+        • No PCIe bottleneck
+        • Unified memory addressing
+        
+        **Apple Silicon:**
+        • Unified Memory Architecture (UMA)
+        • No explicit staging needed
+        • Different optimization strategy
+    end note
+}
+
+@enduml

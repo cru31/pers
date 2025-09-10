@@ -1,0 +1,88 @@
+@startuml DeferredStagingBuffer Timeline
+
+title DeferredStagingBuffer - Asynchronous Streaming Timeline
+
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "Application\n(CPU)" as App
+participant "DeferredStaging\nBuffer" as DSB
+participant "mapAsync\nFuture" as Future
+participant "GPU\nPipeline" as GPU
+participant "Device\nBuffer" as DB
+
+== Buffer Creation (Unmapped) ==
+
+App -> DSB : new DeferredStagingBuffer()\n[mappedAtCreation=false]
+activate DSB #lightyellow
+note right: Buffer created but\nNOT mapped yet
+
+== Asynchronous Mapping Request ==
+
+App -> DSB : mapAsync()
+DSB -> Future : Create future
+Future --> App : future<void*>
+note right: Non-blocking!\nReturns immediately
+
+== Parallel Execution ==
+
+par CPU Work
+    App -> App : Load from disk/network
+    App -> App : Decompress data
+    App -> App : Process assets
+    note right: CPU continues\nother work
+else GPU Work
+    GPU -> GPU : Render Frame N
+    GPU -> GPU : Render Frame N+1
+    GPU -> GPU : Render Frame N+2
+    note left: GPU never stalls\nContinues rendering
+end
+
+== Mapping Completion ==
+
+Future -->> App : future.get() → void* ptr
+activate Future #lightgreen
+note left: Mapping completes\nasynchronously
+deactivate Future
+
+App -> DSB : write(data)
+note right: Write to mapped\nmemory when ready
+
+App -> DSB : unmap()
+deactivate DSB
+
+== GPU Transfer ==
+
+App -> GPU : copyBufferToBuffer()
+GPU ->> DB : DMA Transfer
+note right: GPU copies data\nwhen ready
+
+== Performance Characteristics ==
+
+note over App,DB
+**DeferredStagingBuffer Performance:**
+• **Creation**: ~0.1ms (no mapping)
+• **Map Request**: ~0.01ms (async)
+• **Map Complete**: 5-10ms (async wait)
+• **Write Speed**: Sequential optimized
+• **Transfer**: 16-32 GB/s (PCIe)
+• **Total Latency**: Overlapped with work
+• **CPU Blocking**: None (fully async)
+• **GPU Blocking**: None
+end note
+
+== Use Cases ==
+
+note over DSB
+**Ideal for:**
+• Texture streaming (mipmap LOD)
+• Runtime mesh generation
+• Procedural content
+• Background asset loading
+• Network data streaming
+• Large data sets
+• Parallel I/O operations
+end note
+
+@enduml

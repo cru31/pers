@@ -1,0 +1,245 @@
+@startuml Buffer System Class Diagram
+
+!define INTERFACE_COLOR #E1F5FE
+!define ABSTRACT_COLOR #FFF3E0
+!define CONCRETE_COLOR #E8F5E9
+!define BACKEND_COLOR #FCE4EC
+
+' Interfaces
+interface IBuffer <<interface>> INTERFACE_COLOR {
+    + {abstract} getSize(): uint64_t
+    + {abstract} getUsage(): BufferUsage
+    + {abstract} getDebugName(): string
+    + {abstract} getNativeHandle(): void*
+    + {abstract} isValid(): bool
+    + {abstract} getState(): BufferState
+}
+
+interface IMappableBuffer <<interface>> INTERFACE_COLOR {
+    + {abstract} getMappedData(): void*
+    + {abstract} getMappedData(): const void*
+    + {abstract} mapAsync(mode: MapMode): future<void*>
+    + {abstract} unmap(): void
+    + {abstract} isMapped(): bool
+    + {abstract} isMapPending(): bool
+}
+
+interface IBufferFactory <<interface>> INTERFACE_COLOR {
+    + {abstract} createBuffer(desc: BufferDesc): unique_ptr<IBuffer>
+    + {abstract} createMappableBuffer(desc: BufferDesc): unique_ptr<IMappableBuffer>
+}
+
+interface ICommandEncoder <<interface>> INTERFACE_COLOR {
+    + {abstract} copyBufferToBuffer(src: IBuffer*, dst: IBuffer*, srcOffset: uint64_t, dstOffset: uint64_t, size: uint64_t): void
+}
+
+' Enums and Structs
+enum BufferState {
+    Uninitialized
+    Ready
+    Mapped
+    MapPending
+    Destroyed
+}
+
+enum MapMode {
+    None = 0
+    Read = 1
+    Write = 2
+}
+
+enum BufferUsage {
+    None = 0
+    Vertex = 1 << 0
+    Index = 1 << 1
+    Uniform = 1 << 2
+    Storage = 1 << 3
+    CopySrc = 1 << 4
+    CopyDst = 1 << 5
+    MapRead = 1 << 6
+    MapWrite = 1 << 7
+    Indirect = 1 << 8
+}
+
+class BufferDesc <<struct>> {
+    + size: uint64_t
+    + usage: BufferUsage
+    + mappedAtCreation: bool
+    + debugName: string
+}
+
+' Abstract Buffer Classes
+abstract class DeviceBuffer ABSTRACT_COLOR {
+    # _impl: unique_ptr<IBuffer>
+    # _desc: BufferDesc
+    --
+    + DeviceBuffer(desc: BufferDesc, factory: IBufferFactory*)
+    + copyFrom(encoder: ICommandEncoder*, source: IBuffer*, srcOffset: uint64_t, dstOffset: uint64_t, size: uint64_t): void
+    + getSize(): uint64_t
+    + getUsage(): BufferUsage
+    + getImpl(): IBuffer*
+    + getImpl(): const IBuffer*
+}
+
+abstract class ImmediateStagingBuffer ABSTRACT_COLOR {
+    # _impl: unique_ptr<IMappableBuffer>
+    # _desc: BufferDesc
+    # _mappedData: void*
+    # _finalized: bool
+    --
+    + ImmediateStagingBuffer(desc: BufferDesc, factory: IBufferFactory*)
+    + ~ImmediateStagingBuffer()
+    + getMappedData(): void*
+    + write<T>(data: const T*, count: size_t, offset: size_t): void
+    + finalize(): void
+    + uploadTo(encoder: ICommandEncoder*, target: DeviceBuffer): void
+    + getImpl(): IMappableBuffer*
+}
+
+abstract class DeferredStagingBuffer ABSTRACT_COLOR {
+    # _impl: unique_ptr<IMappableBuffer>
+    # _desc: BufferDesc
+    --
+    + DeferredStagingBuffer(desc: BufferDesc, factory: IBufferFactory*)
+    + mapAsync(): future<void*>
+    + unmap(): void
+    + uploadTo(encoder: ICommandEncoder*, target: DeviceBuffer): void
+    + getImpl(): IMappableBuffer*
+}
+
+abstract class ReadbackBuffer ABSTRACT_COLOR {
+    # _impl: unique_ptr<IMappableBuffer>
+    # _desc: BufferDesc
+    --
+    + ReadbackBuffer(desc: BufferDesc, factory: IBufferFactory*)
+    + copyFrom(encoder: ICommandEncoder*, source: DeviceBuffer): void
+    + readAsync(): future<MappedData>
+    + getImpl(): IMappableBuffer*
+}
+
+class "ReadbackBuffer::MappedData" as MappedData {
+    - _data: const void*
+    - _size: uint64_t
+    - _buffer: IMappableBuffer*
+    - _moved: bool
+    --
+    + MappedData(data: const void*, size: uint64_t, buffer: IMappableBuffer*)
+    + ~MappedData()
+    + MappedData(other: MappedData&&)
+    + as<T>(): const T*
+    + data(): const void*
+    + size(): uint64_t
+}
+
+abstract class DynamicBuffer ABSTRACT_COLOR {
+    # {static} FRAME_COUNT: uint32_t = 3
+    # _buffers: unique_ptr<IMappableBuffer>[3]
+    # _desc: BufferDesc
+    # _currentFrame: atomic<uint32_t>
+    # _factory: IBufferFactory*
+    --
+    + DynamicBuffer(desc: BufferDesc, factory: IBufferFactory*)
+    + beginUpdate(): future<UpdateHandle>
+    + getCurrentBuffer(): IBuffer*
+}
+
+class "DynamicBuffer::UpdateHandle" as UpdateHandle {
+    - _buffer: IMappableBuffer*
+    - _data: void*
+    - _size: uint64_t
+    - _finalized: bool
+    --
+    + UpdateHandle(buffer: IMappableBuffer*, data: void*, size: uint64_t)
+    + ~UpdateHandle()
+    + data(): void*
+    + as<T>(): T*
+    + getBuffer(): IBuffer*
+}
+
+' WebGPU Backend Implementation
+class WebGPUBufferImpl <<backend>> BACKEND_COLOR {
+    - _buffer: WGPUBuffer
+    - _device: WGPUDevice
+    - _desc: BufferDesc
+    - _debugName: string
+    - _state: atomic<State>
+    - _mappedPtr: void*
+    - _mapPromise: unique_ptr<promise<void*>>
+    - _mapMutex: mutex
+    --
+    + WebGPUBufferImpl(desc: BufferDesc, device: WGPUDevice)
+    + ~WebGPUBufferImpl()
+    + getSize(): uint64_t
+    + getUsage(): BufferUsage
+    + getDebugName(): string
+    + getNativeHandle(): void*
+    + isValid(): bool
+    + getState(): BufferState
+    + getMappedData(): void*
+    + getMappedData(): const void*
+    + mapAsync(mode: MapMode): future<void*>
+    + unmap(): void
+    + isMapped(): bool
+    + isMapPending(): bool
+    + getWGPUBuffer(): WGPUBuffer
+    - {static} convertUsage(usage: BufferUsage): WGPUBufferUsage
+}
+
+class WebGPUBufferFactory <<backend>> BACKEND_COLOR {
+    - _device: WGPUDevice
+    --
+    + WebGPUBufferFactory(device: WGPUDevice)
+    + createBuffer(desc: BufferDesc): unique_ptr<IBuffer>
+    + createMappableBuffer(desc: BufferDesc): unique_ptr<IMappableBuffer>
+}
+
+' Relationships
+IMappableBuffer --|> IBuffer : extends
+
+WebGPUBufferImpl ..|> IMappableBuffer : implements
+WebGPUBufferFactory ..|> IBufferFactory : implements
+
+DeviceBuffer --> IBuffer : uses
+ImmediateStagingBuffer --> IMappableBuffer : uses
+DeferredStagingBuffer --> IMappableBuffer : uses
+ReadbackBuffer --> IMappableBuffer : uses
+DynamicBuffer --> IMappableBuffer : uses
+
+DeviceBuffer --> IBufferFactory : depends
+ImmediateStagingBuffer --> IBufferFactory : depends
+DeferredStagingBuffer --> IBufferFactory : depends
+ReadbackBuffer --> IBufferFactory : depends
+DynamicBuffer --> IBufferFactory : depends
+
+ImmediateStagingBuffer --> DeviceBuffer : uploads to
+DeferredStagingBuffer --> DeviceBuffer : uploads to
+ReadbackBuffer --> DeviceBuffer : reads from
+
+DeviceBuffer --> ICommandEncoder : uses
+ImmediateStagingBuffer --> ICommandEncoder : uses
+DeferredStagingBuffer --> ICommandEncoder : uses
+ReadbackBuffer --> ICommandEncoder : uses
+
+ReadbackBuffer *-- MappedData : contains
+DynamicBuffer *-- UpdateHandle : contains
+
+WebGPUBufferFactory --> WebGPUBufferImpl : creates
+
+' Notes
+note top of IBuffer : Base interface for all buffers\nProvides common functionality
+
+note top of IMappableBuffer : Extends IBuffer with CPU mapping\nSupports both immediate and async mapping
+
+note left of DeviceBuffer : GPU-only buffer\nNo CPU access\nHighest performance
+
+note left of ImmediateStagingBuffer : mappedAtCreation=true\nImmediate CPU write\nFor initial data upload
+
+note left of DeferredStagingBuffer : mapAsync() for CPU write\nFor runtime streaming
+
+note left of ReadbackBuffer : GPU to CPU transfer\nAsync read of compute results
+
+note left of DynamicBuffer : Triple-buffered ring buffer\nFor per-frame updates
+
+note bottom of WebGPUBufferImpl : WebGPU backend implementation\nHandles both mappedAtCreation\nand mapAsync patterns
+
+@enduml

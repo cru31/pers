@@ -1,0 +1,199 @@
+@startuml DynamicBuffer Sequence
+
+title DynamicBuffer - Triple Buffer Ring Sequence
+
+actor FrameLoop
+participant "DynamicBuffer" as Dynamic
+participant "IBufferFactory" as Factory
+participant "Buffer[0]" as B0
+participant "Buffer[1]" as B1
+participant "Buffer[2]" as B2
+participant "System RAM/BAR" as RAM
+participant "Atomic Counter" as Counter
+participant "GPU Pipeline" as GPU
+
+== Initialization - Create Triple Buffer Ring ==
+
+FrameLoop -> Dynamic : new DynamicBuffer(desc, factory)
+
+Dynamic -> Dynamic : Set FRAME_COUNT = 3
+Dynamic -> Counter : Initialize _currentFrame = 0
+
+loop for i = 0 to 2
+    Dynamic -> Factory : createMappableBuffer(desc)
+    note right: desc.mappedAtCreation = false\ndesc.usage |= MapWrite
+    
+    Factory -> RAM : Allocate buffer[i]
+    activate RAM
+    RAM --> Factory : Buffer handle
+    Factory --> Dynamic : unique_ptr<IMappableBuffer>
+    deactivate RAM
+    
+    Dynamic -> Dynamic : Store in _buffers[i]
+end
+
+Dynamic --> FrameLoop : DynamicBuffer ready
+
+== Frame N: GPU Using Buffer[0] ==
+
+note over B0
+Buffer[0] contains Frame N-2 data
+GPU is currently reading it
+end note
+
+GPU -> B0 : Read uniforms
+activate B0 #lightcoral
+B0 -> GPU : Frame N uniform data
+note right: GPU actively\nrendering Frame N
+
+== Frame N+1: Update Buffer[1] ==
+
+FrameLoop -> Dynamic : beginUpdate()
+
+Dynamic -> Counter : frame = _currentFrame++
+Counter --> Dynamic : frame = N+1
+
+Dynamic -> Dynamic : idx = (N+1) % 3 = 1
+
+Dynamic -> B1 : mapAsync(MapMode::Write)
+activate B1 #lightyellow
+
+B1 -> RAM : Request mapping
+activate RAM
+RAM --> B1 : Mapped pointer
+B1 --> Dynamic : future<void*>
+
+Dynamic -> Dynamic : Create UpdateHandle
+Dynamic --> FrameLoop : future<UpdateHandle>
+
+FrameLoop -> FrameLoop : updateHandle = future.get()
+
+FrameLoop -> B1 : Write Frame N+1 data
+note right: Update uniforms:\n- View/Proj matrix\n- Time\n- Lights
+
+FrameLoop -> FrameLoop : UpdateHandle destructor
+
+B1 -> RAM : wgpuBufferUnmap()
+deactivate RAM
+deactivate B1
+
+note over B1: Buffer[1] ready\nfor Frame N+1
+
+== Frame N+2: Update Buffer[2] ==
+
+FrameLoop -> Dynamic : beginUpdate()
+
+Dynamic -> Counter : frame = _currentFrame++
+Counter --> Dynamic : frame = N+2
+
+Dynamic -> Dynamic : idx = (N+2) % 3 = 2
+
+Dynamic -> B2 : mapAsync(MapMode::Write)
+activate B2 #lightgreen
+
+B2 -> RAM : Request mapping
+activate RAM
+RAM --> B2 : Mapped pointer
+
+FrameLoop -> B2 : Write Frame N+2 data
+
+== Parallel GPU/CPU Work ==
+
+par CPU Updates Buffer[2]
+    FrameLoop -> B2 : Write uniforms
+    note left: CPU prepares\nFrame N+2 data
+else GPU Transitions
+    GPU -> B0 : Complete Frame N
+    deactivate B0
+    note right: Buffer[0] now free
+    
+    GPU -> B1 : Start Frame N+1
+    activate B1 #lightyellow
+    note right: GPU moves to\nnext buffer
+end
+
+B2 -> RAM : wgpuBufferUnmap()
+deactivate RAM
+deactivate B2
+
+== Buffer State After Rotation ==
+
+note over B0, B1, B2
+**Current State:**
+• Buffer[0]: Free (can write Frame N+3)
+• Buffer[1]: GPU reading (Frame N+1)
+• Buffer[2]: Ready (Frame N+2 queued)
+
+**Frame Counter:** N+3
+**Next Index:** (N+3) % 3 = 0
+end note
+
+== Frame N+3: Reuse Buffer[0] ==
+
+FrameLoop -> Dynamic : beginUpdate()
+
+Dynamic -> Counter : frame = _currentFrame++
+Counter --> Dynamic : frame = N+3
+
+Dynamic -> Dynamic : idx = (N+3) % 3 = 0
+
+Dynamic -> B0 : mapAsync(MapMode::Write)
+activate B0 #lightcoral
+note over B0: Buffer recycled\nNo allocation
+
+== getCurrentBuffer() for Binding ==
+
+FrameLoop -> Dynamic : getCurrentBuffer()
+
+Dynamic -> Counter : Read _currentFrame
+Dynamic -> Dynamic : idx = (_currentFrame - 1) % 3
+
+Dynamic --> FrameLoop : IBuffer* (current frame buffer)
+
+FrameLoop -> GPU : Bind buffer for rendering
+
+== Performance Analysis ==
+
+note over Dynamic, GPU
+**Zero Synchronization:**
+• No mutex/locks
+• Atomic counter only
+• GPU never waits
+• CPU never blocked
+
+**Memory Efficiency:**
+• Fixed 3x buffer size
+• No allocations per frame
+• Predictable memory usage
+
+**Latency:**
+• 1-2 frames by design
+• Consistent timing
+• No spikes
+end note
+
+== Use Case Example ==
+
+note over Dynamic
+**Per-Frame Uniforms:**
+```cpp
+// Each frame
+auto handle = dynamicBuffer.beginUpdate().get();
+
+auto* uniforms = handle.as<FrameUniforms>();
+uniforms->viewProj = camera.getViewProjection();
+uniforms->time = currentTime;
+uniforms->deltaTime = dt;
+uniforms->lightCount = lights.size();
+
+// Bind for rendering
+renderPass->setBuffer(0, handle.getBuffer());
+
+// Auto-unmap when handle destroyed
+```
+end note
+
+deactivate B1
+deactivate B0
+
+@enduml

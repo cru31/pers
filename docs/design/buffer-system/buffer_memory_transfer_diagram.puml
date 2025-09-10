@@ -1,0 +1,201 @@
+@startuml Buffer Memory Transfer Flows
+
+!define CPU_COLOR #E3F2FD
+!define GPU_COLOR #FFF3E0
+!define TRANSFER_COLOR #E8F5E9
+!define SYNC_COLOR #FFEBEE
+
+title Buffer Memory Transfer Patterns and Data Flow
+
+' Layout hints
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam nodesep 100
+skinparam ranksep 80
+
+' ==========================================
+' 1. DeviceBuffer - GPU Only Pattern
+' ==========================================
+package "1. DeviceBuffer - GPU Only (Highest Performance)" {
+    component "CPU Memory" as CPU1 CPU_COLOR {
+        rectangle "Application Data" as AppData1
+    }
+    
+    component "Staging Buffer\n(Host Visible)" as Staging1 TRANSFER_COLOR {
+        rectangle "mappedAtCreation=true\nImmediate Write" as StagingMem1
+    }
+    
+    component "GPU Memory (VRAM)" as GPU1 GPU_COLOR {
+        rectangle "DeviceBuffer\n(Device Local)\n500GB/s ~ 1TB/s" as DeviceMem1
+        rectangle "GPU Compute/Render" as GPUWork1
+    }
+    
+    AppData1 -[#blue,bold]-> StagingMem1 : "memcpy()\nImmediate"
+    StagingMem1 -[#green,bold]-> DeviceMem1 : "GPU Copy Command\nvia PCIe (16-32GB/s)"
+    DeviceMem1 <-[#orange,bold]-> GPUWork1 : "Direct Access\nL1/L2 Cache"
+    
+    note right of DeviceMem1
+        **Characteristics:**
+        • No CPU access after upload
+        • Stays in VRAM permanently
+        • GPU caches optimize access
+        • Used for: Vertex, Index, Textures
+    end note
+}
+
+' ==========================================
+' 2. ImmediateStagingBuffer Pattern
+' ==========================================
+package "2. ImmediateStagingBuffer - Initial Upload Pattern" {
+    component "CPU Memory" as CPU2 CPU_COLOR {
+        rectangle "File/Asset Data" as FileData2
+    }
+    
+    component "ImmediateStaging\n(Host Visible)" as Staging2 TRANSFER_COLOR {
+        rectangle "mappedAtCreation=true\nWrite-Combined Memory" as StagingMem2
+        rectangle "getMappedData()\nPointer Ready" as Pointer2
+    }
+    
+    component "GPU Memory" as GPU2 GPU_COLOR {
+        rectangle "Target Buffer" as Target2
+    }
+    
+    FileData2 -[#blue,bold]-> Pointer2 : "1. Create & Map\n(Instant)"
+    Pointer2 -[#blue]-> StagingMem2 : "2. Write Data"
+    StagingMem2 -[#red,bold]-> StagingMem2 : "3. unmap()"
+    StagingMem2 -[#green,bold]-> Target2 : "4. GPU Copy\n(Async)"
+    
+    note bottom of Staging2
+        **Timeline:**
+        T0: Create buffer (already mapped)
+        T1: CPU writes data
+        T2: Unmap & submit copy
+        T3: GPU executes copy
+        **Use: Loading screens, init**
+    end note
+}
+
+' ==========================================
+' 3. DeferredStagingBuffer Pattern
+' ==========================================
+package "3. DeferredStagingBuffer - Runtime Streaming Pattern" {
+    component "CPU Thread" as CPU3 CPU_COLOR {
+        rectangle "Streaming Data\n(Network/Disk)" as StreamData3
+    }
+    
+    component "DeferredStaging\n(Host Visible)" as Staging3 TRANSFER_COLOR {
+        rectangle "mappedAtCreation=false" as StagingMem3
+        rectangle "mapAsync()\nFuture<void*>" as AsyncMap3
+        rectangle "Mapped Region" as MappedRegion3 #lightgreen
+    }
+    
+    component "GPU Pipeline" as GPU3 GPU_COLOR {
+        rectangle "Frame N Rendering" as FrameN
+        rectangle "Frame N+1 Rendering" as FrameN1
+        rectangle "Target Buffer" as Target3
+    }
+    
+    StreamData3 -[#blue]-> AsyncMap3 : "1. Request Map\n(Non-blocking)"
+    AsyncMap3 -[#purple,dashed]-> MappedRegion3 : "2. Async Wait"
+    StreamData3 -[#blue]-> MappedRegion3 : "3. Write When Ready"
+    MappedRegion3 -[#red]-> StagingMem3 : "4. unmap()"
+    StagingMem3 -[#green,bold]-> Target3 : "5. GPU Copy"
+    
+    FrameN -[#gray]-> FrameN1 : "GPU Continues\nNo Stall"
+    
+    note right of Staging3
+        **Parallel Timeline:**
+        CPU: Load → Map → Write → Unmap
+        GPU: Render Frame N → N+1 → Copy
+        **No Pipeline Stall!**
+        Use: Texture streaming, LOD
+    end note
+}
+
+' ==========================================
+' 4. ReadbackBuffer Pattern
+' ==========================================
+package "4. ReadbackBuffer - GPU to CPU Pattern" {
+    component "GPU Compute" as GPU4 GPU_COLOR {
+        rectangle "Compute Shader\nResults" as Compute4
+        rectangle "GPU Buffer\n(Device Local)" as GPUBuffer4
+    }
+    
+    component "Readback Buffer\n(Host Visible + Cached)" as Readback4 TRANSFER_COLOR {
+        rectangle "mappedAtCreation=false\nMapRead" as ReadbackMem4
+        rectangle "mapAsync(Read)\nFence Wait" as AsyncRead4 SYNC_COLOR
+        rectangle "CPU Cached Memory" as CachedMem4 #lightblue
+    }
+    
+    component "CPU Analysis" as CPU4 CPU_COLOR {
+        rectangle "Process Results" as Process4
+    }
+    
+    Compute4 -[#orange,bold]-> GPUBuffer4 : "1. Compute"
+    GPUBuffer4 -[#green,bold]-> ReadbackMem4 : "2. GPU Copy\n(DMA)"
+    ReadbackMem4 -[#purple,dashed]-> AsyncRead4 : "3. Wait Fence"
+    AsyncRead4 -[#blue]-> CachedMem4 : "4. Map for Read"
+    CachedMem4 -[#blue]-> Process4 : "5. CPU Process\n(Cached Reads)"
+    
+    note bottom of Readback4
+        **Synchronization:**
+        • GPU Fence ensures data ready
+        • CPU cached for fast reads
+        • Auto unmap with RAII
+        Use: Physics, AI, Screenshots
+    end note
+}
+
+' ==========================================
+' 5. DynamicBuffer - Ring Buffer Pattern
+' ==========================================
+package "5. DynamicBuffer - Triple Buffer Ring Pattern" {
+    component "CPU Updates" as CPU5 CPU_COLOR {
+        rectangle "Frame Data\nProducer" as Producer5
+    }
+    
+    component "Triple Buffer Ring\n(Host Visible/BAR)" as Ring5 TRANSFER_COLOR {
+        rectangle "Buffer[0]\nFrame N+2" as Buf0 #lightgreen
+        rectangle "Buffer[1]\nFrame N+1" as Buf1 #lightyellow
+        rectangle "Buffer[2]\nFrame N" as Buf2 #lightcoral
+        
+        Buf0 -[hidden]right-> Buf1
+        Buf1 -[hidden]right-> Buf2
+    }
+    
+    component "GPU Rendering" as GPU5 GPU_COLOR {
+        rectangle "Render Frame N" as RenderN
+        rectangle "Queue Frame N+1" as QueueN1
+    }
+    
+    Producer5 -[#green,bold]-> Buf0 : "Write N+2\n(Available)"
+    Buf2 -[#orange,bold]-> RenderN : "Read N\n(In Use)"
+    Buf1 -[#yellow]-> QueueN1 : "Queued N+1"
+    
+    Producer5 -[#gray,dashed]-> Buf0 : "Rotate →"
+    Buf0 -[#gray,dashed]-> Buf1 : "Rotate →"
+    Buf1 -[#gray,dashed]-> Buf2 : "Rotate →"
+    
+    note top of Ring5
+        **Triple Buffering:**
+        • Frame N: GPU reading
+        • Frame N+1: GPU queued
+        • Frame N+2: CPU writing
+        **No stalls, 1-2 frame latency**
+        Use: Per-frame uniforms, UI
+    end note
+}
+
+' ==========================================
+' Memory Type Legend
+' ==========================================
+legend bottom
+    | Memory Type | Location | CPU Access | GPU Access | Bandwidth | Use Case |
+    | Device Local | VRAM | ❌ None | ✅ Direct | 500GB-1TB/s | Rendering |
+    | Host Visible | System RAM | ✅ Write | ✅ Read | 16-32GB/s | Upload |
+    | Host Cached | System RAM | ✅ Read | ✅ Write | 16-32GB/s | Readback |
+    | BAR/ReBAR | Mapped VRAM | ✅ Write | ✅ Direct | 16-32GB/s | Dynamic |
+    | Write-Combined | System RAM | ✅ Sequential | ✅ Read | Optimized Sequential | Staging |
+endlegend
+
+@enduml

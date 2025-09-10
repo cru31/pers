@@ -1,0 +1,170 @@
+@startuml ReadbackBuffer Sequence
+
+title ReadbackBuffer - GPU to CPU Transfer Sequence
+
+actor ComputeApp
+participant "GPU Compute\nShader" as Compute
+participant "DeviceBuffer\n(Results)" as Results
+participant "ReadbackBuffer" as Readback
+participant "IBufferFactory" as Factory
+participant "System RAM\n(Host Cached)" as RAM
+participant "Command Encoder" as Encoder
+participant "GPU Queue" as Queue
+participant "Fence" as Fence
+participant "mapAsync Promise" as Promise
+
+== GPU Compute Execution ==
+
+ComputeApp -> Compute : dispatch(workgroups)
+note right: Launch compute\nshader
+
+Compute -> Results : Write results to buffer
+activate Results #FFF3E0
+note right: Compute outputs\nstored in VRAM
+
+== ReadbackBuffer Creation ==
+
+ComputeApp -> Readback : new ReadbackBuffer(desc, factory)
+
+Readback -> Readback : Configure for readback
+note right: desc.mappedAtCreation = false\ndesc.usage = CopyDst | MapRead
+
+Readback -> Factory : createMappableBuffer(desc)
+
+Factory -> RAM : Allocate host cached memory
+activate RAM #B3E5FC
+note right: Host cached\nfor CPU reads
+
+RAM --> Factory : Buffer handle
+Factory --> Readback : unique_ptr<IMappableBuffer>
+
+Readback --> ComputeApp : ReadbackBuffer ready
+
+== GPU to CPU Copy Command ==
+
+ComputeApp -> Readback : copyFrom(encoder, resultsBuffer)
+
+Readback -> Encoder : wgpuCommandEncoderCopyBufferToBuffer(\n  resultsBuffer, 0,\n  readbackBuffer, 0,\n  size)
+
+ComputeApp -> Encoder : wgpuCommandEncoderFinish()
+Encoder --> ComputeApp : CommandBuffer
+
+ComputeApp -> Queue : wgpuQueueSubmit(commandBuffer)
+
+== DMA Transfer Execution ==
+
+Queue -> Results : DMA Read from VRAM
+Results --> Queue : Result data
+note right: Read from\nGPU memory
+
+Queue -> RAM : DMA Write via PCIe
+note right: Transfer to\nsystem RAM
+
+Queue -> Fence : Signal completion
+
+deactivate Results
+
+== Asynchronous Read Request ==
+
+ComputeApp -> Readback : readAsync()
+
+Readback -> Fence : Wait for transfer complete
+activate Fence #red
+
+Fence -->> Readback : Transfer complete signal
+deactivate Fence
+
+Readback -> Promise : wgpuBufferMapAsync(\n  WGPUMapMode_Read,\n  callback)
+
+Promise --> Readback : future<MappedData>
+Readback --> ComputeApp : future<MappedData>
+
+== Mapping and Data Access ==
+
+ComputeApp -> Promise : future.get()
+activate Promise #lightgreen
+
+Promise -> RAM : Map for CPU read
+RAM --> Promise : Mapped pointer
+
+Promise -> Promise : Create MappedData wrapper
+note right: RAII wrapper\nfor auto-unmap
+
+Promise --> ComputeApp : MappedData object
+deactivate Promise
+
+== CPU Processing ==
+
+ComputeApp -> RAM : Read results
+note right: CPU cached reads\nFast access via\nL1/L2/L3 cache
+
+ComputeApp -> ComputeApp : Process data
+note right: Analyze results\nMake decisions
+
+== Automatic Cleanup ==
+
+ComputeApp -> ComputeApp : MappedData goes out of scope
+
+note over ComputeApp: MappedData destructor called
+
+Readback -> RAM : wgpuBufferUnmap()
+deactivate RAM
+
+== Performance Metrics ==
+
+note over ComputeApp, Queue
+**Transfer Performance:**
+• GPU→RAM: 16-32 GB/s (PCIe)
+• Latency: 1-2 frames typical
+• CPU cache: Full speed reads
+• Memory: Host cached optimal
+
+**Synchronization:**
+• Fence ensures data ready
+• No GPU stalls
+• CPU waits only when needed
+end note
+
+== Use Case Example ==
+
+note over Readback
+**Physics Simulation Results:**
+```cpp
+// Run physics on GPU
+computePass->dispatch(particleCount/64);
+
+// Create readback buffer
+ReadbackBuffer readback(
+    BufferDesc{resultSize}, factory
+);
+
+// Copy results from GPU
+readback.copyFrom(encoder, gpuResults);
+submit(encoder);
+
+// Read results asynchronously
+auto future = readback.readAsync();
+
+// Do other work...
+renderFrame();
+
+// Process when ready
+auto data = future.get();
+auto* particles = data.as<Particle>();
+for(int i = 0; i < count; i++) {
+    handleCollision(particles[i]);
+}
+// Auto unmap when data destroyed
+```
+end note
+
+== Error Handling ==
+
+alt Map Failure
+    Promise -> Promise : Set exception
+    Promise --> ComputeApp : throw runtime_error
+    ComputeApp -> ComputeApp : Handle error
+    note right: Log and recover
+end
+
+@enduml

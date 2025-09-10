@@ -1,0 +1,157 @@
+@startuml DeferredStagingBuffer Sequence
+
+title DeferredStagingBuffer - Asynchronous Mapping Sequence
+
+actor StreamingSystem
+participant "DeferredStagingBuffer" as DSB
+participant "IBufferFactory" as Factory
+participant "System RAM" as RAM
+participant "mapAsync Promise" as Promise
+participant "WebGPU Device" as Device
+participant "GPU Pipeline" as Pipeline
+participant "Command Encoder" as Encoder
+participant "DeviceBuffer" as Target
+
+== Buffer Creation (Unmapped) ==
+
+StreamingSystem -> DSB : new DeferredStagingBuffer(desc, factory)
+
+DSB -> DSB : Configure for deferred mapping
+note right: desc.mappedAtCreation = false\ndesc.usage = CopySrc | MapWrite
+
+DSB -> Factory : createMappableBuffer(desc)
+
+Factory -> Device : wgpuDeviceCreateBuffer()
+note right: Create unmapped buffer
+
+Device -> RAM : Allocate (unmapped)
+activate RAM #E3F2FD
+RAM --> Device : Buffer handle
+
+Device --> Factory : IMappableBuffer (unmapped)
+Factory --> DSB : unique_ptr<IMappableBuffer>
+
+DSB --> StreamingSystem : Buffer ready (unmapped)
+
+== Asynchronous Mapping Request ==
+
+StreamingSystem -> DSB : mapAsync()
+
+DSB -> Device : wgpuBufferMapAsync(\n  WGPUMapMode_Write,\n  callback)
+
+Device -> Promise : Create promise
+Promise --> DSB : future<void*>
+DSB --> StreamingSystem : future<void*>
+
+note right: Returns immediately!\nNon-blocking
+
+== Parallel Operations ==
+
+par CPU Work
+    StreamingSystem -> StreamingSystem : Load texture from disk
+    StreamingSystem -> StreamingSystem : Decompress image
+    StreamingSystem -> StreamingSystem : Generate mipmaps
+    note right: CPU continues\nproductive work
+else GPU Work  
+    Pipeline -> Pipeline : Render Frame N
+    Pipeline -> Pipeline : Process draw calls
+    Pipeline -> Pipeline : Submit Frame N
+    Pipeline -> Pipeline : Start Frame N+1
+    note left: GPU never blocked\nby CPU operations
+else Mapping Progress
+    Device -> Device : Process map request
+    Device -> RAM : Prepare mapping
+    RAM -> Device : Mapping ready
+    Device -> Promise : Set value(ptr)
+end
+
+== Mapping Completion ==
+
+StreamingSystem -> Promise : future.get()
+note left: Block here if\nnot ready yet
+
+Promise --> StreamingSystem : void* mappedPtr
+activate Promise #lightgreen
+
+StreamingSystem -> RAM : Write texture data
+note right: Sequential writes\nto mapped memory
+
+StreamingSystem -> RAM : Write mipmap levels
+
+deactivate Promise
+
+== Unmap and Prepare for Transfer ==
+
+StreamingSystem -> DSB : unmap()
+
+DSB -> Device : wgpuBufferUnmap()
+RAM -> RAM : Flush writes
+note right: Make visible\nto GPU
+
+== GPU Upload ==
+
+StreamingSystem -> DSB : uploadTo(encoder, textureBuffer)
+
+DSB -> Encoder : wgpuCommandEncoderCopyBufferToTexture(\n  stagingBuffer,\n  textureBuffer)
+
+Encoder -> Pipeline : [Queue for execution]
+
+Pipeline -> RAM : DMA Read
+RAM --> Pipeline : Texture data
+deactivate RAM
+
+Pipeline -> Target : DMA Write to VRAM
+
+== Performance Characteristics ==
+
+note over StreamingSystem, Pipeline
+**Async Advantages:**
+• CPU not blocked during map
+• GPU continues rendering
+• I/O overlapped with compute
+• Perfect for streaming
+
+**Timing:**
+• Map request: < 0.01ms
+• Map complete: 5-10ms (async)
+• Data write: Depends on size
+• Total impact: Minimal
+end note
+
+== Use Case Example ==
+
+note over DSB
+**Texture Streaming:**
+```cpp
+// Create deferred buffer
+DeferredStagingBuffer staging(
+    BufferDesc{textureSize}, factory
+);
+
+// Request mapping (non-blocking)
+auto future = staging.mapAsync();
+
+// Do other work while waiting
+processAudio();
+updatePhysics();
+
+// Write when ready
+void* ptr = future.get();
+decompressTexture(compressed, ptr);
+staging.unmap();
+
+// Upload to GPU
+staging.uploadTo(encoder, gpuTexture);
+```
+end note
+
+== Error Handling ==
+
+alt Mapping Failure
+    Device -> Promise : Set exception
+    Promise --> StreamingSystem : throw runtime_error
+    StreamingSystem -> StreamingSystem : Handle error
+    note right: Fallback to\ndefault texture
+end
+
+@enduml

@@ -1,0 +1,190 @@
+@startuml Buffer Operations Timeline
+
+title Buffer Operations Timeline - CPU/GPU Synchronization
+
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+' ==========================================
+' 1. ImmediateStagingBuffer Timeline
+' ==========================================
+== ImmediateStagingBuffer - Synchronous Initial Upload ==
+
+participant "Application\n(CPU)" as App1
+participant "ImmediateStaging\nBuffer" as ISB
+participant "Command\nEncoder" as Cmd1
+participant "GPU\nQueue" as GPU1
+participant "Device\nBuffer" as DB1
+
+App1 -> ISB : new ImmediateStagingBuffer()\n[mappedAtCreation=true]
+activate ISB #lightgreen
+ISB --> App1 : void* ptr (instant)
+note right: Buffer created\nalready mapped
+
+App1 -> ISB : write(data)
+note right: Direct memcpy\nto mapped memory
+
+App1 -> ISB : finalize()
+ISB -> ISB : unmap()
+deactivate ISB
+
+App1 -> Cmd1 : copyBufferToBuffer()
+Cmd1 -> GPU1 : submit()
+
+GPU1 ->> DB1 : DMA Transfer
+note right: Async GPU copy\n16-32 GB/s via PCIe
+
+== Timeline: 0ms → 5ms total ==
+
+' ==========================================
+' 2. DeferredStagingBuffer Timeline  
+' ==========================================
+== DeferredStagingBuffer - Asynchronous Streaming ==
+
+participant "Application\n(CPU)" as App2
+participant "DeferredStaging\nBuffer" as DSB
+participant "GPU\nPipeline" as GPU2
+participant "Device\nBuffer" as DB2
+
+App2 -> DSB : new DeferredStagingBuffer()\n[mappedAtCreation=false]
+activate DSB #lightyellow
+
+App2 -> DSB : mapAsync()
+DSB --> App2 : future<void*>
+note right: Non-blocking\nreturns immediately
+
+App2 -> App2 : Do other work
+GPU2 -> GPU2 : Continue rendering\nFrame N
+
+DSB -->> App2 : future.get() → void* ptr
+note left: Map completes\nasynchronously
+
+App2 -> DSB : write(data)
+App2 -> DSB : unmap()
+deactivate DSB
+
+App2 -> GPU2 : copyBufferToBuffer()
+GPU2 ->> DB2 : DMA Transfer
+
+note over GPU2: GPU never stalled\nContinued rendering
+
+== Timeline: CPU parallel with GPU ==
+
+' ==========================================
+' 3. ReadbackBuffer Timeline
+' ==========================================
+== ReadbackBuffer - GPU to CPU Transfer ==
+
+participant "Application\n(CPU)" as App3
+participant "Compute\nShader" as CS
+participant "GPU\nBuffer" as GB
+participant "Readback\nBuffer" as RB
+participant "GPU\nQueue" as GPU3
+participant "Fence" as Fence
+
+App3 -> CS : dispatch()
+CS -> GB : write results
+activate GB #orange
+
+App3 -> RB : new ReadbackBuffer()
+activate RB #lightblue
+
+App3 -> GPU3 : copyBufferToBuffer(GB → RB)
+GB -->> RB : GPU DMA Copy
+
+App3 -> RB : readAsync()
+RB -> Fence : wait for GPU completion
+RB --> App3 : future<MappedData>
+
+Fence -->> RB : Signal complete
+RB -->> App3 : MappedData with results
+deactivate GB
+
+App3 -> App3 : Process results
+note right: RAII auto-unmap\nwhen MappedData\ngoes out of scope
+
+deactivate RB
+
+== Timeline: Fence ensures GPU→CPU sync ==
+
+' ==========================================
+' 4. DynamicBuffer Triple Buffering Timeline
+' ==========================================
+== DynamicBuffer - Lock-free Triple Buffering ==
+
+participant "Frame N\n(CPU)" as CPU_N
+participant "Frame N+1\n(CPU)" as CPU_N1
+participant "Frame N+2\n(CPU)" as CPU_N2
+participant "Buffer[0]" as B0
+participant "Buffer[1]" as B1
+participant "Buffer[2]" as B2
+participant "GPU" as GPU4
+
+note over B0
+Triple Buffer Ring
+3 frames in flight
+end note
+
+CPU_N -> B0 : map & write Frame N data
+B0 -> GPU4 : Frame N rendering
+activate GPU4 #orange
+note right: GPU reads Buffer[0]
+
+CPU_N1 -> B1 : map & write Frame N+1 data
+note right: CPU writes Buffer[1]\nwhile GPU reads Buffer[0]
+
+CPU_N2 -> B2 : map & write Frame N+2 data
+note right: CPU writes Buffer[2]\nGPU still busy with N
+
+GPU4 -> GPU4 : Complete Frame N
+deactivate GPU4
+B1 -> GPU4 : Frame N+1 rendering
+activate GPU4 #yellow
+
+note over B0: Buffer[0] now free\nfor Frame N+3
+
+== No stalls, constant 60+ FPS ==
+
+' ==========================================
+' 5. Comparison Summary
+' ==========================================
+== Performance Comparison ==
+
+note over App1,DB1
+**ImmediateStagingBuffer**
+• Latency: ~1ms (map instant)
+• Throughput: Limited by PCIe
+• CPU Blocking: During write only
+• GPU Blocking: None
+• Use: Init, loading screens
+end note
+
+note over App2,DB2
+**DeferredStagingBuffer**
+• Latency: 5-10ms (async map)
+• Throughput: Overlapped I/O
+• CPU Blocking: None (async)
+• GPU Blocking: None
+• Use: Streaming, LOD
+end note
+
+note over App3,RB
+**ReadbackBuffer**
+• Latency: 1-2 frames
+• Throughput: PCIe limited
+• CPU Blocking: Fence wait
+• GPU Blocking: None
+• Use: Compute results
+end note
+
+note over CPU_N,GPU4
+**DynamicBuffer**
+• Latency: 1-2 frames
+• Throughput: Continuous
+• CPU Blocking: None
+• GPU Blocking: None
+• Use: Per-frame data
+end note
+
+@enduml

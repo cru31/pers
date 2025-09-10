@@ -1,0 +1,116 @@
+@startuml DeviceBuffer Sequence
+
+title DeviceBuffer - GPU-Only Buffer Creation and Upload Sequence
+
+actor Application
+participant "IBufferFactory" as Factory
+participant "DeviceBuffer" as Device
+participant "ImmediateStagingBuffer" as Staging
+participant "System RAM\n(Host Visible)" as RAM
+participant "ICommandEncoder" as Encoder
+participant "GPU Queue" as Queue
+participant "VRAM\n(Device Local)" as VRAM
+participant "GPU Shaders" as Shaders
+
+== Initialization Phase ==
+
+Application -> Factory : createBuffer(desc)
+note right: desc.usage = Vertex|Index\ndesc.size = meshSize
+
+Factory -> Device : new DeviceBuffer()
+Device -> Device : Validate usage flags
+Device -> Device : Add CopyDst flag
+
+Device -> VRAM : wgpuDeviceCreateBuffer()
+activate VRAM #FFF3E0
+VRAM --> Device : WGPUBuffer handle
+note right: GPU memory allocated\nNo data yet
+
+Device --> Factory : DeviceBuffer*
+Factory --> Application : unique_ptr<DeviceBuffer>
+
+== Staging Buffer Creation ==
+
+Application -> Factory : createMappableBuffer(stagingDesc)
+note right: stagingDesc.mappedAtCreation = true\nstagingDesc.usage = CopySrc
+
+Factory -> Staging : new ImmediateStagingBuffer()
+
+Staging -> RAM : wgpuDeviceCreateBuffer()
+activate RAM #E3F2FD
+RAM --> Staging : WGPUBuffer (mapped)
+
+Staging -> Staging : wgpuBufferGetMappedRange()
+Staging --> Application : void* mappedPtr
+
+== Data Upload ==
+
+Application -> RAM : memcpy(vertices, mappedPtr, size)
+note right: Direct CPU write\nSequential access\nWrite-combined memory
+
+Application -> Staging : finalize()
+Staging -> RAM : wgpuBufferUnmap()
+deactivate RAM
+note left: Flush CPU writes\nPrepare for GPU
+
+== GPU Transfer ==
+
+Application -> Encoder : wgpuDeviceCreateCommandEncoder()
+Encoder --> Application : CommandEncoder
+
+Application -> Encoder : wgpuCommandEncoderCopyBufferToBuffer(\n  staging, 0,\n  device, 0,\n  size)
+note right: Record copy command
+
+Application -> Encoder : wgpuCommandEncoderFinish()
+Encoder --> Application : CommandBuffer
+
+Application -> Queue : wgpuQueueSubmit(commandBuffer)
+
+== DMA Transfer Execution ==
+
+Queue -> Queue : Process command buffer
+
+Queue -> RAM : DMA Controller Read
+activate RAM #E3F2FD
+RAM --> Queue : Vertex data stream
+note right: PCIe read\n16-32 GB/s
+
+Queue -> VRAM : DMA Controller Write
+note right: PCIe write\nDirect to VRAM
+
+deactivate RAM
+
+Queue --> Application : Fence signal (optional)
+
+== GPU Usage ==
+
+Shaders -> VRAM : Vertex fetch
+VRAM --> Shaders : Vertex attributes
+note right: 500GB-1TB/s bandwidth\nL1/L2 cache hierarchy
+
+Shaders -> Shaders : Vertex transformation
+Shaders -> Shaders : Primitive assembly
+Shaders -> Shaders : Rasterization
+Shaders -> Shaders : Fragment processing
+
+== Memory Management ==
+
+note over Device, VRAM
+**Lifetime Management:**
+• DeviceBuffer owns GPU allocation
+• Destructor releases VRAM
+• No CPU-side buffer needed
+• Data persists until explicit release
+end note
+
+== Error Handling ==
+
+note over Application, Device
+**Common Issues:**
+• Out of VRAM → Allocation fails
+• Invalid usage flags → Validation error
+• Buffer too large → Split into chunks
+• PCIe bandwidth → Batch transfers
+end note
+
+@enduml

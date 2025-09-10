@@ -1,0 +1,114 @@
+@startuml DynamicBuffer Timeline
+
+title DynamicBuffer - Triple Buffer Ring Timeline
+
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "Frame Logic\n(CPU)" as CPU
+participant "Buffer[0]" as B0
+participant "Buffer[1]" as B1
+participant "Buffer[2]" as B2
+participant "GPU\nPipeline" as GPU
+
+== Initial Setup ==
+
+note over B0, B1, B2
+**Triple Buffer Ring**
+Pre-allocated buffers
+Rotate each frame
+No allocation overhead
+end note
+
+== Frame N: GPU Reading Buffer[0] ==
+
+GPU -> B0 : Read uniforms
+activate B0 #lightcoral
+B0 -> GPU : Frame N data
+note right: GPU actively\nreading Buffer[0]\nfor Frame N render
+
+== Frame N+1: CPU Writing Buffer[1] ==
+
+CPU -> B1 : mapAsync(Write)
+activate B1 #lightyellow
+B1 --> CPU : Mapped pointer
+
+CPU -> B1 : Write Frame N+1 uniforms
+note left: CPU updates while\nGPU uses Buffer[0]
+
+CPU -> B1 : unmap()
+note left: Buffer[1] ready\nfor Frame N+1
+
+== Frame N+2: CPU Preparing Buffer[2] ==
+
+CPU -> B2 : mapAsync(Write)
+activate B2 #lightgreen
+B2 --> CPU : Mapped pointer
+
+CPU -> B2 : Write Frame N+2 uniforms
+
+par Parallel Operations
+    CPU -> B2 : CPU writes data
+    note left: CPU prepares\nFrame N+2
+else GPU Transition
+    GPU -> B0 : Finish Frame N
+    deactivate B0
+    GPU -> B1 : Start Frame N+1
+    note right: GPU moves to\nnext buffer
+end
+
+CPU -> B2 : unmap()
+deactivate B2
+
+== Buffer Rotation ==
+
+note over B0, B1, B2
+**Current State:**
+• Buffer[0]: Free (Frame N done)
+• Buffer[1]: GPU reading (Frame N+1)
+• Buffer[2]: Ready (Frame N+2)
+
+**Next Frame:**
+• Buffer[0]: CPU will write Frame N+3
+• Buffer[1]: GPU continues Frame N+1
+• Buffer[2]: Queued for Frame N+2
+end note
+
+== Continuous Operation ==
+
+CPU -> B0 : mapAsync(Write) [Frame N+3]
+activate B0 #lightcoral
+note over CPU: Rotation continues\nNo stalls, no waits
+
+deactivate B1
+deactivate B0
+
+== Performance Characteristics ==
+
+note over CPU, GPU
+**DynamicBuffer Performance:**
+• **Latency**: 1-2 frames (by design)
+• **Update Time**: < 0.1ms per frame
+• **Memory**: 3x buffer size
+• **CPU Blocking**: None
+• **GPU Blocking**: None
+• **Throughput**: Continuous 60+ FPS
+• **Sync Overhead**: Zero (lock-free)
+end note
+
+== Use Cases ==
+
+note over B1
+**Ideal for:**
+• Per-frame uniforms
+• Camera matrices
+• Time & animation data
+• Light positions
+• Dynamic UI data
+• Particle system updates
+• Per-frame constants
+• Frame statistics
+end note
+
+@enduml

@@ -1,0 +1,134 @@
+@startuml ImmediateStagingBuffer Sequence
+
+title ImmediateStagingBuffer - Immediate Mapping Upload Sequence
+
+actor Application
+participant "IBufferFactory" as Factory
+participant "ImmediateStagingBuffer" as ISB
+participant "BufferDesc" as Desc
+participant "System RAM\n(Host Visible)" as RAM
+participant "WebGPU Device" as Device
+participant "Command Encoder" as Encoder
+participant "DeviceBuffer" as Target
+participant "GPU Queue" as Queue
+
+== Buffer Creation with Immediate Mapping ==
+
+Application -> ISB : new ImmediateStagingBuffer(desc, factory)
+
+ISB -> Desc : Force staging configuration
+note right: desc.mappedAtCreation = true\ndesc.usage = CopySrc | MapWrite
+
+ISB -> Factory : createMappableBuffer(desc)
+
+Factory -> Device : wgpuDeviceCreateBuffer()
+note right: WGPUBufferDescriptor:\n.mappedAtCreation = true\n.size = desc.size
+
+Device -> RAM : Allocate & map
+activate RAM #E3F2FD
+RAM --> Device : Buffer handle
+
+Device -> Device : wgpuBufferGetMappedRange()
+Device --> Factory : IMappableBuffer with ptr
+
+Factory --> ISB : unique_ptr<IMappableBuffer>
+
+ISB -> ISB : Store mapped pointer
+ISB --> Application : ImmediateStagingBuffer ready
+
+== Immediate Data Writing ==
+
+Application -> ISB : getMappedData()
+ISB --> Application : void* ptr (instant)
+note right: No waiting!\nAlready mapped
+
+Application -> ISB : write(vertexData, count)
+ISB -> RAM : memcpy(ptr, data, size)
+note right: Direct write\nWrite-combined memory\nOptimized for sequential
+
+Application -> ISB : write(indexData, count, offset)
+ISB -> RAM : memcpy(ptr + offset, data, size)
+
+== Finalization ==
+
+Application -> ISB : finalize()
+
+ISB -> Device : wgpuBufferUnmap()
+RAM -> RAM : Flush write-combine buffer
+note right: Make data visible\nto GPU
+
+ISB -> ISB : _mappedData = nullptr
+ISB -> ISB : _finalized = true
+
+deactivate RAM
+
+== Upload to DeviceBuffer ==
+
+Application -> ISB : uploadTo(encoder, deviceBuffer)
+
+ISB -> ISB : Check finalized
+note right: Auto-finalize\nif needed
+
+ISB -> Encoder : wgpuCommandEncoderCopyBufferToBuffer(\n  stagingBuffer, 0,\n  deviceBuffer, 0,\n  size)
+
+Encoder -> Queue : [Queued for execution]
+
+== Automatic Cleanup ==
+
+Application -> Application : [Scope exit]
+
+ISB -> ISB : ~ImmediateStagingBuffer()
+
+alt if not finalized
+    ISB -> ISB : finalize()
+    ISB -> Device : wgpuBufferUnmap()
+end
+
+ISB -> Device : wgpuBufferRelease()
+Device -> RAM : Deallocate
+
+== Performance Analysis ==
+
+note over Application, RAM
+**Timing Breakdown:**
+• Creation + Mapping: < 0.1ms
+• Write 1MB data: ~0.5ms
+• Finalize: < 0.01ms
+• GPU Copy: Async (overlapped)
+• Total CPU time: < 1ms typical
+end note
+
+== Use Case Examples ==
+
+note over ISB
+**Example: Loading a Mesh**
+```cpp
+// Create staging with immediate access
+ImmediateStagingBuffer staging(
+    BufferDesc{meshSize, "MeshStaging"},
+    factory
+);
+
+// Write data immediately - no wait!
+staging.write(vertices, vertexCount);
+staging.write(indices, indexCount, vertexOffset);
+
+// Upload to GPU
+staging.uploadTo(encoder, gpuBuffer);
+// Destructor auto-finalizes
+```
+end note
+
+== Memory Characteristics ==
+
+note over RAM
+**Host Visible Memory:**
+• Location: System RAM
+• CPU Write: Optimized (WC)
+• GPU Read: Via PCIe
+• Cache: Write-Combined
+• Bandwidth: Sequential optimal
+• Size limit: ~256MB recommended
+end note
+
+@enduml

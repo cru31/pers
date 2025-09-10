@@ -1,0 +1,316 @@
+@startuml Buffer Memory Transfer Sequence Diagrams
+
+title Buffer Memory Transfer Sequences - Detailed Flow
+
+' ==========================================
+' 1. DeviceBuffer Upload Sequence
+' ==========================================
+== DeviceBuffer - GPU-Only Buffer Creation and Upload ==
+
+actor Application
+participant "IBufferFactory" as Factory
+participant "DeviceBuffer" as Device
+participant "ImmediateStagingBuffer" as Staging
+participant "System RAM\n(Host Visible)" as RAM
+participant "ICommandEncoder" as Encoder
+participant "GPU Queue" as Queue
+participant "VRAM\n(Device Local)" as VRAM
+participant "GPU Shaders" as Shaders
+
+Application -> Factory : createBuffer(desc)
+Factory -> Device : new DeviceBuffer\n[usage: Vertex|Index]
+Device -> VRAM : Allocate\n(Device Local Memory)
+activate VRAM #FFF3E0
+Device --> Application : DeviceBuffer*
+
+note right of Device: GPU memory allocated\nbut no data yet
+
+Application -> Factory : createMappableBuffer(desc)
+Factory -> Staging : new ImmediateStagingBuffer\n[mappedAtCreation: true]
+Staging -> RAM : Allocate & Map\n(Host Visible)
+activate RAM #E3F2FD
+Staging --> Application : void* ptr
+
+Application -> RAM : memcpy(vertices)
+note right: Direct CPU write\nto mapped memory
+
+Application -> Staging : finalize()
+Staging -> RAM : unmap()
+deactivate RAM
+
+Application -> Encoder : beginCommandBuffer()
+Application -> Staging : uploadTo(encoder, device)
+Staging -> Encoder : copyBufferToBuffer\n(staging → device)
+
+Application -> Encoder : endCommandBuffer()
+Encoder -> Queue : submit()
+
+Queue -> Queue : Process Commands
+Queue -> RAM : DMA Read\n(16-32 GB/s)
+activate RAM #E3F2FD
+RAM --> Queue : Data
+deactivate RAM
+Queue -> VRAM : DMA Write\n(PCIe Transfer)
+note right: Async transfer\nvia DMA controller
+
+Queue --> Application : Fence Signal
+
+note over VRAM: Data now in VRAM\nReady for GPU
+
+Shaders -> VRAM : Read vertices\n(500GB-1TB/s)
+VRAM --> Shaders : Vertex Data
+note right: L1/L2 cache\noptimized access
+
+== Total: CPU→Staging→GPU Transfer Complete ==
+
+' ==========================================
+' 2. DeferredStagingBuffer Streaming Sequence
+' ==========================================
+== DeferredStagingBuffer - Async Streaming Pattern ==
+
+actor StreamingSystem
+participant "DeferredStagingBuffer" as Deferred
+participant "System RAM" as RAM2
+participant "mapAsync()" as MapAsync
+participant "GPU Pipeline" as Pipeline
+participant "ICommandEncoder" as Encoder2
+participant "DeviceBuffer" as Target
+participant "VRAM" as VRAM2
+
+StreamingSystem -> Deferred : new DeferredStagingBuffer\n[mappedAtCreation: false]
+Deferred -> RAM2 : Allocate\n(Host Visible, Unmapped)
+activate RAM2 #E3F2FD
+
+StreamingSystem -> Deferred : mapAsync(Write)
+Deferred -> MapAsync : Request mapping
+MapAsync --> StreamingSystem : future<void*>
+note right: Returns immediately\nNon-blocking
+
+par Parallel Execution
+    StreamingSystem -> StreamingSystem : Load texture from disk
+    note right: CPU continues\nother work
+else GPU continues rendering
+    Pipeline -> Pipeline : Render Frame N
+    Pipeline -> Pipeline : Render Frame N+1
+    note left: GPU not blocked\nby CPU operations
+end
+
+MapAsync -> RAM2 : Map for CPU access
+RAM2 --> MapAsync : Mapping complete
+MapAsync --> StreamingSystem : void* ptr (future ready)
+
+StreamingSystem -> RAM2 : Decompress & write\ntexture data
+note right: Sequential writes\nto mapped memory
+
+StreamingSystem -> Deferred : unmap()
+Deferred -> RAM2 : Flush & unmap
+
+StreamingSystem -> Encoder2 : copyBufferToBuffer\n(deferred → target)
+Encoder2 -> Pipeline : Submit copy
+
+Pipeline -> RAM2 : DMA Read
+RAM2 --> Pipeline : Texture data
+deactivate RAM2
+Pipeline -> VRAM2 : DMA Write
+activate VRAM2 #FFF3E0
+
+note over VRAM2: Texture ready\nin VRAM
+
+== Streaming Complete - No GPU Stall ==
+
+' ==========================================
+' 3. ReadbackBuffer GPU→CPU Sequence
+' ==========================================
+== ReadbackBuffer - GPU Results to CPU ==
+
+actor ComputeApp
+participant "GPU Compute" as Compute
+participant "Device Buffer\n(Results)" as Results
+participant "ReadbackBuffer" as Readback
+participant "System RAM\n(Host Cached)" as RAM3
+participant "ICommandEncoder" as Encoder3
+participant "GPU Queue" as Queue3
+participant "Fence" as Fence
+
+ComputeApp -> Compute : dispatch(shader)
+Compute -> Results : Write results
+activate Results #FFF3E0
+note right: Compute shader\nwrites to VRAM
+
+ComputeApp -> Readback : new ReadbackBuffer\n[usage: MapRead|CopyDst]
+Readback -> RAM3 : Allocate\n(Host Cached)
+activate RAM3 #B3E5FC
+
+ComputeApp -> Encoder3 : copyBufferToBuffer\n(results → readback)
+Encoder3 -> Queue3 : Submit copy + fence
+
+Queue3 -> Results : DMA Read\n(GPU Memory)
+Results --> Queue3 : Result data
+deactivate Results
+
+Queue3 -> RAM3 : DMA Write\n(via PCIe)
+note right: GPU writes to\nsystem RAM
+
+Queue3 -> Fence : Signal completion
+
+ComputeApp -> Readback : readAsync()
+Readback -> Fence : Wait for GPU
+Fence --> Readback : Complete
+
+Readback -> RAM3 : mapAsync(Read)
+RAM3 --> Readback : Mapped for CPU
+Readback --> ComputeApp : MappedData wrapper
+
+ComputeApp -> RAM3 : Read results\n(CPU cached)
+note right: Fast CPU reads\nfrom L1/L2/L3 cache
+
+ComputeApp -> ComputeApp : Process data
+
+note over ComputeApp: MappedData destructor\nauto unmaps
+
+Readback -> RAM3 : unmap()
+deactivate RAM3
+
+== GPU→CPU Transfer Complete ==
+
+' ==========================================
+' 4. DynamicBuffer Triple Buffer Sequence
+' ==========================================
+== DynamicBuffer - Triple Buffering Per-Frame Updates ==
+
+actor FrameLoop
+participant "DynamicBuffer" as Dynamic
+participant "Buffer[0]" as B0
+participant "Buffer[1]" as B1  
+participant "Buffer[2]" as B2
+participant "System RAM/BAR" as RAM4
+participant "GPU" as GPU
+participant "Frame N Pipeline" as FrameN
+participant "Frame N+1 Pipeline" as FrameN1
+
+note over B0
+Triple buffer ring
+Pre-allocated
+end note
+
+== Frame N: GPU Reading Buffer[0] ==
+
+FrameN -> B0 : GPU reads uniforms
+activate B0 #lightcoral
+B0 -> GPU : Uniform data
+note right: GPU processing\nFrame N
+
+== Frame N+1: Preparing Buffer[1] ==
+
+FrameLoop -> Dynamic : beginUpdate()
+Dynamic -> Dynamic : Select buffer[(N+1) % 3]
+Dynamic -> B1 : mapAsync(Write)
+activate B1 #lightyellow
+B1 -> RAM4 : Map for CPU
+activate RAM4
+RAM4 --> B1 : Mapped
+B1 --> Dynamic : UpdateHandle
+
+FrameLoop -> B1 : Write frame N+1 data
+note right: CPU writes while\nGPU reads buffer[0]
+
+FrameLoop -> B1 : End update (unmap)
+B1 -> RAM4 : Flush writes
+deactivate RAM4
+deactivate B1
+
+FrameN1 -> FrameN1 : Queue frame N+1\n(using Buffer[1])
+
+== Frame N+2: CPU Writing Buffer[2] ==
+
+FrameLoop -> Dynamic : beginUpdate()
+Dynamic -> B2 : mapAsync(Write)
+activate B2 #lightgreen
+B2 -> RAM4 : Map for CPU
+activate RAM4
+
+FrameLoop -> B2 : Write frame N+2 data
+
+par
+    FrameLoop -> B2 : CPU writes
+else
+    GPU -> B0 : Finish Frame N
+    deactivate B0
+    GPU -> B1 : Start Frame N+1
+    activate B1 #lightyellow
+    note right: Buffer rotation\nNo stalls
+end
+
+B2 -> RAM4 : Unmap
+deactivate RAM4
+deactivate B2
+
+== Continuous Triple Buffering ==
+
+note over Dynamic
+**Buffer States:**
+• Buffer[0]: Free (was Frame N)
+• Buffer[1]: GPU reading (Frame N+1)  
+• Buffer[2]: Ready (Frame N+2)
+
+**Next frame:**
+• Buffer[0]: CPU writes Frame N+3
+• Buffer[1]: GPU reads Frame N+1
+• Buffer[2]: Queued for Frame N+2
+end note
+
+== No Synchronization Stalls - 60+ FPS ==
+
+' ==========================================
+' 5. Complex Upload Chain
+' ==========================================
+== Complex Asset Loading Chain ==
+
+actor AssetLoader
+participant "File I/O" as FileIO
+participant "Decompressor" as Decomp
+participant "ImmediateStagingBuffer" as Stage
+participant "System RAM" as RAM5
+participant "Command Buffer" as Cmd
+participant "Multiple DeviceBuffers" as Devices
+participant "VRAM" as VRAM5
+
+AssetLoader -> FileIO : Read mesh file
+FileIO --> AssetLoader : Compressed data
+
+AssetLoader -> Decomp : Decompress
+Decomp --> AssetLoader : Mesh data
+
+group Create Multiple Buffers
+    AssetLoader -> Stage : Create staging\n[size: totalSize]
+    Stage -> RAM5 : Allocate & map
+    activate RAM5 #E3F2FD
+    
+    AssetLoader -> Stage : Write vertices @ offset 0
+    AssetLoader -> Stage : Write indices @ offset N
+    AssetLoader -> Stage : Write normals @ offset M
+    
+    Stage -> RAM5 : unmap()
+end
+
+AssetLoader -> Cmd : Begin recording
+
+group Batch GPU Copies
+    AssetLoader -> Cmd : Copy staging[0..V] → vertexBuffer
+    AssetLoader -> Cmd : Copy staging[V..I] → indexBuffer  
+    AssetLoader -> Cmd : Copy staging[I..N] → normalBuffer
+    note right: Single staging buffer\nmultiple destinations
+end
+
+AssetLoader -> Cmd : Submit batch
+
+Cmd -> RAM5 : DMA read regions
+RAM5 --> VRAM5 : DMA write to multiple buffers
+deactivate RAM5
+activate VRAM5 #FFF3E0
+
+note over VRAM5: All buffers populated\nin single submission
+
+== Efficient Batch Upload Complete ==
+
+@enduml

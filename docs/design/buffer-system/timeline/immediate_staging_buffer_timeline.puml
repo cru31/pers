@@ -1,0 +1,64 @@
+@startuml ImmediateStagingBuffer Timeline
+
+title ImmediateStagingBuffer - Synchronous Initial Upload Timeline
+
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "Application\n(CPU)" as App
+participant "ImmediateStaging\nBuffer" as ISB
+participant "Command\nEncoder" as Cmd
+participant "GPU\nQueue" as GPU
+participant "Device\nBuffer" as DB
+
+== Buffer Creation & Immediate Mapping ==
+
+App -> ISB : new ImmediateStagingBuffer()\n[mappedAtCreation=true]
+activate ISB #lightgreen
+ISB --> App : void* ptr (instant)
+note right: Buffer created with\nimmediate CPU access\nNo waiting required
+
+== Data Writing Phase ==
+
+App -> ISB : write(data)
+note right: Direct memcpy\nto mapped memory\nWrite-combined for\nsequential performance
+
+App -> ISB : finalize()
+ISB -> ISB : unmap()
+deactivate ISB
+note left: Buffer unmapped\nReady for GPU transfer
+
+== GPU Transfer Phase ==
+
+App -> Cmd : copyBufferToBuffer()
+Cmd -> GPU : submit()
+
+GPU ->> DB : DMA Transfer
+note right: Async GPU copy\n16-32 GB/s via PCIe\nCPU can continue
+
+== Performance Characteristics ==
+
+note over App,DB
+**ImmediateStagingBuffer Performance:**
+• **Creation**: ~0.1ms (instant mapping)
+• **Mapping**: 0ms (already mapped)
+• **Write Speed**: Sequential writes optimized
+• **Transfer**: 16-32 GB/s (PCIe limited)
+• **Total Latency**: ~1-5ms for typical mesh
+• **CPU Blocking**: Only during write
+• **GPU Blocking**: None
+end note
+
+== Use Cases ==
+
+note over ISB
+**Ideal for:**
+• Initial asset loading
+• Static mesh/texture upload
+• Loading screen resources
+• Small to medium data (< 256MB)
+• One-time uploads
+end note
+
+@enduml
