@@ -5,6 +5,10 @@
 #include "pers/graphics/IQueue.h"
 #include "pers/graphics/ICommandEncoder.h"
 #include "pers/graphics/ISwapChain.h"
+#include "pers/graphics/ISurfaceFramebuffer.h"
+#include "pers/graphics/SurfaceFramebuffer.h"
+#include "pers/graphics/OffscreenFramebuffer.h"
+#include "pers/graphics/RenderPassConfig.h"
 #include "pers/graphics/IFramebuffer.h"
 #include "pers/graphics/IResourceFactory.h"
 #include "pers/graphics/IBuffer.h"
@@ -22,8 +26,8 @@ TriangleRenderer::~TriangleRenderer() {
     cleanup();
 }
 
-bool TriangleRenderer::initialize(const std::shared_ptr<pers::IInstance>& instance, const glm::ivec2& size) {
-    _windowSize = size;
+bool TriangleRenderer::initialize(const std::shared_ptr<pers::IInstance>& instance, const TriangleRendererConfig& config) {
+    _config = config;
     _instance = instance;
     
     if (!_instance) {
@@ -33,7 +37,7 @@ bool TriangleRenderer::initialize(const std::shared_ptr<pers::IInstance>& instan
     }
     
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
-        "Initializing with size: %dx%d", _windowSize.x, _windowSize.y);
+        "Initializing with size: %dx%d", _config.windowSize.x, _config.windowSize.y);
     
     // Surface will be created and set by the app
     // Wait for surface to be set
@@ -83,21 +87,29 @@ bool TriangleRenderer::initializeGraphics(const pers::NativeSurfaceHandle& surfa
     }
     setQueue(queue);
     
-    // Step 3: Create swap chain
+    // Step 3: Create surface framebuffer and swap chain
     LOG_INFO("TriangleRenderer",
-        "Creating swap chain...");
+        "Creating surface framebuffer and swap chain...");
     
-    auto swapChain = createSwapChain(logicalDevice, surface);
-    if (!swapChain) {
+    // Create surface framebuffer
+    _surfaceFramebuffer = std::make_shared<pers::SurfaceFramebuffer>(logicalDevice);
+    
+    // Build swap chain description using builder with CONFIG values
+    pers::SwapChainDescBuilder builder;
+    pers::SwapChainDesc swapChainDesc = builder
+        .setSize(_config.windowSize.x, _config.windowSize.y)
+        .setFormat(_config.colorFormat)  // From config!
+        .setPresentMode(_config.presentMode)  // From config!
+        .setUsage(pers::TextureUsage::RenderAttachment)
+        .setDebugName("TriangleSwapChain")
+        .build();
+    
+    // Create swap chain through surface framebuffer
+    if (!_surfaceFramebuffer->create(surface, swapChainDesc)) {
         LOG_ERROR("TriangleRenderer",
             "Failed to create swap chain");
         return false;
     }
-    setSwapChain(swapChain);
-    
-    // Step 4: Create framebuffers using the new architecture
-    LOG_INFO("TriangleRenderer",
-        "Creating framebuffers...");
     
     // Get resource factory from logical device
     auto resourceFactory = logicalDevice->getResourceFactory();
@@ -107,33 +119,8 @@ bool TriangleRenderer::initializeGraphics(const pers::NativeSurfaceHandle& surfa
         return false;
     }
     
-    // Create surface framebuffer using IResourceFactory interface
-    _surfaceFramebuffer = resourceFactory->createSurfaceFramebuffer(
-        surface,
-        _windowSize.x,
-        _windowSize.y,
-        pers::TextureFormat::BGRA8Unorm);
-    
-    if (!_surfaceFramebuffer) {
-        LOG_ERROR("TriangleRenderer",
-            "Failed to create surface framebuffer");
-        return false;
-    }
-    
-    // Create depth framebuffer
-    _depthFramebuffer = resourceFactory->createDepthOnlyFramebuffer(
-        _windowSize.x,
-        _windowSize.y,
-        pers::TextureFormat::Depth24Plus);
-    
-    if (!_depthFramebuffer) {
-        LOG_ERROR("TriangleRenderer",
-            "Failed to create depth framebuffer");
-        return false;
-    }
-    
-    // Set the depth framebuffer for the surface
-    _surfaceFramebuffer->setDepthFramebuffer(_depthFramebuffer);
+    // NOTE: NOT creating separate depth framebuffer - SurfaceFramebuffer handles it internally
+    // This fixes the double depth buffer allocation bug (Review issue #1)
     
     LOG_INFO("TriangleRenderer",
         "Framebuffers created successfully");
@@ -160,9 +147,6 @@ void TriangleRenderer::setQueue(const std::shared_ptr<pers::IQueue>& queue) {
     _queue = queue;
 }
 
-void TriangleRenderer::setSwapChain(const std::shared_ptr<pers::ISwapChain>& swapChain) {
-    _swapChain = swapChain;
-}
 
 std::shared_ptr<pers::IPhysicalDevice> TriangleRenderer::requestPhysicalDevice(const pers::NativeSurfaceHandle& surface) {
     if (!_instance || !surface.isValid()) {
@@ -224,9 +208,9 @@ std::shared_ptr<pers::ILogicalDevice> TriangleRenderer::createLogicalDevice(cons
     
     // Setup device descriptor
     pers::LogicalDeviceDesc deviceDesc;
-    deviceDesc.enableValidation = true;  // Enable validation in debug
+    deviceDesc.enableValidation = _config.enableValidation;  // Use configured validation setting
     deviceDesc.debugName = "TriangleRendererDevice";
-    deviceDesc.timeout = std::chrono::seconds(10);  // 10 second timeout
+    deviceDesc.timeout = _config.deviceTimeout;  // Use configured timeout
     
     // For now, we don't request any special features or limits
     // Just use the adapter's defaults
@@ -252,39 +236,6 @@ std::shared_ptr<pers::ILogicalDevice> TriangleRenderer::createLogicalDevice(cons
     return device;
 }
 
-std::shared_ptr<pers::ISwapChain> TriangleRenderer::createSwapChain(const std::shared_ptr<pers::ILogicalDevice>& device, const pers::NativeSurfaceHandle& surface) {
-    if (!device || !surface.isValid()) {
-        LOG_ERROR("TriangleRenderer",
-            "Device or surface not ready");
-        return nullptr;
-    }
-    
-    // Create swap chain descriptor
-    pers::SwapChainDescBuilder builder;
-    pers::SwapChainDesc swapChainDesc = builder
-        .setSize(_windowSize.x, _windowSize.y)
-        .setFormat(pers::TextureFormat::BGRA8Unorm)
-        .setPresentMode(pers::PresentMode::Fifo)  // VSync
-        .setUsage(pers::TextureUsage::RenderAttachment)
-        .setDebugName("TriangleSwapChain")
-        .build();
-    
-    pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
-        "Creating swap chain: %dx%d", _windowSize.x, _windowSize.y);
-    
-    auto swapChain = device->createSwapChain(surface, swapChainDesc);
-    
-    if (!swapChain) {
-        LOG_ERROR("TriangleRenderer",
-            "Failed to create swap chain");
-        return nullptr;
-    }
-    
-    LOG_INFO("TriangleRenderer",
-        "Swap chain created successfully");
-    
-    return swapChain;
-}
 
 bool TriangleRenderer::createTriangleResources() {
     LOG_INFO("TriangleRenderer",
@@ -402,12 +353,17 @@ fn main() -> @location(0) vec4<f32> {
     
     // Color target (matches swap chain format)
     pers::ColorTargetState colorTarget;
-    colorTarget.format = pers::TextureFormat::BGRA8Unorm;  // Standard swap chain format
+    colorTarget.format = _config.colorFormat;  // Use configured color format
     colorTarget.writeMask = pers::ColorWriteMask::All;
     pipelineDesc.colorTargets.push_back(colorTarget);
     
     // Multisample state (no MSAA for now)
     pipelineDesc.multisample.count = 1;
+    
+    // Depth-stencil state (must match the framebuffer's depth format)
+    pipelineDesc.depthStencil.format = _config.depthFormat;
+    pipelineDesc.depthStencil.depthWriteEnabled = true;
+    pipelineDesc.depthStencil.depthCompare = pers::CompareFunction::Less;
     
     _renderPipeline = factory->createRenderPipeline(pipelineDesc);
     if (!_renderPipeline) {
@@ -416,21 +372,40 @@ fn main() -> @location(0) vec4<f32> {
         return false;
     }
     
+    // 4. Create render pass configuration (once, reused every frame)
+    _renderPassConfig = std::make_unique<pers::RenderPassConfig>();
+    
+    // Configure color attachment
+    pers::RenderPassConfig::ColorConfig colorConfig;
+    colorConfig.loadOp = pers::LoadOp::Clear;
+    colorConfig.storeOp = pers::StoreOp::Store;
+    colorConfig.clearColor = { _config.clearColor.r, _config.clearColor.g, _config.clearColor.b, _config.clearColor.a };  // Use configured clear color
+    _renderPassConfig->addColorAttachment(colorConfig);
+    
+    // Configure depth attachment
+    pers::RenderPassConfig::DepthStencilConfig depthConfig;
+    depthConfig.depthLoadOp = pers::LoadOp::Clear;
+    depthConfig.depthStoreOp = pers::StoreOp::Store;
+    depthConfig.depthClearValue = _config.clearDepth;
+    depthConfig.depthReadOnly = false;
+    _renderPassConfig->setDepthStencilConfig(depthConfig);
+    
+    _renderPassConfig->setLabel("TriangleRenderPass");
+    
     LOG_INFO("TriangleRenderer",
         "Triangle resources created successfully");
     return true;
 }
 
 void TriangleRenderer::renderFrame() {
-    if (!_swapChain || !_renderPipeline || !_vertexBuffer || !_queue) {
+    if (!_surfaceFramebuffer || !_renderPipeline || !_vertexBuffer || !_queue) {
         return;  // Not ready to render
     }
     
-    // 1. Get current texture from swap chain
-    auto textureView = _swapChain->getCurrentTextureView();
-    if (!textureView) {
+    // 1. Acquire next image from surface framebuffer
+    if (!_surfaceFramebuffer->acquireNextImage()) {
         LOG_WARNING("TriangleRenderer",
-            "Failed to get current texture view");
+            "Failed to acquire next image");
         return;
     }
     
@@ -442,19 +417,15 @@ void TriangleRenderer::renderFrame() {
         return;
     }
     
-    // 3. Begin render pass
-    pers::RenderPassDesc renderPassDesc;
-    renderPassDesc.label = "TriangleRenderPass";
+    // 3. Begin render pass using pre-configured settings
+    if (!_renderPassConfig) {
+        LOG_ERROR("TriangleRenderer",
+            "Render pass configuration not initialized");
+        return;
+    }
     
-    pers::RenderPassColorAttachment colorAttachment;
-    colorAttachment.view = textureView;
-    colorAttachment.loadOp = pers::LoadOp::Clear;
-    colorAttachment.storeOp = pers::StoreOp::Store;
-    colorAttachment.clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };  // Clear to black
-    renderPassDesc.colorAttachments.push_back(colorAttachment);
-    
-    // Add depth attachment from SwapChain
-    renderPassDesc.depthStencilAttachment = _swapChain->getDepthStencilAttachment();
+    // Make descriptor from config + current framebuffer
+    pers::RenderPassDesc renderPassDesc = _renderPassConfig->makeDescriptor(_surfaceFramebuffer);
     
     auto renderPass = commandEncoder->beginRenderPass(renderPassDesc);
     if (!renderPass) {
@@ -485,53 +456,63 @@ void TriangleRenderer::renderFrame() {
     
     _queue->submit(commandBuffer);
     
-    // 9. Present swap chain
-    _swapChain->present();
+    // 9. Present the frame
+    _surfaceFramebuffer->present();
     
     // Frame counter for debugging
-    static int frameCount = 0;
-    if (++frameCount % 60 == 0) {
+    _frameCounter++;
+    if (_frameCounter % _config.frameLogInterval == 0) {
         pers::Logger::Instance().LogFormat(pers::LogLevel::Debug, "TriangleRenderer", PERS_SOURCE_LOC,
-            "Frame: %d", frameCount);
+            "Frame: %d", _frameCounter);
     }
 }
 
 void TriangleRenderer::onResize(int width, int height) {
     glm::ivec2 newSize(width, height);
-    if (_windowSize == newSize) {
+    if (_config.windowSize == newSize) {
         return; // No change
     }
     
-    _windowSize = newSize;
+    _config.windowSize = newSize;
     
     pers::Logger::Instance().LogFormat(pers::LogLevel::Info, "TriangleRenderer", PERS_SOURCE_LOC,
-        "Resized to: %dx%d", _windowSize.x, _windowSize.y);
+        "Resized to: %dx%d", _config.windowSize.x, _config.windowSize.y);
     
-    // Resize swap chain with new size
-    if (_swapChain) {
-        _swapChain->resize(width, height);
+    // Resize surface framebuffer with new size
+    if (_surfaceFramebuffer) {
+        _surfaceFramebuffer->resize(width, height);
     }
 }
 
 void TriangleRenderer::cleanup() {
-    // Clean up in reverse order of creation
+    // Clean up in EXACT reverse order of creation
     
-    // TODO: Release pipeline, buffers, swap chain
+    // 8. _renderPassConfig (created last in createTriangleResources)
+    _renderPassConfig.reset();
     
-    // Release queue
+    // 7. _renderPipeline (created in createTriangleResources)
+    _renderPipeline.reset();
+    
+    // 6. _vertexBuffer (created in createTriangleResources)
+    _vertexBuffer.reset();
+    
+    // 5. _surfaceFramebuffer (created in initializeGraphics)
+    _surfaceFramebuffer.reset();
+
+    // 4. _queue (set in initializeGraphics)
     _queue.reset();
     
-    // Release logical device
+    // 3. _device (logical device, created in initializeGraphics)
     _device.reset();
     
-    // Release physical device
+    // 2. _physicalDevice (set in initializeGraphics)
     _physicalDevice.reset();
     
-    // Release surface (WebGPU will handle this)
+    // 1. _surface (set first in initializeGraphics)
     _surface = pers::NativeSurfaceHandle();
     
-    // Release instance
-    _instance.reset();
+    // Note: _instance is NOT reset here as it was provided externally
+    // The application that created the instance should destroy it
     
     LOG_INFO("TriangleRenderer",
         "Cleanup completed");

@@ -20,9 +20,10 @@ public:
     /**
      * @brief Constructor
      * @param device WebGPU device handle (takes ownership)
-     * @param adapter WebGPU adapter handle (kept for reference, not owned)
+     * @param physicalDevice The physical device this logical device was created from
      */
-    WebGPULogicalDevice(WGPUDevice device, WGPUAdapter adapter);
+    WebGPULogicalDevice(WGPUDevice device,
+                       const std::shared_ptr<IPhysicalDevice>& physicalDevice);
     ~WebGPULogicalDevice() override;
     
     // Delete copy operations to prevent double-free
@@ -53,13 +54,16 @@ public:
     // Native handle access
     NativeDeviceHandle getNativeDeviceHandle() const override;
     
+    // Physical device access
+    std::shared_ptr<IPhysicalDevice> getPhysicalDevice() const override;
+    
     // SwapChain management (for depth buffer auto-linking)
     void setCurrentSwapChain(const std::shared_ptr<ISwapChain>& swapChain);
     std::shared_ptr<ISwapChain> getCurrentSwapChain() const;
 
 private:
     WGPUDevice _device = nullptr;
-    WGPUAdapter _adapter = nullptr;  // Keep reference for queries
+    std::weak_ptr<IPhysicalDevice> _physicalDevice;  // The physical device this was created from
     std::shared_ptr<IQueue> _defaultQueue;  // WebGPU has single queue
     mutable std::shared_ptr<IResourceFactory> _resourceFactory;  // Cached factory
     std::weak_ptr<ISwapChain> _currentSwapChain;  // Track current SwapChain for auto depth buffer

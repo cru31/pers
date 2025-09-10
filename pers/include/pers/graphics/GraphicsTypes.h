@@ -18,12 +18,22 @@ enum class TextureDimension {
  * @brief Texture view dimension enumeration
  */
 enum class TextureViewDimension {
+    Undefined,
     D1,
     D2,
     D2Array,
     Cube,
     CubeArray,
     D3
+};
+
+/**
+ * @brief Texture aspect for views
+ */
+enum class TextureAspect {
+    All,
+    StencilOnly,
+    DepthOnly
 };
 
 /**

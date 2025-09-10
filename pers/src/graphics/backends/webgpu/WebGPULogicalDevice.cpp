@@ -10,8 +10,9 @@
 
 namespace pers {
 
-WebGPULogicalDevice::WebGPULogicalDevice(WGPUDevice device, WGPUAdapter adapter)
-    : _device(device), _adapter(adapter) {
+WebGPULogicalDevice::WebGPULogicalDevice(WGPUDevice device,
+                                       const std::shared_ptr<IPhysicalDevice>& physicalDevice)
+    : _device(device), _physicalDevice(physicalDevice) {
     
     if (_device) {
         wgpuDeviceAddRef(_device);
@@ -26,10 +27,6 @@ WebGPULogicalDevice::WebGPULogicalDevice(WGPUDevice device, WGPUAdapter adapter)
     } else {
         LOG_ERROR("WebGPULogicalDevice", "Created with null device!");
     }
-    
-    if (_adapter) {
-        wgpuAdapterAddRef(_adapter);
-    }
 }
 
 WebGPULogicalDevice::~WebGPULogicalDevice() {
@@ -38,11 +35,6 @@ WebGPULogicalDevice::~WebGPULogicalDevice() {
     if (_device) {
         wgpuDeviceRelease(_device);
         _device = nullptr;
-    }
-    
-    if (_adapter) {
-        wgpuAdapterRelease(_adapter);
-        _adapter = nullptr;
     }
 }
 
@@ -167,6 +159,10 @@ void WebGPULogicalDevice::waitIdle() {
 
 NativeDeviceHandle WebGPULogicalDevice::getNativeDeviceHandle() const {
     return NativeDeviceHandle::fromBackend(_device);
+}
+
+std::shared_ptr<IPhysicalDevice> WebGPULogicalDevice::getPhysicalDevice() const {
+    return _physicalDevice.lock();
 }
 
 } // namespace pers

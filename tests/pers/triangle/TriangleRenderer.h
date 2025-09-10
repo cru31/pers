@@ -1,8 +1,12 @@
 #pragma once
 
 #include <memory>
+#include <chrono>
 #include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
 #include "pers/graphics/GraphicsTypes.h"
+#include "pers/graphics/SurfaceFramebuffer.h"
+#include "pers/graphics/RenderPassConfig.h"
 
 namespace pers {
     class IGraphicsBackendFactory;
@@ -17,13 +21,35 @@ namespace pers {
     class IFramebuffer;
 }
 
+// Configuration structure - NO HARDCODING
+struct TriangleRendererConfig {
+    // Configurable formats
+    pers::TextureFormat colorFormat = pers::TextureFormat::BGRA8Unorm;
+    pers::TextureFormat depthFormat = pers::TextureFormat::Depth24PlusStencil8;
+    
+    // Configurable clear values
+    glm::vec4 clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    float clearDepth = 1.0f;
+    
+    // Window settings
+    glm::ivec2 windowSize = glm::ivec2(800, 600);
+    pers::PresentMode presentMode = pers::PresentMode::Fifo;  // VSync
+    
+    // Device settings
+    std::chrono::milliseconds deviceTimeout{10000};
+    bool enableValidation = true;
+    
+    // Performance settings
+    uint32_t frameLogInterval = 60;
+};
+
 class TriangleRenderer {
 public:
     TriangleRenderer() = default;
     ~TriangleRenderer();
     
-    // Initialize the renderer with instance and size
-    bool initialize(const std::shared_ptr<pers::IInstance>& instance, const glm::ivec2& size);
+    // Initialize the renderer with instance and config
+    bool initialize(const std::shared_ptr<pers::IInstance>& instance, const TriangleRendererConfig& config);
     
     // Get the graphics instance (for surface creation)
     std::shared_ptr<pers::IInstance> getInstance() const { return _instance; }
@@ -49,15 +75,14 @@ private:
     void setPhysicalDevice(const std::shared_ptr<pers::IPhysicalDevice>& physicalDevice);
     void setLogicalDevice(const std::shared_ptr<pers::ILogicalDevice>& device);
     void setQueue(const std::shared_ptr<pers::IQueue>& queue);
-    void setSwapChain(const std::shared_ptr<pers::ISwapChain>& swapChain);
     
     // Device initialization helpers
     std::shared_ptr<pers::IPhysicalDevice> requestPhysicalDevice(const pers::NativeSurfaceHandle& surface);
     std::shared_ptr<pers::ILogicalDevice> createLogicalDevice(const std::shared_ptr<pers::IPhysicalDevice>& physicalDevice);
-    std::shared_ptr<pers::ISwapChain> createSwapChain(const std::shared_ptr<pers::ILogicalDevice>& device, const pers::NativeSurfaceHandle& surface);
     
 private:
-    glm::ivec2 _windowSize = glm::ivec2(800, 600);
+    // Configuration
+    TriangleRendererConfig _config;
     
     // Pers graphics resources
     std::shared_ptr<pers::IInstance> _instance;
@@ -67,9 +92,14 @@ private:
     pers::NativeSurfaceHandle _surface; // Surface handle
     
     // Rendering resources
-    std::shared_ptr<pers::ISwapChain> _swapChain;
-    std::shared_ptr<pers::ISurfaceFramebuffer> _surfaceFramebuffer;  // New framebuffer architecture
-    std::shared_ptr<pers::IFramebuffer> _depthFramebuffer;  // Separate depth buffer
+    std::shared_ptr<pers::ISurfaceFramebuffer> _surfaceFramebuffer;  // Surface framebuffer interface
+    // NO SEPARATE DEPTH BUFFER - SurfaceFramebuffer handles it internally (Review issue #1)
     std::shared_ptr<pers::IBuffer> _vertexBuffer;
     std::shared_ptr<pers::IRenderPipeline> _renderPipeline;
+    
+    // Render pass configuration (created once, reused every frame)
+    std::unique_ptr<pers::RenderPassConfig> _renderPassConfig;
+    
+    // Frame counter for performance logging
+    uint32_t _frameCounter = 0;
 };

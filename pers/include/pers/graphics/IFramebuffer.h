@@ -97,46 +97,5 @@ public:
     virtual bool resize(uint32_t width, uint32_t height) = 0;
 };
 
-/**
- * @brief Interface for surface framebuffers (SwapChain)
- * 
- * Specialized framebuffer for presenting to a surface/window.
- * Adds acquire/present semantics required by SwapChain.
- */
-class ISurfaceFramebuffer : public IResizableFramebuffer {
-public:
-    /**
-     * @brief Acquire the next available image from the SwapChain
-     * @return True if acquisition succeeded, false otherwise
-     * 
-     * Must be called once per frame before using getColorAttachment().
-     * The acquired image remains valid until present() is called.
-     */
-    virtual bool acquireNextImage() = 0;
-    
-    /**
-     * @brief Present the rendered image to the surface
-     * 
-     * Submits the current image for presentation and releases it.
-     * After calling present(), acquireNextImage() must be called
-     * before the next frame.
-     */
-    virtual void present() = 0;
-    
-    /**
-     * @brief Check if the framebuffer is ready for rendering
-     * @return True if an image has been acquired and not yet presented
-     */
-    virtual bool isReady() const = 0;
-    
-    /**
-     * @brief Set an external depth framebuffer (optional)
-     * @param depthFramebuffer Framebuffer providing depth attachment, or nullptr to clear
-     * 
-     * Allows sharing depth buffers between surface and offscreen rendering.
-     * The depth framebuffer must be passed as const& per coding standards.
-     */
-    virtual void setDepthFramebuffer(const std::shared_ptr<IFramebuffer>& depthFramebuffer) = 0;
-};
 
 } // namespace pers

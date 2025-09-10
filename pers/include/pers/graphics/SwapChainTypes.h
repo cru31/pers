@@ -75,10 +75,11 @@ struct SwapChainDesc {
     uint32_t height = 0;
     
     // Values determined by negotiation
-    TextureFormat format = TextureFormat::Undefined;
-    PresentMode presentMode = PresentMode::Fifo;
+    TextureFormat format = TextureFormat::BGRA8Unorm;
+    PresentMode presentMode = PresentMode::Mailbox;
     TextureUsageFlags usage = static_cast<TextureUsageFlags>(TextureUsage::RenderAttachment);
     CompositeAlphaMode alphaMode = CompositeAlphaMode::Opaque;
+    uint32_t bufferCount = 3;  // Number of buffers (e.g., 2 for double buffering, 3 for triple buffering)
     
     // MSAA level (defaults to no MSAA)
     MSAALevel msaaLevel = MSAALevel::None;

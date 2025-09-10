@@ -5,7 +5,7 @@
 
 class TriangleRenderer;
 
-class PersTriangleApp : public Application {
+class PersTriangleApp : public pers::Application {
 public:
     PersTriangleApp();
     ~PersTriangleApp() override;

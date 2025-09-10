@@ -1,10 +1,11 @@
 #include "pers/graphics/backends/webgpu/WebGPUResourceFactory.h"
 #include "pers/graphics/backends/webgpu/WebGPUBuffer.h"
+#include "pers/graphics/backends/webgpu/WebGPUTexture.h"
+#include "pers/graphics/backends/webgpu/WebGPUTextureView.h"
 #include "pers/graphics/backends/webgpu/WebGPUShaderModule.h"
 #include "pers/graphics/backends/webgpu/WebGPURenderPipeline.h"
 #include "pers/graphics/backends/webgpu/WebGPULogicalDevice.h"
-#include "pers/graphics/backends/webgpu/WebGPUFramebufferFactory.h"
-#include "pers/graphics/backends/webgpu/WebGPUOffscreenFramebuffer.h"
+#include "pers/graphics/backends/webgpu/WebGPUConverters.h"
 #include "pers/utils/Logger.h"
 #include <webgpu/webgpu.h>
 
@@ -43,17 +44,86 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& d
 }
 
 std::shared_ptr<ITexture> WebGPUResourceFactory::createTexture(const TextureDesc& desc) {
-    TODO_OR_DIE("WebGPUResourceFactory::createTexture", 
-                   "Implement WebGPUTexture");
-    return nullptr;
+    auto device = _logicalDevice.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUResourceFactory", "Cannot create texture without device");
+        return nullptr;
+    }
+    
+    WGPUDevice wgpuDevice = device->getNativeDeviceHandle().as<WGPUDevice>();
+    
+    // Convert texture descriptor
+    WGPUTextureDescriptor textureDesc = {};
+    textureDesc.label = WGPUStringView{desc.label.data(), desc.label.length()};
+    textureDesc.size.width = desc.width;
+    textureDesc.size.height = desc.height;
+    textureDesc.size.depthOrArrayLayers = desc.depthOrArrayLayers;
+    textureDesc.mipLevelCount = desc.mipLevelCount;
+    textureDesc.sampleCount = desc.sampleCount;
+    textureDesc.dimension = WebGPUConverters::convertTextureDimension(desc.dimension);
+    textureDesc.format = WebGPUConverters::convertTextureFormat(desc.format);
+    textureDesc.usage = WebGPUConverters::convertTextureUsage(desc.usage);
+    
+    // Create the texture
+    WGPUTexture wgpuTexture = wgpuDeviceCreateTexture(wgpuDevice, &textureDesc);
+    if (!wgpuTexture) {
+        LOG_ERROR("WebGPUResourceFactory", "Failed to create texture: " + desc.label);
+        return nullptr;
+    }
+    
+    return std::make_shared<WebGPUTexture>(
+        wgpuTexture,
+        desc.width,
+        desc.height,
+        desc.depthOrArrayLayers,
+        desc.format,
+        desc.usage,
+        desc.dimension
+    );
 }
 
 std::shared_ptr<ITextureView> WebGPUResourceFactory::createTextureView(
     const std::shared_ptr<ITexture>& texture,
     const TextureViewDesc& desc) {
-    TODO_OR_DIE("WebGPUResourceFactory::createTextureView", 
-                   "Implement WebGPUTextureView");
-    return nullptr;
+    if (!texture) {
+        LOG_ERROR("WebGPUResourceFactory", "Cannot create texture view from null texture");
+        return nullptr;
+    }
+    
+    auto webgpuTexture = std::dynamic_pointer_cast<WebGPUTexture>(texture);
+    if (!webgpuTexture) {
+        LOG_ERROR("WebGPUResourceFactory", "Texture is not a WebGPU texture");
+        return nullptr;
+    }
+    
+    WGPUTexture wgpuTexture = webgpuTexture->getWGPUTexture();
+    
+    // Create texture view descriptor
+    WGPUTextureViewDescriptor viewDesc = {};
+    viewDesc.label = WGPUStringView{desc.label.data(), desc.label.length()};
+    viewDesc.format = WebGPUConverters::convertTextureFormat(desc.format);
+    viewDesc.dimension = WebGPUConverters::convertTextureViewDimension(desc.dimension);
+    viewDesc.baseMipLevel = desc.baseMipLevel;
+    viewDesc.mipLevelCount = desc.mipLevelCount;
+    viewDesc.baseArrayLayer = desc.baseArrayLayer;
+    viewDesc.arrayLayerCount = desc.arrayLayerCount;
+    viewDesc.aspect = WebGPUConverters::convertTextureAspect(desc.aspect);
+    
+    // Create the texture view
+    WGPUTextureView wgpuView = wgpuTextureCreateView(wgpuTexture, &viewDesc);
+    if (!wgpuView) {
+        LOG_ERROR("WebGPUResourceFactory", "Failed to create texture view: " + desc.label);
+        return nullptr;
+    }
+    
+    // Use the texture's actual dimensions for the view
+    return std::make_shared<WebGPUTextureView>(
+        wgpuView,
+        webgpuTexture->getWidth(),
+        webgpuTexture->getHeight(),
+        webgpuTexture->getFormat(),
+        false  // Not a swap chain texture
+    );
 }
 
 std::shared_ptr<ISampler> WebGPUResourceFactory::createSampler(const SamplerDesc& desc) {
@@ -97,64 +167,6 @@ std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(con
     return std::make_shared<WebGPURenderPipeline>(desc, wgpuDevice);
 }
 
-std::shared_ptr<ISurfaceFramebuffer> WebGPUResourceFactory::createSurfaceFramebuffer(
-    const NativeSurfaceHandle& surface,
-    uint32_t width,
-    uint32_t height,
-    TextureFormat format) {
-    
-    auto device = _logicalDevice.lock();
-    if (!device) {
-        LOG_ERROR("WebGPUResourceFactory",
-            "Cannot create surface framebuffer without device");
-        return nullptr;
-    }
-    
-    WGPUSurface wgpuSurface = surface.as<WGPUSurface>();
-    return WebGPUFramebufferFactory::createSurfaceFramebuffer(
-        device, wgpuSurface, width, height, format);
-}
-
-std::shared_ptr<IFramebuffer> WebGPUResourceFactory::createOffscreenFramebuffer(
-    const OffscreenFramebufferDesc& desc) {
-    
-    auto device = _logicalDevice.lock();
-    if (!device) {
-        LOG_ERROR("WebGPUResourceFactory",
-            "Cannot create offscreen framebuffer without device");
-        return nullptr;
-    }
-    
-    // Convert from IResourceFactory desc to WebGPU desc
-    OffscreenFramebufferConfig config;
-    config.width = desc.width;
-    config.height = desc.height;
-    config.sampleCount = desc.sampleCount;
-    config.colorFormats = desc.colorFormats;
-    config.depthFormat = desc.depthFormat;
-    config.colorUsage = desc.colorUsage;
-    config.depthUsage = desc.depthUsage;
-    
-    return WebGPUFramebufferFactory::createOffscreenFramebuffer(device, config);
-}
-
-std::shared_ptr<IFramebuffer> WebGPUResourceFactory::createDepthOnlyFramebuffer(
-    uint32_t width,
-    uint32_t height,
-    TextureFormat format,
-    uint32_t sampleCount,
-    TextureUsage usage) {
-    
-    auto device = _logicalDevice.lock();
-    if (!device) {
-        LOG_ERROR("WebGPUResourceFactory",
-            "Cannot create depth-only framebuffer without device");
-        return nullptr;
-    }
-    
-    return WebGPUFramebufferFactory::createDepthOnlyFramebuffer(
-        device, width, height, format, sampleCount, usage);
-}
 
 } // namespace webgpu
 } // namespace pers

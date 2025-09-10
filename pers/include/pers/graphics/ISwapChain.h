@@ -77,55 +77,10 @@ public:
     
     /**
      * @brief Query surface capabilities
-     * @param physicalDevice The physical device to query capabilities from
      * @return Surface capabilities including supported formats, present modes, and dimensions
      */
-    virtual SurfaceCapabilities querySurfaceCapabilities(
-        const std::shared_ptr<IPhysicalDevice>& physicalDevice) const = 0;
+    virtual SurfaceCapabilities querySurfaceCapabilities() const = 0;
     
-    /**
-     * @brief Enable or disable automatic depth buffer creation
-     * @param enabled True to enable depth buffer (default), false to disable
-     * 
-     * When enabled, the swap chain automatically creates and manages a depth buffer
-     * that matches the swap chain dimensions and is recreated on resize.
-     */
-    virtual void setDepthBufferEnabled(bool enabled) = 0;
-    
-    /**
-     * @brief Get the depth texture view for the swap chain
-     * @return Shared pointer to depth texture view, or nullptr if depth buffer is disabled
-     * 
-     * The depth buffer is automatically created on first access if enabled.
-     * The same depth buffer is reused across frames (cleared each frame).
-     */
-    virtual std::shared_ptr<ITextureView> getDepthTextureView() = 0;
-    
-    /**
-     * @brief Options for depth stencil attachment configuration
-     */
-    struct DepthStencilOptions {
-        LoadOp depthLoadOp = LoadOp::Clear;
-        StoreOp depthStoreOp = StoreOp::Store;
-        float depthClearValue = 1.0f;
-        bool depthReadOnly = false;
-        LoadOp stencilLoadOp = LoadOp::Clear;
-        StoreOp stencilStoreOp = StoreOp::Discard;
-        uint32_t stencilClearValue = 0;
-        bool stencilReadOnly = false;
-    };
-    
-    /**
-     * @brief Get a configured depth stencil attachment for this SwapChain
-     * 
-     * Helper function that returns a properly configured depth attachment
-     * if depth buffer is enabled. Returns nullptr if depth is disabled.
-     * 
-     * @param options Configuration options for the depth stencil attachment
-     * @return Configured depth stencil attachment or nullptr
-     */
-    virtual std::shared_ptr<RenderPassDepthStencilAttachment> getDepthStencilAttachment(
-        const DepthStencilOptions& options = {}) = 0;
 };
 
 } // namespace pers

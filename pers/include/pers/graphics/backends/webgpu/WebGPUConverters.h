@@ -40,6 +40,13 @@ public:
     // Buffer usage flags
     static WGPUBufferUsage convertBufferUsage(BufferUsage usage);
     
+    // Texture dimension
+    static WGPUTextureDimension convertTextureDimension(TextureDimension dimension);
+    static WGPUTextureViewDimension convertTextureViewDimension(TextureViewDimension dimension);
+    
+    // Texture aspect
+    static WGPUTextureAspect convertTextureAspect(TextureAspect aspect);
+    
 private:
     // Static utility class, no instantiation
     WebGPUConverters() = delete;

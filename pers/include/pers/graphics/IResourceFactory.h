@@ -9,6 +9,7 @@
 #include "pers/graphics/IShaderModule.h"
 #include "pers/graphics/IBuffer.h"  // Include for BufferDesc
 #include "pers/graphics/IRenderPipeline.h"  // Include for RenderPipelineDesc
+#include "pers/graphics/ITexture.h"  // Include for TextureDesc
 
 namespace pers {
 
@@ -21,23 +22,7 @@ class IComputePipeline;
 class IBindGroupLayout;
 class IBindGroup;
 class IPipelineLayout;
-class ISurfaceFramebuffer;
 class IFramebuffer;
-
-/**
- * @brief Texture descriptor for creation
- */
-struct TextureDesc {
-    uint32_t width = 1;
-    uint32_t height = 1;
-    uint32_t depth = 1;
-    uint32_t mipLevelCount = 1;
-    uint32_t sampleCount = 1;
-    TextureDimension dimension = TextureDimension::D2;
-    TextureFormat format = TextureFormat::RGBA8Unorm;
-    TextureUsage usage = TextureUsage::None;
-    std::string label;
-};
 
 /**
  * @brief Texture view descriptor
@@ -49,20 +34,7 @@ struct TextureViewDesc {
     uint32_t mipLevelCount = 1;
     uint32_t baseArrayLayer = 0;
     uint32_t arrayLayerCount = 1;
-    std::string label;
-};
-
-/**
- * @brief Offscreen framebuffer descriptor
- */
-struct OffscreenFramebufferDesc {
-    uint32_t width = 0;
-    uint32_t height = 0;
-    uint32_t sampleCount = 1;  // 1 for no MSAA, 2/4/8 for MSAA
-    std::vector<TextureFormat> colorFormats;  // Up to 8 for MRT
-    TextureFormat depthFormat = TextureFormat::Undefined;  // Optional depth
-    TextureUsage colorUsage = TextureUsage::RenderAttachment | TextureUsage::TextureBinding;
-    TextureUsage depthUsage = TextureUsage::RenderAttachment;
+    TextureAspect aspect = TextureAspect::All;
     std::string label;
 };
 
@@ -140,43 +112,6 @@ public:
      */
     virtual std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) = 0;
     
-    /**
-     * @brief Create a surface framebuffer for a swap chain surface
-     * @param surface Native surface handle
-     * @param width Initial width
-     * @param height Initial height
-     * @param format Surface format (typically BGRA8Unorm)
-     * @return Shared pointer to surface framebuffer or nullptr if failed
-     */
-    virtual std::shared_ptr<ISurfaceFramebuffer> createSurfaceFramebuffer(
-        const NativeSurfaceHandle& surface,
-        uint32_t width,
-        uint32_t height,
-        TextureFormat format = TextureFormat::BGRA8Unorm) = 0;
-    
-    /**
-     * @brief Create an offscreen framebuffer
-     * @param desc Offscreen framebuffer descriptor
-     * @return Shared pointer to framebuffer or nullptr if failed
-     */
-    virtual std::shared_ptr<IFramebuffer> createOffscreenFramebuffer(
-        const OffscreenFramebufferDesc& desc) = 0;
-    
-    /**
-     * @brief Create a depth-only framebuffer
-     * @param width Width
-     * @param height Height
-     * @param format Depth format
-     * @param sampleCount Sample count (1 for no MSAA)
-     * @param usage Texture usage flags (externally configurable)
-     * @return Shared pointer to framebuffer or nullptr if failed
-     */
-    virtual std::shared_ptr<IFramebuffer> createDepthOnlyFramebuffer(
-        uint32_t width,
-        uint32_t height,
-        TextureFormat format = TextureFormat::Depth24Plus,
-        uint32_t sampleCount = 1,
-        TextureUsage usage = TextureUsage::RenderAttachment | TextureUsage::TextureBinding) = 0;
 };
 
 } // namespace pers

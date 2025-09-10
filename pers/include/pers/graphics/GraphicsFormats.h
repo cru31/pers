@@ -72,6 +72,8 @@ enum class TextureFormat {
     R16Uint,
     R16Sint,
     R16Float,
+    R16Unorm,     // WebGPU supported
+    R16Snorm,     // WebGPU supported
     RG8Unorm,
     RG8Snorm,
     RG8Uint,
@@ -84,6 +86,8 @@ enum class TextureFormat {
     RG16Uint,
     RG16Sint,
     RG16Float,
+    RG16Unorm,       // WebGPU supported
+    RG16Snorm,       // WebGPU supported  
     RGBA8Unorm,      // Most common format across all platforms
     RGBA8UnormSrgb,  // sRGB variant
     RGBA8Snorm,
@@ -92,6 +96,11 @@ enum class TextureFormat {
     BGRA8Unorm,      // Preferred swapchain format on some platforms (macOS/iOS)
     BGRA8UnormSrgb,  // sRGB swapchain
     
+    // Packed 32-bit formats (WebGPU supported)
+    RGB9E5Ufloat,    // Shared exponent format
+    RGB10A2Unorm,    // 10-bit RGB, 2-bit alpha
+    RG11B10Ufloat,   // 11-bit RG, 10-bit B unsigned float
+    
     // 64-bit formats (universally supported)
     RG32Uint,
     RG32Sint,
@@ -99,6 +108,8 @@ enum class TextureFormat {
     RGBA16Uint,
     RGBA16Sint,
     RGBA16Float,     // HDR rendering
+    RGBA16Unorm,     // WebGPU supported
+    RGBA16Snorm,     // WebGPU supported
     
     // 128-bit formats (universally supported)
     RGBA32Uint,
@@ -179,6 +190,7 @@ enum class VertexFormat {
  * @brief Index format enumeration
  */
 enum class IndexFormat {
+    Undefined,
     Uint16,
     Uint32
 };

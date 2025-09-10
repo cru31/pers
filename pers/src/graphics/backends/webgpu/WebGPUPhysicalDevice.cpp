@@ -529,8 +529,8 @@ std::shared_ptr<ILogicalDevice> WebGPUPhysicalDevice::createLogicalDevice(
         return nullptr;
     }
     
-    // Create and return logical device
-    auto logicalDevice = std::make_shared<WebGPULogicalDevice>(callbackData.device, _adapter);
+    // Create and return logical device with shared_from_this()
+    auto logicalDevice = std::make_shared<WebGPULogicalDevice>(callbackData.device, shared_from_this());
     
     // Release our reference as WebGPULogicalDevice will add its own
     wgpuDeviceRelease(callbackData.device);

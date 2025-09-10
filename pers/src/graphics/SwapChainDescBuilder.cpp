@@ -210,6 +210,21 @@ SwapChainNegotiationResult SwapChainDescBuilder::negotiate(const SurfaceCapabili
                                   " not available, using fallback " + GraphicsEnumStrings::toString(selectedAlphaMode.value()));
     }
     
+    // Negotiate buffer count
+    uint32_t negotiatedBufferCount = _desiredBufferCount;
+    if (negotiatedBufferCount < capabilities.minImageCount) {
+        negotiatedBufferCount = capabilities.minImageCount;
+        _negotiationLogs.push_back("[ADJUSTED] BufferCount: Desired " + std::to_string(_desiredBufferCount) + 
+                                  " below minimum, using " + std::to_string(negotiatedBufferCount));
+    } else if (negotiatedBufferCount > capabilities.maxImageCount && capabilities.maxImageCount > 0) {
+        negotiatedBufferCount = capabilities.maxImageCount;
+        _negotiationLogs.push_back("[ADJUSTED] BufferCount: Desired " + std::to_string(_desiredBufferCount) + 
+                                  " above maximum, using " + std::to_string(negotiatedBufferCount));
+    } else {
+        _negotiationLogs.push_back("[OK] BufferCount: Using desired " + std::to_string(negotiatedBufferCount));
+    }
+    result.negotiatedBufferCount = negotiatedBufferCount;
+    
     // Store the result for later use
     _lastNegotiationResult = result;
     
@@ -237,6 +252,7 @@ SwapChainDesc SwapChainDescBuilder::build(const SwapChainNegotiationResult& nego
     desc.format = negotiationResult.negotiatedFormat;
     desc.presentMode = negotiationResult.negotiatedPresentMode;
     desc.alphaMode = negotiationResult.negotiatedAlphaMode;
+    desc.bufferCount = negotiationResult.negotiatedBufferCount;
     desc.debugName = _debugName;
     
     return desc;
@@ -273,6 +289,7 @@ SwapChainDesc SwapChainDescBuilder::build() const {
     desc.format = _preferredFormat;
     desc.presentMode = _preferredPresentMode;
     desc.alphaMode = _preferredAlphaMode;
+    desc.bufferCount = _desiredBufferCount;
     desc.usage = static_cast<TextureUsageFlags>(_usage);
     desc.debugName = _debugName;
     return desc;

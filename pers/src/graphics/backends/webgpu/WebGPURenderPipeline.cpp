@@ -90,6 +90,15 @@ static WGPUVertexStepMode convertStepMode(VertexStepMode mode) {
     return WGPUVertexStepMode_Vertex;
 }
 
+static WGPUIndexFormat convertIndexFormat(IndexFormat format) {
+    switch (format) {
+        case IndexFormat::Undefined: return WGPUIndexFormat_Undefined;
+        case IndexFormat::Uint16: return WGPUIndexFormat_Uint16;
+        case IndexFormat::Uint32: return WGPUIndexFormat_Uint32;
+    }
+    return WGPUIndexFormat_Undefined;
+}
+
 static WGPUCompareFunction convertCompareFunction(CompareFunction func) {
     switch (func) {
         case CompareFunction::Never: return WGPUCompareFunction_Never;
@@ -111,11 +120,72 @@ static WGPUCompareFunction convertCompareFunction(CompareFunction func) {
 
 static WGPUTextureFormat convertTextureFormat(TextureFormat format) {
     switch (format) {
-        case TextureFormat::BGRA8Unorm: return WGPUTextureFormat_BGRA8Unorm;
+        // Color formats
+        case TextureFormat::R8Unorm: return WGPUTextureFormat_R8Unorm;
+        case TextureFormat::R8Snorm: return WGPUTextureFormat_R8Snorm;
+        case TextureFormat::R8Uint: return WGPUTextureFormat_R8Uint;
+        case TextureFormat::R8Sint: return WGPUTextureFormat_R8Sint;
+        case TextureFormat::R16Uint: return WGPUTextureFormat_R16Uint;
+        case TextureFormat::R16Sint: return WGPUTextureFormat_R16Sint;
+        case TextureFormat::R16Float: return WGPUTextureFormat_R16Float;
+        case TextureFormat::RG8Unorm: return WGPUTextureFormat_RG8Unorm;
+        case TextureFormat::RG8Snorm: return WGPUTextureFormat_RG8Snorm;
+        case TextureFormat::RG8Uint: return WGPUTextureFormat_RG8Uint;
+        case TextureFormat::RG8Sint: return WGPUTextureFormat_RG8Sint;
+        case TextureFormat::R32Float: return WGPUTextureFormat_R32Float;
+        case TextureFormat::R32Uint: return WGPUTextureFormat_R32Uint;
+        case TextureFormat::R32Sint: return WGPUTextureFormat_R32Sint;
+        case TextureFormat::RG16Uint: return WGPUTextureFormat_RG16Uint;
+        case TextureFormat::RG16Sint: return WGPUTextureFormat_RG16Sint;
+        case TextureFormat::RG16Float: return WGPUTextureFormat_RG16Float;
         case TextureFormat::RGBA8Unorm: return WGPUTextureFormat_RGBA8Unorm;
+        case TextureFormat::RGBA8UnormSrgb: return WGPUTextureFormat_RGBA8UnormSrgb;
+        case TextureFormat::RGBA8Snorm: return WGPUTextureFormat_RGBA8Snorm;
+        case TextureFormat::RGBA8Uint: return WGPUTextureFormat_RGBA8Uint;
+        case TextureFormat::RGBA8Sint: return WGPUTextureFormat_RGBA8Sint;
+        case TextureFormat::BGRA8Unorm: return WGPUTextureFormat_BGRA8Unorm;
+        case TextureFormat::BGRA8UnormSrgb: return WGPUTextureFormat_BGRA8UnormSrgb;
+        case TextureFormat::RGB10A2Unorm: return WGPUTextureFormat_RGB10A2Unorm;
+        case TextureFormat::RG32Float: return WGPUTextureFormat_RG32Float;
+        case TextureFormat::RG32Uint: return WGPUTextureFormat_RG32Uint;
+        case TextureFormat::RG32Sint: return WGPUTextureFormat_RG32Sint;
+        case TextureFormat::RGBA16Uint: return WGPUTextureFormat_RGBA16Uint;
+        case TextureFormat::RGBA16Sint: return WGPUTextureFormat_RGBA16Sint;
+        case TextureFormat::RGBA16Float: return WGPUTextureFormat_RGBA16Float;
+        case TextureFormat::RGBA32Float: return WGPUTextureFormat_RGBA32Float;
+        case TextureFormat::RGBA32Uint: return WGPUTextureFormat_RGBA32Uint;
+        case TextureFormat::RGBA32Sint: return WGPUTextureFormat_RGBA32Sint;
+        
+        // Depth/stencil formats
+        case TextureFormat::Stencil8: return WGPUTextureFormat_Stencil8;
+        case TextureFormat::Depth16Unorm: return WGPUTextureFormat_Depth16Unorm;
+        case TextureFormat::Depth24Plus: return WGPUTextureFormat_Depth24Plus;
         case TextureFormat::Depth24PlusStencil8: return WGPUTextureFormat_Depth24PlusStencil8;
         case TextureFormat::Depth32Float: return WGPUTextureFormat_Depth32Float;
-        default: return WGPUTextureFormat_BGRA8Unorm;
+        case TextureFormat::Depth32FloatStencil8: return WGPUTextureFormat_Depth32FloatStencil8;
+        
+        // Compressed formats
+        case TextureFormat::BC1RGBAUnorm: return WGPUTextureFormat_BC1RGBAUnorm;
+        case TextureFormat::BC1RGBAUnormSrgb: return WGPUTextureFormat_BC1RGBAUnormSrgb;
+        case TextureFormat::BC2RGBAUnorm: return WGPUTextureFormat_BC2RGBAUnorm;
+        case TextureFormat::BC2RGBAUnormSrgb: return WGPUTextureFormat_BC2RGBAUnormSrgb;
+        case TextureFormat::BC3RGBAUnorm: return WGPUTextureFormat_BC3RGBAUnorm;
+        case TextureFormat::BC3RGBAUnormSrgb: return WGPUTextureFormat_BC3RGBAUnormSrgb;
+        case TextureFormat::BC4RUnorm: return WGPUTextureFormat_BC4RUnorm;
+        case TextureFormat::BC4RSnorm: return WGPUTextureFormat_BC4RSnorm;
+        case TextureFormat::BC5RGUnorm: return WGPUTextureFormat_BC5RGUnorm;
+        case TextureFormat::BC5RGSnorm: return WGPUTextureFormat_BC5RGSnorm;
+        case TextureFormat::BC6HRGBUfloat: return WGPUTextureFormat_BC6HRGBUfloat;
+        case TextureFormat::BC6HRGBFloat: return WGPUTextureFormat_BC6HRGBFloat;
+        case TextureFormat::BC7RGBAUnorm: return WGPUTextureFormat_BC7RGBAUnorm;
+        case TextureFormat::BC7RGBAUnormSrgb: return WGPUTextureFormat_BC7RGBAUnormSrgb;
+        
+        case TextureFormat::Undefined: return WGPUTextureFormat_Undefined;
+        default: 
+            Logger::Instance().LogFormat(LogLevel::Error, "WebGPURenderPipeline",
+                PERS_SOURCE_LOC, "Unknown TextureFormat value: %d", 
+                static_cast<int>(format));
+            return WGPUTextureFormat_Undefined;
     }
 }
 
@@ -183,12 +253,11 @@ WebGPURenderPipeline::WebGPURenderPipeline(const RenderPipelineDesc& desc, WGPUD
         colorTargets.push_back(colorTarget);
     }
     
-    // Default color target if none specified
+    // No default color target - user must specify what they want
     if (colorTargets.empty()) {
-        WGPUColorTargetState colorTarget = {};
-        colorTarget.format = WGPUTextureFormat_BGRA8Unorm;
-        colorTarget.writeMask = WGPUColorWriteMask_All;
-        colorTargets.push_back(colorTarget);
+        LOG_ERROR("WebGPURenderPipeline",
+            "No color targets specified in RenderPipelineDesc");
+        return;
     }
     
     WGPUFragmentState fragment = {};
@@ -201,17 +270,16 @@ WebGPURenderPipeline::WebGPURenderPipeline(const RenderPipelineDesc& desc, WGPUD
     // Primitive state
     WGPUPrimitiveState primitive = {};
     primitive.topology = convertTopology(desc.primitive.topology);
-    primitive.stripIndexFormat = desc.primitive.stripIndexFormat ? 
-        WGPUIndexFormat_Uint16 : WGPUIndexFormat_Undefined;
+    primitive.stripIndexFormat = convertIndexFormat(desc.primitive.stripIndexFormat);
     primitive.frontFace = convertFrontFace(desc.primitive.frontFace);
     primitive.cullMode = convertCullMode(desc.primitive.cullMode);
     
     // Depth stencil state
     WGPUDepthStencilState* depthStencilPtr = nullptr;
     WGPUDepthStencilState depthStencil = {};
-    if (desc.depthStencil.depthWriteEnabled || 
-        desc.depthStencil.depthCompare != CompareFunction::Undefined) {
-        depthStencil.format = WGPUTextureFormat_Depth24PlusStencil8;
+    if (desc.depthStencil.format != TextureFormat::Undefined) {
+        // Use the format specified by the user, not hardcoded!
+        depthStencil.format = convertTextureFormat(desc.depthStencil.format);
         depthStencil.depthWriteEnabled = desc.depthStencil.depthWriteEnabled ? WGPUOptionalBool_True : WGPUOptionalBool_False;
         depthStencil.depthCompare = convertCompareFunction(desc.depthStencil.depthCompare);
         depthStencil.stencilReadMask = desc.depthStencil.stencilReadMask;

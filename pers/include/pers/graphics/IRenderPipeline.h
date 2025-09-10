@@ -51,12 +51,13 @@ struct VertexBufferLayout {
 
 struct PrimitiveState {
     PrimitiveTopology topology = PrimitiveTopology::TriangleList;
-    bool stripIndexFormat = false;
+    IndexFormat stripIndexFormat = IndexFormat::Undefined;  // Index format for strip primitives
     FrontFace frontFace = FrontFace::CCW;
     CullMode cullMode = CullMode::None;
 };
 
 struct DepthStencilState {
+    TextureFormat format = TextureFormat::Undefined;  // Depth format to use
     bool depthWriteEnabled = false;
     CompareFunction depthCompare = CompareFunction::Less;
     uint32_t stencilReadMask = 0xFFFFFFFF;

@@ -1,0 +1,551 @@
+@startuml pers_graphics_architecture
+
+' Core Graphics Architecture - Class Diagram
+
+package "Graphics Core Interfaces" {
+    interface IInstance {
+        +enumeratePhysicalDevices() : vector<IPhysicalDevice>
+        +getBackend() : GraphicsBackend
+    }
+    
+    interface IPhysicalDevice {
+        +getName() : string
+        +getDeviceType() : DeviceType
+        +getProperties() : PhysicalDeviceProperties
+        +createLogicalDevice() : ILogicalDevice
+        +requestSurface(window : IWindow) : NativeSurfaceHandle
+    }
+    
+    interface ILogicalDevice {
+        +createSwapChain(surface, desc) : ISwapChain
+        +createRenderPipeline(desc) : IRenderPipeline
+        +createBuffer(desc) : IBuffer
+        +createTexture(desc) : ITexture
+        +createBindGroup(desc) : IBindGroup
+        +createBindGroupLayout(desc) : IBindGroupLayout
+        +getCommandEncoder() : ICommandEncoder
+        +getResourceFactory() : IResourceFactory
+        +getQueue() : IQueue
+        +waitIdle() : void
+    }
+    
+    interface ISwapChain {
+        +getCurrentTextureView() : ITextureView
+        +present() : void
+        +resize(width, height) : void
+        +getFormat() : TextureFormat
+        +getWidth() : uint32_t
+        +getHeight() : uint32_t
+    }
+    
+    interface ICommandEncoder {
+        +beginRenderPass(desc) : IRenderPassEncoder
+        +beginComputePass(desc) : IComputePassEncoder
+        +copyBufferToBuffer(...) : void
+        +copyTextureToTexture(...) : void
+        +finish() : ICommandBuffer
+    }
+    
+    interface IRenderPassEncoder {
+        +setPipeline(pipeline) : void
+        +setBindGroup(index, group) : void
+        +setVertexBuffer(slot, buffer) : void
+        +setIndexBuffer(buffer, format) : void
+        +draw(vertexCount, instanceCount) : void
+        +drawIndexed(indexCount, instanceCount) : void
+        +end() : void
+    }
+    
+    interface IFramebuffer {
+        +getColorAttachment(index) : ITextureView
+        +getDepthStencilAttachment() : ITextureView
+        +getWidth() : uint32_t
+        +getHeight() : uint32_t
+        +getSampleCount() : uint32_t
+        +getColorFormat(index) : TextureFormat
+        +getDepthFormat() : TextureFormat
+        +getColorAttachmentCount() : uint32_t
+        +hasDepthStencilAttachment() : bool
+    }
+    
+    interface IResizableFramebuffer {
+        +resize(width, height) : bool
+    }
+    
+    interface ISurfaceFramebuffer {
+        +create(surface, desc) : bool
+        +destroy() : void
+        +acquireNextImage() : bool
+        +present() : void
+        +isReady() : bool
+        +setDepthFramebuffer(fb) : void
+    }
+    
+    IFramebuffer <|-- IResizableFramebuffer
+    IResizableFramebuffer <|-- ISurfaceFramebuffer
+}
+
+package "Graphics Implementations" {
+    class SurfaceFramebuffer {
+        -_device : shared_ptr<ILogicalDevice>
+        -_swapChain : shared_ptr<ISwapChain>
+        -_depthFramebuffer : shared_ptr<IFramebuffer>
+        -_currentColorView : shared_ptr<ITextureView>
+        -_width : uint32_t
+        -_height : uint32_t
+        -_format : TextureFormat
+        -_depthFormat : TextureFormat
+        -_acquired : bool
+        +create(surface, desc) : bool
+        +destroy() : void
+        +acquireNextImage() : bool
+        +present() : void
+        -createDepthBuffer() : void
+    }
+    
+    class OffscreenFramebuffer {
+        -_colorTextures : vector<shared_ptr<ITexture>>
+        -_colorViews : vector<shared_ptr<ITextureView>>
+        -_depthTexture : shared_ptr<ITexture>
+        -_depthView : shared_ptr<ITextureView>
+        -_width : uint32_t
+        -_height : uint32_t
+        -_sampleCount : uint32_t
+        +OffscreenFramebuffer(factory, config)
+        +resize(width, height) : bool
+        -createColorAttachments(factory, config) : void
+        -createDepthAttachment(factory, config) : void
+    }
+    
+    ISurfaceFramebuffer <|.. SurfaceFramebuffer
+    IResizableFramebuffer <|.. OffscreenFramebuffer
+}
+
+package "WebGPU Backend" {
+    class WebGPUInstance {
+        -_instance : WGPUInstance
+        -_physicalDevices : vector<shared_ptr>
+        +enumeratePhysicalDevices() : vector
+        +getBackend() : GraphicsBackend
+        -createWGPUInstance() : void
+    }
+    
+    class WebGPUPhysicalDevice {
+        -_adapter : WGPUAdapter
+        -_properties : PhysicalDeviceProperties
+        -_limits : WGPUSupportedLimits
+        -_features : vector<WGPUFeatureName>
+        +createLogicalDevice(desc) : ILogicalDevice
+        +requestSurface(window) : NativeSurfaceHandle
+        -queryAdapterInfo() : void
+    }
+    
+    class WebGPULogicalDevice {
+        -_device : WGPUDevice
+        -_adapter : WGPUAdapter
+        -_queue : shared_ptr<WebGPUQueue>
+        -_resourceFactory : shared_ptr<WebGPUResourceFactory>
+        -_bindGroupLayoutCache : BindGroupLayoutCache
+        +createSwapChain(surface, desc) : ISwapChain
+        +createRenderPipeline(desc) : IRenderPipeline
+        +getCommandEncoder() : ICommandEncoder
+        -setupDevice() : void
+    }
+    
+    class WebGPUSwapChain {
+        -_swapChain : WGPUSwapChain
+        -_device : WGPUDevice
+        -_surface : WGPUSurface
+        -_format : TextureFormat
+        -_width : uint32_t
+        -_height : uint32_t
+        +getCurrentTextureView() : ITextureView
+        +present() : void
+        +resize(width, height) : void
+        -configure(desc) : void
+    }
+    
+    class WebGPUCommandEncoder {
+        -_encoder : WGPUCommandEncoder
+        -_device : WGPUDevice
+        -_currentRenderPass : shared_ptr<WebGPURenderPassEncoder>
+        +beginRenderPass(desc) : IRenderPassEncoder
+        +finish() : ICommandBuffer
+        -validateRenderPassDesc(desc) : bool
+    }
+    
+    class WebGPURenderPipeline {
+        -_pipeline : WGPURenderPipeline
+        -_bindGroupLayouts : vector<WGPUBindGroupLayout>
+        -_pipelineLayout : WGPUPipelineLayout
+        +getPipeline() : WGPURenderPipeline
+        +getBindGroupLayout(index) : WGPUBindGroupLayout
+        -createShaderModule(device, code) : WGPUShaderModule
+        -setupVertexState(desc) : WGPUVertexState
+        -setupFragmentState(desc) : WGPUFragmentState
+        -setupDepthStencilState(desc) : WGPUDepthStencilState
+    }
+    
+    IInstance <|.. WebGPUInstance
+    IPhysicalDevice <|.. WebGPUPhysicalDevice
+    ILogicalDevice <|.. WebGPULogicalDevice
+    ISwapChain <|.. WebGPUSwapChain
+    ICommandEncoder <|.. WebGPUCommandEncoder
+    IRenderPipeline <|.. WebGPURenderPipeline
+}
+
+package "Format Conversion" {
+    class WebGPUConverters <<utility>> {
+        {static} +toWGPUTextureFormat(format) : WGPUTextureFormat
+        {static} +fromWGPUTextureFormat(format) : TextureFormat
+        {static} +toWGPUTextureUsage(usage) : WGPUTextureUsageFlags
+        {static} +toWGPUBufferUsage(usage) : WGPUBufferUsageFlags
+        {static} +toWGPUVertexFormat(format) : WGPUVertexFormat
+        {static} +toWGPUCompareFunction(func) : WGPUCompareFunction
+        {static} +toWGPUStencilOperation(op) : WGPUStencilOperation
+        {static} +toWGPUPrimitiveTopology(topology) : WGPUPrimitiveTopology
+        {static} +toWGPUIndexFormat(format) : WGPUIndexFormat
+        {static} +toWGPUCullMode(mode) : WGPUCullMode
+        {static} +toWGPUFrontFace(face) : WGPUFrontFace
+    }
+    
+    enum TextureFormat {
+        Undefined
+        R8Unorm
+        R8Snorm
+        R16Float
+        R16Unorm
+        R16Snorm
+        R32Float
+        RG8Unorm
+        RG8Snorm
+        RG16Float
+        RG16Unorm
+        RG16Snorm
+        RG32Float
+        RGBA8Unorm
+        RGBA8UnormSrgb
+        RGBA16Float
+        RGBA16Unorm
+        RGBA16Snorm
+        RGBA32Float
+        BGRA8Unorm
+        BGRA8UnormSrgb
+        RGB10A2Unorm
+        RG11B10Ufloat
+        RGB9E5Ufloat
+        Depth16Unorm
+        Depth24Plus
+        Depth24PlusStencil8
+        Depth32Float
+        Stencil8
+        BC1RGBAUnorm
+        BC2RGBAUnorm
+        BC3RGBAUnorm
+        BC4RUnorm
+        BC5RGUnorm
+        BC6HRGBUfloat
+        BC7RGBAUnorm
+    }
+}
+
+' Relationships
+SurfaceFramebuffer --> ILogicalDevice : uses
+SurfaceFramebuffer --> ISwapChain : manages
+SurfaceFramebuffer --> OffscreenFramebuffer : depth buffer
+WebGPULogicalDevice --> WebGPUResourceFactory : creates
+WebGPULogicalDevice --> WebGPUQueue : owns
+WebGPUCommandEncoder --> WebGPURenderPassEncoder : creates
+WebGPURenderPipeline ..> WebGPUConverters : uses
+
+@enduml
+
+@startuml surface_framebuffer_lifecycle
+
+' Surface Framebuffer Create/Destroy Lifecycle
+
+participant Application
+participant SurfaceFramebuffer
+participant ILogicalDevice
+participant ISwapChain
+participant OffscreenFramebuffer
+
+== Initialization ==
+Application -> SurfaceFramebuffer : new SurfaceFramebuffer(device)
+activate SurfaceFramebuffer
+SurfaceFramebuffer -> SurfaceFramebuffer : _device = device\n_width = 0\n_height = 0\n_format = Undefined\n_depthFormat = Depth24Plus\n_acquired = false
+return
+
+== Create ==
+Application -> SurfaceFramebuffer : create(surface, desc)
+activate SurfaceFramebuffer
+
+SurfaceFramebuffer -> SurfaceFramebuffer : destroy() // Clean up existing
+note right: Ensures clean state\nbefore creation
+
+SurfaceFramebuffer -> SurfaceFramebuffer : _width = desc.width\n_height = desc.height\n_format = desc.format
+note right: Step 1: Store dimensions\nand format
+
+SurfaceFramebuffer -> ILogicalDevice : createSwapChain(surface, desc)
+activate ILogicalDevice
+create ISwapChain
+ILogicalDevice -> ISwapChain : new
+return swapChain
+
+SurfaceFramebuffer -> SurfaceFramebuffer : _swapChain = swapChain
+note right: Step 2: Create and\nstore swap chain
+
+alt if _depthFormat != Undefined
+    SurfaceFramebuffer -> SurfaceFramebuffer : createDepthBuffer()
+    activate SurfaceFramebuffer
+    
+    SurfaceFramebuffer -> ILogicalDevice : getResourceFactory()
+    activate ILogicalDevice
+    return factory
+    
+    create OffscreenFramebuffer
+    SurfaceFramebuffer -> OffscreenFramebuffer : new(factory, config)
+    activate OffscreenFramebuffer
+    OffscreenFramebuffer -> OffscreenFramebuffer : Create depth texture
+    return
+    
+    SurfaceFramebuffer -> SurfaceFramebuffer : _depthFramebuffer = fb
+    deactivate SurfaceFramebuffer
+    note right: Step 3: Create\ndepth buffer
+end
+
+return true
+
+== Rendering Loop ==
+loop Each Frame
+    Application -> SurfaceFramebuffer : acquireNextImage()
+    activate SurfaceFramebuffer
+    
+    alt if _acquired
+        SurfaceFramebuffer -> SurfaceFramebuffer : _currentColorView.reset()\n_acquired = false
+        note right: Clean up previous\nacquired image
+    end
+    
+    SurfaceFramebuffer -> ISwapChain : getCurrentTextureView()
+    activate ISwapChain
+    return textureView
+    
+    SurfaceFramebuffer -> SurfaceFramebuffer : _currentColorView = textureView\n_acquired = true
+    return true
+    
+    Application -> Application : Render frame
+    
+    Application -> SurfaceFramebuffer : present()
+    activate SurfaceFramebuffer
+    
+    SurfaceFramebuffer -> ISwapChain : present()
+    activate ISwapChain
+    return
+    
+    SurfaceFramebuffer -> SurfaceFramebuffer : _currentColorView.reset()\n_acquired = false
+    return
+end
+
+== Destroy ==
+Application -> SurfaceFramebuffer : destroy()
+activate SurfaceFramebuffer
+
+alt if _acquired
+    SurfaceFramebuffer -> SurfaceFramebuffer : _currentColorView.reset()\n_acquired = false
+    note right: Clean up acquired state
+end
+
+SurfaceFramebuffer -> SurfaceFramebuffer : _depthFramebuffer.reset()
+note right: Step 3 (reverse):\nDestroy depth buffer
+
+SurfaceFramebuffer -> SurfaceFramebuffer : _swapChain.reset()
+note right: Step 2 (reverse):\nDestroy swap chain
+
+SurfaceFramebuffer -> SurfaceFramebuffer : _width = 0\n_height = 0\n_format = Undefined
+note right: Step 1 (reverse):\nReset dimensions\nand format
+
+note over SurfaceFramebuffer : Perfect symmetry:\nDestroy in exact reverse\norder of creation
+
+return
+
+== Destruction ==
+Application -> SurfaceFramebuffer : delete
+activate SurfaceFramebuffer
+SurfaceFramebuffer -> SurfaceFramebuffer : ~SurfaceFramebuffer()
+SurfaceFramebuffer -> SurfaceFramebuffer : destroy()
+note right: Ensures cleanup\neven if not explicitly\ncalled by user
+destroy SurfaceFramebuffer
+
+@enduml
+
+@startuml render_pipeline_creation
+
+' Render Pipeline Creation Flow
+
+participant Application
+participant ILogicalDevice
+participant WebGPULogicalDevice
+participant WebGPURenderPipeline
+participant WebGPUConverters
+
+== Pipeline Creation ==
+Application -> ILogicalDevice : createRenderPipeline(desc)
+activate ILogicalDevice
+
+ILogicalDevice -> WebGPULogicalDevice : createRenderPipeline(desc)
+activate WebGPULogicalDevice
+
+create WebGPURenderPipeline
+WebGPULogicalDevice -> WebGPURenderPipeline : new(device, desc)
+activate WebGPURenderPipeline
+
+WebGPURenderPipeline -> WebGPURenderPipeline : createShaderModule(vertexShader)
+note right: Compile vertex\nshader WGSL
+
+WebGPURenderPipeline -> WebGPURenderPipeline : createShaderModule(fragmentShader)
+note right: Compile fragment\nshader WGSL
+
+WebGPURenderPipeline -> WebGPURenderPipeline : setupVertexState(desc)
+activate WebGPURenderPipeline
+
+loop for each attribute
+    WebGPURenderPipeline -> WebGPUConverters : toWGPUVertexFormat(format)
+    activate WebGPUConverters
+    return WGPUVertexFormat
+end
+
+return vertexState
+
+WebGPURenderPipeline -> WebGPURenderPipeline : setupFragmentState(desc)
+activate WebGPURenderPipeline
+
+loop for each color target
+    WebGPURenderPipeline -> WebGPUConverters : toWGPUTextureFormat(format)
+    activate WebGPUConverters
+    return WGPUTextureFormat
+end
+
+return fragmentState
+
+alt if desc.depthStencil.format != Undefined
+    WebGPURenderPipeline -> WebGPURenderPipeline : setupDepthStencilState(desc)
+    activate WebGPURenderPipeline
+    
+    WebGPURenderPipeline -> WebGPUConverters : toWGPUTextureFormat(depthFormat)
+    activate WebGPUConverters
+    return WGPUTextureFormat
+    
+    WebGPURenderPipeline -> WebGPUConverters : toWGPUCompareFunction(depthCompare)
+    activate WebGPUConverters
+    return WGPUCompareFunction
+    
+    return depthStencilState
+end
+
+WebGPURenderPipeline -> WebGPURenderPipeline : wgpuDeviceCreateRenderPipeline(...)
+note right: Create actual\nWebGPU pipeline
+
+return pipeline
+
+WebGPULogicalDevice -> WebGPULogicalDevice : Store in cache
+return IRenderPipeline
+
+return IRenderPipeline
+
+@enduml
+
+@startuml triangle_renderer_flow
+
+' Triangle Renderer Initialization and Rendering Flow
+
+participant Application
+participant TriangleRenderer
+participant SurfaceFramebuffer
+participant WebGPULogicalDevice
+participant WebGPURenderPipeline
+participant ICommandEncoder
+participant IRenderPassEncoder
+
+== Initialization ==
+Application -> TriangleRenderer : initialize(device, surface)
+activate TriangleRenderer
+
+TriangleRenderer -> TriangleRenderer : Create SwapChainDesc
+note right: width = 800\nheight = 600\nformat = BGRA8Unorm
+
+create SurfaceFramebuffer
+TriangleRenderer -> SurfaceFramebuffer : new(device)
+
+TriangleRenderer -> SurfaceFramebuffer : create(surface, desc)
+activate SurfaceFramebuffer
+SurfaceFramebuffer -> SurfaceFramebuffer : Create SwapChain\nCreate DepthBuffer
+return success
+
+TriangleRenderer -> TriangleRenderer : Create RenderPipelineDesc
+note right: Set vertex shader\nSet fragment shader\nSet depth format = Depth24Plus\nSet depth compare = Less
+
+TriangleRenderer -> WebGPULogicalDevice : createRenderPipeline(desc)
+activate WebGPULogicalDevice
+create WebGPURenderPipeline
+WebGPULogicalDevice -> WebGPURenderPipeline : new
+return pipeline
+
+TriangleRenderer -> TriangleRenderer : createVertexBuffer()
+TriangleRenderer -> TriangleRenderer : createUniformBuffer()
+TriangleRenderer -> TriangleRenderer : createBindGroup()
+
+return
+
+== Render Loop ==
+loop Each Frame
+    Application -> TriangleRenderer : render()
+    activate TriangleRenderer
+    
+    TriangleRenderer -> SurfaceFramebuffer : acquireNextImage()
+    activate SurfaceFramebuffer
+    return true
+    
+    TriangleRenderer -> TriangleRenderer : updateUniforms()
+    note right: Update MVP matrix
+    
+    TriangleRenderer -> WebGPULogicalDevice : getCommandEncoder()
+    activate WebGPULogicalDevice
+    create ICommandEncoder
+    WebGPULogicalDevice -> ICommandEncoder : new
+    return encoder
+    
+    TriangleRenderer -> TriangleRenderer : Create RenderPassDesc
+    note right: colorAttachment = surfaceFramebuffer\ndepthAttachment = depthBuffer\nclearColor = (0.1, 0.1, 0.1, 1.0)\nclearDepth = 1.0
+    
+    TriangleRenderer -> ICommandEncoder : beginRenderPass(desc)
+    activate ICommandEncoder
+    create IRenderPassEncoder
+    ICommandEncoder -> IRenderPassEncoder : new
+    return renderPass
+    
+    TriangleRenderer -> IRenderPassEncoder : setPipeline(pipeline)
+    TriangleRenderer -> IRenderPassEncoder : setBindGroup(0, bindGroup)
+    TriangleRenderer -> IRenderPassEncoder : setVertexBuffer(0, vertexBuffer)
+    TriangleRenderer -> IRenderPassEncoder : draw(3, 1)
+    
+    TriangleRenderer -> IRenderPassEncoder : end()
+    destroy IRenderPassEncoder
+    
+    TriangleRenderer -> ICommandEncoder : finish()
+    activate ICommandEncoder
+    return commandBuffer
+    
+    TriangleRenderer -> WebGPULogicalDevice : getQueue()
+    activate WebGPULogicalDevice
+    return queue
+    
+    TriangleRenderer -> queue : submit(commandBuffer)
+    
+    TriangleRenderer -> SurfaceFramebuffer : present()
+    activate SurfaceFramebuffer
+    return
+    
+    return
+end
+
+@enduml

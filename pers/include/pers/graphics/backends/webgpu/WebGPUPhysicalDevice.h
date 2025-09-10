@@ -14,7 +14,8 @@ namespace pers {
  * Copy operations are deleted to prevent double-free issues.
  * Move operations are deleted as this class is meant to be used via shared_ptr.
  */
-class WebGPUPhysicalDevice : public IPhysicalDevice {
+class WebGPUPhysicalDevice : public IPhysicalDevice,
+                             public std::enable_shared_from_this<WebGPUPhysicalDevice> {
 public:
     explicit WebGPUPhysicalDevice(WGPUAdapter adapter);
     ~WebGPUPhysicalDevice() override;

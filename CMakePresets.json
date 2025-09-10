@@ -87,7 +87,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -98,7 +98,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -109,7 +109,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -120,7 +120,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -131,7 +131,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -142,7 +142,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -153,7 +153,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -164,7 +164,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests"
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
       }
     },
     {
@@ -175,7 +175,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests",
+        "VCPKG_MANIFEST_FEATURES": "glfw-support",
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -191,7 +191,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests",
+        "VCPKG_MANIFEST_FEATURES": "glfw-support",
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -208,7 +208,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests",
+        "VCPKG_MANIFEST_FEATURES": "glfw-support",
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -225,7 +225,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests",
+        "VCPKG_MANIFEST_FEATURES": "glfw-support",
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -241,7 +241,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTS": "ON",
-        "VCPKG_MANIFEST_FEATURES": "tests",
+        "VCPKG_MANIFEST_FEATURES": "glfw-support",
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -253,28 +253,40 @@
       "inherits": "windows-debug-download",
       "displayName": "CLion Windows Debug (WebGPU Download)",
       "description": "CLion Windows debug build with pre-built WebGPU",
-      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/debug"
+      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/debug",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
+      }
     },
     {
       "name": "clion-windows-release-download",
       "inherits": "windows-release-download",
       "displayName": "CLion Windows Release (WebGPU Download)",
       "description": "CLion Windows release build with pre-built WebGPU",
-      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/release"
+      "binaryDir": "${sourceDir}/build-clion/wgpu-prebuilt/release",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
+      }
     },
     {
       "name": "clion-windows-debug-compile",
       "inherits": "windows-debug-compile",
       "displayName": "CLion Windows Debug (WebGPU Compile)",
       "description": "CLion Windows debug build with WebGPU compiled from source",
-      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/debug"
+      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/debug",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
+      }
     },
     {
       "name": "clion-windows-release-compile",
       "inherits": "windows-release-compile",
       "displayName": "CLion Windows Release (WebGPU Compile)",
       "description": "CLion Windows release build with WebGPU compiled from source",
-      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/release"
+      "binaryDir": "${sourceDir}/build-clion/wgpu-compile/release",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "glfw-support"
+      }
     },
     {
       "name": "clion-macos-debug",

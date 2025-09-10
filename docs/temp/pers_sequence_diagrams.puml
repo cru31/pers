@@ -1,0 +1,529 @@
+@startuml initialization_sequence
+!theme plain
+title Graphics System Initialization Sequence
+
+participant "Application" as App
+participant "IInstance" as Instance
+participant "IPhysicalDevice" as PhysDev
+participant "ILogicalDevice" as LogDev
+participant "IResourceFactory" as Factory
+participant "ISwapChain" as SwapChain
+participant "SurfaceFramebuffer" as SurfaceFB
+participant "OffscreenFramebuffer" as OffscreenFB
+
+== Instance Creation ==
+App -> Instance: createInstance(desc)
+activate Instance
+Instance -> Instance: initialize WebGPU/backend
+Instance --> App: instance
+deactivate Instance
+
+== Surface Creation ==
+App -> Instance: createSurface(windowHandle)
+activate Instance
+Instance -> Instance: create platform surface
+Instance --> App: surfaceHandle
+deactivate Instance
+
+== Physical Device Selection ==
+App -> Instance: requestPhysicalDevice(options)
+activate Instance
+Instance -> Instance: enumerate adapters
+Instance -> Instance: select best adapter
+Instance -> PhysDev: create(adapter)
+activate PhysDev
+PhysDev -> PhysDev: queryCapabilities()
+PhysDev -> PhysDev: enumerateFeatures()
+PhysDev --> Instance: physicalDevice
+deactivate PhysDev
+Instance --> App: physicalDevice
+deactivate Instance
+
+== Surface Compatibility Check ==
+App -> PhysDev: supportsSurface(surface)
+activate PhysDev
+PhysDev -> PhysDev: check surface formats
+PhysDev --> App: true/false
+deactivate PhysDev
+
+== Logical Device Creation ==
+App -> PhysDev: createLogicalDevice(desc)
+activate PhysDev
+PhysDev -> LogDev: create(deviceDesc)
+activate LogDev
+LogDev -> LogDev: create queue
+LogDev -> Factory: create()
+activate Factory
+Factory --> LogDev: resourceFactory
+deactivate Factory
+LogDev --> PhysDev: logicalDevice
+deactivate LogDev
+PhysDev --> App: logicalDevice
+deactivate PhysDev
+
+== SurfaceFramebuffer Creation ==
+App -> SurfaceFB: new SurfaceFramebuffer(device)
+activate SurfaceFB
+SurfaceFB -> SurfaceFB: store device reference
+SurfaceFB --> App: surfaceFramebuffer
+deactivate SurfaceFB
+
+== SwapChain and Depth Buffer Creation (inside SurfaceFramebuffer) ==
+App -> SurfaceFB: create(surface, swapChainDesc, depthFormat)
+activate SurfaceFB
+SurfaceFB -> SurfaceFB: store dimensions & format
+
+note over SurfaceFB: SurfaceFramebuffer manages all creation
+
+SurfaceFB -> SurfaceFB: createSwapChain()
+activate SurfaceFB
+    SurfaceFB -> LogDev: createSwapChain(surface, desc)
+    activate LogDev
+    LogDev -> SwapChain: create(surface, desc)
+    activate SwapChain
+    SwapChain -> SwapChain: configure format/size
+    SwapChain --> LogDev: swapChain
+    deactivate SwapChain
+    LogDev --> SurfaceFB: swapChain
+    deactivate LogDev
+    SurfaceFB -> SurfaceFB: _swapChain = swapChain
+deactivate SurfaceFB
+
+SurfaceFB -> SurfaceFB: createDepthFramebuffer()
+activate SurfaceFB
+    SurfaceFB -> OffscreenFB: create(factory, depthConfig)
+    activate OffscreenFB
+    OffscreenFB -> Factory: createTexture(depthDesc)
+    Factory --> OffscreenFB: depthTexture
+    OffscreenFB -> Factory: createTextureView(texture, viewDesc)
+    Factory --> OffscreenFB: depthView
+    OffscreenFB --> SurfaceFB: depthFramebuffer
+    deactivate OffscreenFB
+    SurfaceFB -> SurfaceFB: _depthFramebuffer = depthFramebuffer
+    note right: Single depth buffer\nmanaged internally by SurfaceFramebuffer
+deactivate SurfaceFB
+
+SurfaceFB --> App: true
+deactivate SurfaceFB
+
+@enduml
+
+@startuml resource_creation_sequence
+!theme plain
+title Resource Creation Sequence
+
+participant "Application" as App
+participant "ILogicalDevice" as LogDev
+participant "IResourceFactory" as Factory
+participant "WebGPUBuffer" as Buffer
+participant "WebGPUTexture" as Texture
+participant "WebGPUShaderModule" as Shader
+participant "WebGPURenderPipeline" as Pipeline
+
+== Get Resource Factory ==
+App -> LogDev: getResourceFactory()
+LogDev --> App: factory
+
+== Buffer Creation ==
+App -> Factory: createBuffer(bufferDesc)
+activate Factory
+note right of Factory
+  BufferDesc {
+    size: 1024
+    usage: Vertex | CopyDst
+    mappedAtCreation: true
+    debugName: "VertexBuffer"
+  }
+end note
+Factory -> Buffer: create(desc, wgpuDevice)
+activate Buffer
+Buffer -> Buffer: wgpuDeviceCreateBuffer()
+Buffer -> Buffer: validate size > 0
+Buffer --> Factory: buffer
+deactivate Buffer
+Factory --> App: buffer
+deactivate Factory
+
+== Texture Creation ==
+App -> Factory: createTexture(textureDesc)
+activate Factory
+note right of Factory
+  TextureDesc {
+    width: 800, height: 600
+    format: Depth24Plus
+    usage: RenderAttachment
+    dimension: D2
+  }
+end note
+Factory -> Texture: create(desc, wgpuDevice)
+activate Texture
+Texture -> Texture: convertFormat()
+Texture -> Texture: wgpuDeviceCreateTexture()
+Texture --> Factory: texture
+deactivate Texture
+Factory --> App: texture
+deactivate Factory
+
+== Shader Module Creation ==
+App -> Factory: createShaderModule(shaderDesc)
+activate Factory
+note right of Factory
+  ShaderModuleDesc {
+    code: "WGSL code"
+    stage: Vertex
+    entryPoint: "main"
+  }
+end note
+Factory -> Shader: create(desc)
+activate Shader
+Shader -> Shader: createShaderModule(wgpuDevice)
+Shader -> Shader: wgpuDeviceCreateShaderModule()
+Shader --> Factory: shader
+deactivate Shader
+Factory --> App: shader
+deactivate Factory
+
+== Render Pipeline Creation ==
+App -> Factory: createRenderPipeline(pipelineDesc)
+activate Factory
+note right of Factory
+  RenderPipelineDesc {
+    vertex: vertexShader
+    fragment: fragmentShader
+    depthStencil.format: Depth24Plus
+    depthStencil.depthWriteEnabled: true
+    depthStencil.depthCompare: Less
+    colorTargets[0].format: BGRA8Unorm
+  }
+end note
+Factory -> Pipeline: create(desc, wgpuDevice)
+activate Pipeline
+Pipeline -> Pipeline: setupVertexState()
+Pipeline -> Pipeline: setupFragmentState()
+Pipeline -> Pipeline: setupDepthStencilState()
+Pipeline -> Pipeline: wgpuDeviceCreateRenderPipeline()
+Pipeline --> Factory: pipeline
+deactivate Pipeline
+Factory --> App: pipeline
+deactivate Factory
+
+@enduml
+
+@startuml render_frame_sequence
+!theme plain
+title Frame Rendering Sequence
+
+participant "Application" as App
+participant "SurfaceFramebuffer" as SurfaceFB
+participant "ISwapChain" as SwapChain
+participant "ILogicalDevice" as LogDev
+participant "ICommandEncoder" as CmdEnc
+participant "IRenderPassEncoder" as RenderPass
+participant "IQueue" as Queue
+participant "RenderPassConfig" as Config
+
+== Frame Start ==
+App -> SurfaceFB: acquireNextImage()
+activate SurfaceFB
+SurfaceFB -> SwapChain: getCurrentTextureView()
+activate SwapChain
+SwapChain -> SwapChain: wgpuSurfaceGetCurrentTexture()
+SwapChain -> SwapChain: wgpuTextureCreateView()
+SwapChain --> SurfaceFB: textureView
+deactivate SwapChain
+SurfaceFB --> App: true
+deactivate SurfaceFB
+
+== Command Recording ==
+App -> LogDev: createCommandEncoder()
+activate LogDev
+LogDev -> CmdEnc: create()
+activate CmdEnc
+CmdEnc --> LogDev: encoder
+deactivate CmdEnc
+LogDev --> App: encoder
+deactivate LogDev
+
+== Configure Render Pass ==
+App -> Config: makeDescriptor(surfaceFramebuffer)
+activate Config
+Config -> SurfaceFB: getColorAttachment(0)
+SurfaceFB --> Config: colorView
+Config -> SurfaceFB: getDepthStencilAttachment()
+SurfaceFB --> Config: depthView
+Config -> Config: build RenderPassDesc
+note right of Config
+  RenderPassDesc {
+    colorAttachments[0] {
+      view: colorView
+      loadOp: Clear
+      storeOp: Store
+      clearValue: {0, 0, 0, 1}
+    }
+    depthStencilAttachment {
+      view: depthView
+      depthLoadOp: Clear
+      depthStoreOp: Store
+      depthClearValue: 1.0
+    }
+  }
+end note
+Config --> App: renderPassDesc
+deactivate Config
+
+== Begin Render Pass ==
+App -> CmdEnc: beginRenderPass(renderPassDesc)
+activate CmdEnc
+CmdEnc -> RenderPass: create(desc)
+activate RenderPass
+RenderPass -> RenderPass: wgpuCommandEncoderBeginRenderPass()
+RenderPass --> CmdEnc: renderPass
+deactivate RenderPass
+CmdEnc --> App: renderPass
+deactivate CmdEnc
+
+== Draw Commands ==
+App -> RenderPass: setPipeline(pipeline)
+activate RenderPass
+RenderPass -> RenderPass: wgpuRenderPassEncoderSetPipeline()
+deactivate RenderPass
+
+App -> RenderPass: setVertexBuffer(0, buffer, 0)
+activate RenderPass
+RenderPass -> RenderPass: wgpuRenderPassEncoderSetVertexBuffer()
+deactivate RenderPass
+
+App -> RenderPass: draw(3, 1, 0, 0)
+activate RenderPass
+note right of RenderPass
+  draw(
+    vertexCount: 3,
+    instanceCount: 1,
+    firstVertex: 0,
+    firstInstance: 0
+  )
+end note
+RenderPass -> RenderPass: wgpuRenderPassEncoderDraw()
+deactivate RenderPass
+
+== End Render Pass ==
+App -> RenderPass: end()
+activate RenderPass
+RenderPass -> RenderPass: wgpuRenderPassEncoderEnd()
+RenderPass --> App: void
+deactivate RenderPass
+
+== Submit Commands ==
+App -> CmdEnc: finish()
+activate CmdEnc
+CmdEnc -> CmdEnc: wgpuCommandEncoderFinish()
+CmdEnc --> App: commandBuffer
+deactivate CmdEnc
+
+App -> Queue: submit(commandBuffer)
+activate Queue
+Queue -> Queue: wgpuQueueSubmit()
+Queue --> App: void
+deactivate Queue
+
+== Present Frame ==
+App -> SurfaceFB: present()
+activate SurfaceFB
+SurfaceFB -> SwapChain: present()
+activate SwapChain
+SwapChain -> SwapChain: wgpuSurfacePresent()
+SwapChain --> SurfaceFB: void
+deactivate SwapChain
+SurfaceFB --> App: void
+deactivate SurfaceFB
+
+@enduml
+
+@startuml format_conversion_sequence
+!theme plain
+title Texture Format Conversion Sequence
+
+participant "Application" as App
+participant "WebGPUResourceFactory" as Factory
+participant "WebGPUConverters" as Conv
+participant "WebGPUTexture" as Texture
+participant "WebGPURenderPipeline" as Pipeline
+
+== Texture Creation with Format ==
+App -> Factory: createTexture(desc)
+activate Factory
+note right of Factory
+  TextureDesc {
+    format: Depth24Plus
+  }
+end note
+Factory -> Conv: convertTextureFormat(Depth24Plus)
+activate Conv
+Conv -> Conv: switch(format)
+Conv -> Conv: case Depth24Plus
+Conv --> Factory: WGPUTextureFormat_Depth24Plus
+deactivate Conv
+
+Factory -> Texture: create with WGPUTextureFormat
+activate Texture
+Texture --> Factory: texture
+deactivate Texture
+Factory --> App: texture
+deactivate Factory
+
+== Pipeline Creation with Depth Format ==
+App -> Factory: createRenderPipeline(desc)
+activate Factory
+note right of Factory
+  RenderPipelineDesc {
+    depthStencil {
+      format: Depth32Float
+      depthWriteEnabled: true
+      depthCompare: Less
+    }
+  }
+end note
+
+Factory -> Pipeline: create(desc, device)
+activate Pipeline
+Pipeline -> Conv: convertTextureFormat(Depth32Float)
+activate Conv
+Conv -> Conv: switch(format)
+Conv -> Conv: case Depth32Float
+Conv --> Pipeline: WGPUTextureFormat_Depth32Float
+deactivate Conv
+
+Pipeline -> Pipeline: depthStencil.format = WGPUTextureFormat_Depth32Float
+Pipeline --> Factory: pipeline
+deactivate Pipeline
+Factory --> App: pipeline
+deactivate Factory
+
+== Unsupported Format Fallback ==
+App -> Factory: createTexture(desc)
+activate Factory
+note right of Factory
+  TextureDesc {
+    format: R16Unorm
+  }
+end note
+Factory -> Conv: convertTextureFormat(R16Unorm)
+activate Conv
+Conv -> Conv: switch(format)
+Conv -> Conv: case R16Unorm
+Conv -> Conv: LOG_WARNING("R16Unorm not supported, using R16Float")
+Conv --> Factory: WGPUTextureFormat_R16Float
+deactivate Conv
+
+Factory -> Texture: create with fallback format
+activate Texture
+Texture --> Factory: texture
+deactivate Texture
+Factory --> App: texture
+deactivate Factory
+
+== BC Compressed Format ==
+App -> Factory: createTexture(desc)
+activate Factory
+note right of Factory
+  TextureDesc {
+    format: BC7RGBAUnorm
+  }
+end note
+Factory -> Conv: convertTextureFormat(BC7RGBAUnorm)
+activate Conv
+Conv -> Conv: switch(format)
+Conv -> Conv: case BC7RGBAUnorm
+Conv --> Factory: WGPUTextureFormat_BC7RGBAUnorm
+deactivate Conv
+
+Factory -> Texture: create with BC format
+activate Texture
+Texture --> Factory: texture
+deactivate Texture
+Factory --> App: texture
+deactivate Factory
+
+@enduml
+
+@startuml error_handling_sequence
+!theme plain
+title Error Handling and Validation Sequence
+
+participant "Application" as App
+participant "WebGPUResourceFactory" as Factory
+participant "WebGPUBuffer" as Buffer
+participant "WebGPURenderPipeline" as Pipeline
+participant "Logger" as Log
+
+== Buffer Size Validation ==
+App -> Factory: createBuffer(desc)
+activate Factory
+note right of Factory
+  BufferDesc {
+    size: 0  // Invalid!
+    usage: Vertex
+  }
+end note
+
+Factory -> Factory: check desc.size == 0
+Factory -> Log: LOG_WARNING("Cannot create buffer with size 0")
+activate Log
+Log --> Factory: logged
+deactivate Log
+Factory --> App: nullptr
+deactivate Factory
+
+== Device Lost Error ==
+App -> Factory: createTexture(desc)
+activate Factory
+Factory -> Factory: _logicalDevice.lock()
+Factory -> Factory: device == nullptr
+Factory -> Log: LOG_ERROR("Cannot create texture without device")
+activate Log
+Log --> Factory: logged
+deactivate Log
+Factory --> App: nullptr
+deactivate Factory
+
+== Pipeline Format Mismatch ==
+App -> Pipeline: create(desc, device)
+activate Pipeline
+note right of Pipeline
+  Pipeline depth format: None
+  RenderPass depth format: Depth24Plus
+  MISMATCH!
+end note
+
+Pipeline -> Pipeline: wgpuDeviceCreateRenderPipeline()
+Pipeline -> Log: Validation Error (from WebGPU)
+activate Log
+note right of Log
+  "Render pipeline targets incompatible with render pass
+   Incompatible depth-stencil attachment format:
+   RenderPass uses Depth24Plus
+   RenderPipeline uses None"
+end note
+Log --> Pipeline: logged
+deactivate Log
+Pipeline --> App: pipeline (but will fail at draw time)
+deactivate Pipeline
+
+== String View Assignment Fix ==
+App -> Factory: createTexture(desc)
+activate Factory
+note right of Factory
+  TextureDesc {
+    label: "MyTexture"
+  }
+end note
+
+Factory -> Factory: textureDesc.label = WGPUStringView{desc.label.data(), desc.label.length()}
+note right of Factory
+  Fixed: Was using c_str() directly
+  Now: Proper WGPUStringView construction
+end note
+Factory --> App: texture
+deactivate Factory
+
+@enduml

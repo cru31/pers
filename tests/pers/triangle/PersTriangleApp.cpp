@@ -40,8 +40,12 @@ bool PersTriangleApp::initializeRenderer() {
     // Get framebuffer size to pass to renderer
     glm::ivec2 size = getFramebufferSize();
     
+    // Create configuration for renderer
+    TriangleRendererConfig config;
+    config.windowSize = size;
+    
     // Initialize renderer with the instance we got from base class
-    if (!_renderer->initialize(getInstance(), size)) {
+    if (!_renderer->initialize(getInstance(), config)) {
         LOG_ERROR("PersTriangleApp",
             "Failed to initialize renderer");
         return false;

@@ -1,0 +1,379 @@
+@startuml pers_engine_class_diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' Core Interfaces
+interface IInstance {
+    +requestPhysicalDevice(options: PhysicalDeviceOptions): IPhysicalDevice
+    +createSurface(window: NativeWindowHandle): NativeSurfaceHandle
+}
+
+interface IPhysicalDevice {
+    +getCapabilities(): DeviceCapabilities
+    +supportsSurface(surface: NativeSurfaceHandle): bool
+    +createLogicalDevice(desc: LogicalDeviceDesc): ILogicalDevice
+    +getSupportedFormats(surface: NativeSurfaceHandle): vector<TextureFormat>
+}
+
+interface ILogicalDevice {
+    +getQueue(): IQueue
+    +getResourceFactory(): IResourceFactory
+    +createSwapChain(surface: NativeSurfaceHandle, desc: SwapChainDesc): ISwapChain
+    +createCommandEncoder(desc: CommandEncoderDesc): ICommandEncoder
+}
+
+interface IResourceFactory {
+    +createBuffer(desc: BufferDesc): IBuffer
+    +createTexture(desc: TextureDesc): ITexture
+    +createTextureView(texture: ITexture, desc: TextureViewDesc): ITextureView
+    +createSampler(desc: SamplerDesc): ISampler
+    +createShaderModule(desc: ShaderModuleDesc): IShaderModule
+    +createRenderPipeline(desc: RenderPipelineDesc): IRenderPipeline
+}
+
+interface ISwapChain {
+    +getCurrentTextureView(): ITextureView
+    +present(): void
+    +resize(width: uint32_t, height: uint32_t): void
+}
+
+interface IQueue {
+    +submit(commandBuffer: ICommandBuffer): void
+    +writeBuffer(buffer: IBuffer, data: void*, size: size_t, offset: size_t): void
+}
+
+interface ICommandEncoder {
+    +beginRenderPass(desc: RenderPassDesc): IRenderPassEncoder
+    +beginComputePass(desc: ComputePassDesc): IComputePassEncoder
+    +copyBufferToBuffer(src: IBuffer, dst: IBuffer, size: size_t): void
+    +finish(): ICommandBuffer
+}
+
+interface IRenderPassEncoder {
+    +setPipeline(pipeline: IRenderPipeline): void
+    +setVertexBuffer(slot: uint32_t, buffer: IBuffer, offset: size_t): void
+    +setIndexBuffer(buffer: IBuffer, format: IndexFormat, offset: size_t): void
+    +setBindGroup(index: uint32_t, bindGroup: IBindGroup): void
+    +draw(vertexCount: uint32_t, instanceCount: uint32_t, firstVertex: uint32_t, firstInstance: uint32_t): void
+    +drawIndexed(indexCount: uint32_t, instanceCount: uint32_t, firstIndex: uint32_t, baseVertex: int32_t, firstInstance: uint32_t): void
+    +end(): void
+}
+
+interface IBuffer {
+    +map(): void*
+    +unmap(): void
+    +getSize(): size_t
+    +getUsage(): BufferUsage
+}
+
+interface ITexture {
+    +getWidth(): uint32_t
+    +getHeight(): uint32_t
+    +getFormat(): TextureFormat
+    +createView(desc: TextureViewDesc): ITextureView
+}
+
+interface ITextureView {
+    +getWidth(): uint32_t
+    +getHeight(): uint32_t
+    +getFormat(): TextureFormat
+}
+
+interface IShaderModule {
+    +getStage(): ShaderStage
+    +getEntryPoint(): string
+    +isValid(): bool
+}
+
+interface IRenderPipeline {
+    +getDebugName(): string
+}
+
+interface IFramebuffer {
+    +getColorAttachment(index: uint32_t): ITextureView
+    +getDepthStencilAttachment(): ITextureView
+    +getWidth(): uint32_t
+    +getHeight(): uint32_t
+}
+
+interface ISurfaceFramebuffer {
+    +acquireNextImage(): bool
+    +present(): void
+    +resize(width: uint32_t, height: uint32_t): void
+    +setDepthFramebuffer(depth: IFramebuffer): void
+}
+
+' WebGPU Implementations
+class WebGPUInstance implements IInstance {
+    -_instance: WGPUInstance
+    -_backend: BackendType
+    +initialize(desc: InstanceDesc): bool
+}
+
+class WebGPUPhysicalDevice implements IPhysicalDevice {
+    -_adapter: WGPUAdapter
+    -_capabilities: DeviceCapabilities
+    -_surface: WGPUSurface
+    +queryCapabilities(): void
+    +enumerateFeatures(): void
+}
+
+class WebGPULogicalDevice implements ILogicalDevice {
+    -_device: WGPUDevice
+    -_queue: shared_ptr<WebGPUQueue>
+    -_resourceFactory: shared_ptr<WebGPUResourceFactory>
+    -_swapChains: vector<weak_ptr<WebGPUSwapChain>>
+}
+
+class WebGPUResourceFactory implements IResourceFactory {
+    -_logicalDevice: weak_ptr<WebGPULogicalDevice>
+}
+
+class WebGPUSwapChain implements ISwapChain {
+    -_swapChain: WGPUSwapChain
+    -_surface: WGPUSurface
+    -_format: TextureFormat
+    -_width: uint32_t
+    -_height: uint32_t
+}
+
+class WebGPUQueue implements IQueue {
+    -_queue: WGPUQueue
+}
+
+class WebGPUCommandEncoder implements ICommandEncoder {
+    -_encoder: WGPUCommandEncoder
+    -_device: WGPUDevice
+}
+
+class WebGPURenderPassEncoder implements IRenderPassEncoder {
+    -_encoder: WGPURenderPassEncoder
+}
+
+class WebGPUBuffer implements IBuffer {
+    -_buffer: WGPUBuffer
+    -_size: size_t
+    -_usage: BufferUsage
+    -_mappedData: void*
+}
+
+class WebGPUTexture implements ITexture {
+    -_texture: WGPUTexture
+    -_width: uint32_t
+    -_height: uint32_t
+    -_format: TextureFormat
+    -_usage: TextureUsage
+}
+
+class WebGPUTextureView implements ITextureView {
+    -_view: WGPUTextureView
+    -_width: uint32_t
+    -_height: uint32_t
+    -_format: TextureFormat
+}
+
+class WebGPUShaderModule implements IShaderModule {
+    -_module: WGPUShaderModule
+    -_stage: ShaderStage
+    -_entryPoint: string
+}
+
+class WebGPURenderPipeline implements IRenderPipeline {
+    -_pipeline: WGPURenderPipeline
+    -_debugName: string
+}
+
+' Framebuffer Classes
+class SurfaceFramebuffer implements ISurfaceFramebuffer {
+    -_device: shared_ptr<ILogicalDevice>
+    -_swapChain: shared_ptr<ISwapChain>
+    -_depthFramebuffer: shared_ptr<IFramebuffer>
+    -_currentTextureView: shared_ptr<ITextureView>
+    -_width: uint32_t
+    -_height: uint32_t
+}
+
+class OffscreenFramebuffer implements IFramebuffer {
+    -_colorAttachments: vector<shared_ptr<ITexture>>
+    -_colorViews: vector<shared_ptr<ITextureView>>
+    -_depthStencilAttachment: shared_ptr<ITexture>
+    -_depthStencilView: shared_ptr<ITextureView>
+    -_width: uint32_t
+    -_height: uint32_t
+}
+
+' Helper/Utility Classes
+class WebGPUConverters {
+    {static} +convertTextureFormat(format: TextureFormat): WGPUTextureFormat
+    {static} +convertFromWGPUTextureFormat(format: WGPUTextureFormat): TextureFormat
+    {static} +convertBufferUsage(usage: BufferUsage): WGPUBufferUsage
+    {static} +convertPresentMode(mode: PresentMode): WGPUPresentMode
+    {static} +convertCompareFunction(func: CompareFunction): WGPUCompareFunction
+    {static} +convertTextureUsage(usage: TextureUsage): WGPUTextureUsage
+    {static} +convertTextureDimension(dim: TextureDimension): WGPUTextureDimension
+    {static} +convertTextureViewDimension(dim: TextureViewDimension): WGPUTextureViewDimension
+    {static} +convertTextureAspect(aspect: TextureAspect): WGPUTextureAspect
+}
+
+class RenderPassConfig {
+    -_colorConfigs: vector<ColorConfig>
+    -_depthStencilConfig: DepthStencilConfig
+    -_label: string
+    +addColorAttachment(config: ColorConfig): void
+    +setDepthStencilConfig(config: DepthStencilConfig): void
+    +makeDescriptor(framebuffer: shared_ptr<IFramebuffer>): RenderPassDesc
+}
+
+class SwapChainDescBuilder {
+    -_desc: SwapChainDesc
+    +setSize(width: uint32_t, height: uint32_t): SwapChainDescBuilder&
+    +setFormat(format: TextureFormat): SwapChainDescBuilder&
+    +setPresentMode(mode: PresentMode): SwapChainDescBuilder&
+    +setUsage(usage: TextureUsage): SwapChainDescBuilder&
+    +build(): SwapChainDesc
+}
+
+' Data Structures
+class RenderPipelineDesc {
+    +vertex: shared_ptr<IShaderModule>
+    +fragment: shared_ptr<IShaderModule>
+    +vertexLayouts: vector<VertexBufferLayout>
+    +primitive: PrimitiveState
+    +depthStencil: DepthStencilState
+    +multisample: MultisampleState
+    +colorTargets: vector<ColorTargetState>
+    +debugName: string
+}
+
+class DepthStencilState {
+    +format: TextureFormat
+    +depthWriteEnabled: bool
+    +depthCompare: CompareFunction
+    +stencilReadMask: uint32_t
+    +stencilWriteMask: uint32_t
+    +stencilFront: StencilFaceState
+    +stencilBack: StencilFaceState
+}
+
+class BufferDesc {
+    +size: size_t
+    +usage: BufferUsage
+    +mappedAtCreation: bool
+    +debugName: string
+}
+
+class TextureDesc {
+    +width: uint32_t
+    +height: uint32_t
+    +depthOrArrayLayers: uint32_t
+    +mipLevelCount: uint32_t
+    +sampleCount: uint32_t
+    +dimension: TextureDimension
+    +format: TextureFormat
+    +usage: TextureUsage
+    +label: string
+}
+
+' Enums
+enum TextureFormat {
+    R8Unorm
+    R8Snorm
+    R16Float
+    R16Unorm
+    R16Snorm
+    R32Float
+    RG8Unorm
+    RG16Float
+    RG16Unorm
+    RG16Snorm
+    RGBA8Unorm
+    RGBA8UnormSrgb
+    BGRA8Unorm
+    BGRA8UnormSrgb
+    RGB9E5Ufloat
+    RGB10A2Unorm
+    RG11B10Ufloat
+    RGBA16Float
+    RGBA16Unorm
+    RGBA16Snorm
+    RGBA32Float
+    Depth16Unorm
+    Depth24Plus
+    Depth24PlusStencil8
+    Depth32Float
+    Depth32FloatStencil8
+    BC1RGBAUnorm
+    BC2RGBAUnorm
+    BC3RGBAUnorm
+    BC4RUnorm
+    BC5RGUnorm
+    BC6HRGBUfloat
+    BC7RGBAUnorm
+    Undefined
+}
+
+enum BufferUsage {
+    MapRead
+    MapWrite
+    CopySrc
+    CopyDst
+    Index
+    Vertex
+    Uniform
+    Storage
+    Indirect
+    QueryResolve
+}
+
+enum IndexFormat {
+    Undefined
+    Uint16
+    Uint32
+}
+
+enum CompareFunction {
+    Undefined
+    Never
+    Less
+    Equal
+    LessEqual
+    Greater
+    NotEqual
+    GreaterEqual
+    Always
+}
+
+' Relationships
+WebGPUInstance --> WebGPUPhysicalDevice : creates
+WebGPUPhysicalDevice --> WebGPULogicalDevice : creates
+WebGPULogicalDevice --> WebGPUQueue : owns
+WebGPULogicalDevice --> WebGPUResourceFactory : owns
+WebGPULogicalDevice --> WebGPUSwapChain : creates
+WebGPULogicalDevice --> WebGPUCommandEncoder : creates
+
+WebGPUResourceFactory --> WebGPUBuffer : creates
+WebGPUResourceFactory --> WebGPUTexture : creates
+WebGPUResourceFactory --> WebGPUTextureView : creates
+WebGPUResourceFactory --> WebGPUShaderModule : creates
+WebGPUResourceFactory --> WebGPURenderPipeline : creates
+
+WebGPUCommandEncoder --> WebGPURenderPassEncoder : creates
+
+SurfaceFramebuffer --> ILogicalDevice : uses
+SurfaceFramebuffer --> ISwapChain : uses
+SurfaceFramebuffer --> IFramebuffer : uses depth
+
+OffscreenFramebuffer --> ITexture : owns
+OffscreenFramebuffer --> ITextureView : owns
+
+RenderPassConfig ..> IFramebuffer : uses
+SwapChainDescBuilder ..> SwapChainDesc : builds
+
+WebGPUConverters ..> TextureFormat : converts
+WebGPUConverters ..> BufferUsage : converts
+
+WebGPURenderPipeline ..> RenderPipelineDesc : configured by
+WebGPURenderPipeline ..> DepthStencilState : uses
+
+@enduml

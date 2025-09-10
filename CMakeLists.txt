@@ -21,6 +21,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_TESTS "Build test programs" ON)
 option(BUILD_SAMPLES "Build sample programs" OFF)
 
+# Automatically set vcpkg features based on build options
+if(BUILD_TESTS OR BUILD_SAMPLES)
+    set(VCPKG_MANIFEST_FEATURES "glfw-support" CACHE STRING "vcpkg manifest features" FORCE)
+endif()
+
 # Output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

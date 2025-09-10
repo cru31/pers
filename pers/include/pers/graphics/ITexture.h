@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cstdint>
+#include <string>
 #include "pers/graphics/GraphicsTypes.h"
 #include "pers/graphics/GraphicsFormats.h"
 
@@ -25,6 +26,7 @@ struct TextureDesc {
     uint32_t sampleCount = 1;
     TextureFormat format = TextureFormat::RGBA8Unorm;
     TextureUsage usage = TextureUsage::None;
+    std::string label;
 };
 
 /**

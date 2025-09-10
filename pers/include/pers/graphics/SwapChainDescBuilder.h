@@ -22,6 +22,7 @@ struct SwapChainNegotiationResult {
     TextureFormat negotiatedFormat = TextureFormat::Undefined;
     PresentMode negotiatedPresentMode = PresentMode::Fifo;
     CompositeAlphaMode negotiatedAlphaMode = CompositeAlphaMode::Opaque;
+    uint32_t negotiatedBufferCount = 2;
     
     std::vector<TextureFormat> availableFormats;
     std::vector<PresentMode> availablePresentModes;
@@ -128,6 +129,7 @@ public:
     SwapChainDescBuilder& setPresentMode(PresentMode mode) { return withPresentMode(mode); }
     SwapChainDescBuilder& setUsage(TextureUsage usage) { _usage = usage; return *this; }
     SwapChainDescBuilder& setDebugName(const std::string& name) { return withDebugName(name); }
+    SwapChainDescBuilder& setDesiredBufferCount(uint32_t count) { _desiredBufferCount = count; return *this; }
     SwapChainDesc build() const;  // Simple build without negotiation
     
 private:
@@ -145,6 +147,7 @@ private:
     
     std::string _debugName;
     TextureUsage _usage = TextureUsage::RenderAttachment;
+    uint32_t _desiredBufferCount = 3;  // Default to triple buffering (will be negotiated)
     
     // Surface capabilities for auto-negotiation
     std::optional<SurfaceCapabilities> _surfaceCapabilities;

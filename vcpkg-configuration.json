@@ -3,11 +3,5 @@
     "kind": "git",
     "repository": "https://github.com/Microsoft/vcpkg",
     "baseline": "6ecbbbdf31cba47aafa7cf6189b1e73e10ac61f8"
-  },
-  "overrides": [
-    {
-      "name": "glm",
-      "version": "1.0.1#1"
-    }
-  ]
+  }
 }

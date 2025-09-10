@@ -11,7 +11,6 @@ class IWindowFactory;
 namespace pers {
     class IGraphicsBackendFactory;
     class IInstance;
-}
 
 /**
  * Base application class providing common functionality for graphics applications
@@ -80,3 +79,5 @@ private:
     std::unique_ptr<IWindow> _window;
     std::shared_ptr<pers::IInstance> _instance;
 };
+
+}

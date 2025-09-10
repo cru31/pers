@@ -11,6 +11,7 @@ class IQueue;
 class ICommandEncoder;
 class ISwapChain;
 class IResourceFactory;
+class IPhysicalDevice;
 struct SwapChainDesc;
 
 /**
@@ -61,6 +62,12 @@ public:
      * @return Native device handle (WGPUDevice for WebGPU)
      */
     virtual NativeDeviceHandle getNativeDeviceHandle() const = 0;
+    
+    /**
+     * @brief Get the physical device this logical device was created from
+     * @return Shared pointer to physical device or nullptr if expired
+     */
+    virtual std::shared_ptr<IPhysicalDevice> getPhysicalDevice() const = 0;
 };
 
 } // namespace pers

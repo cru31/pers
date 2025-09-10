@@ -15,6 +15,12 @@ WGPUTextureFormat WebGPUConverters::convertTextureFormat(TextureFormat format) {
         case TextureFormat::R16Uint: return WGPUTextureFormat_R16Uint;
         case TextureFormat::R16Sint: return WGPUTextureFormat_R16Sint;
         case TextureFormat::R16Float: return WGPUTextureFormat_R16Float;
+        // R16Unorm, R16Snorm not supported in wgpu-native yet
+        case TextureFormat::R16Unorm:
+        case TextureFormat::R16Snorm:
+            LOG_WARNING("WebGPUConverters", 
+                "R16Unorm/R16Snorm not yet supported in wgpu-native, using R16Float");
+            return WGPUTextureFormat_R16Float;
         case TextureFormat::RG8Unorm: return WGPUTextureFormat_RG8Unorm;
         case TextureFormat::RG8Snorm: return WGPUTextureFormat_RG8Snorm;
         case TextureFormat::RG8Uint: return WGPUTextureFormat_RG8Uint;
@@ -27,6 +33,12 @@ WGPUTextureFormat WebGPUConverters::convertTextureFormat(TextureFormat format) {
         case TextureFormat::RG16Uint: return WGPUTextureFormat_RG16Uint;
         case TextureFormat::RG16Sint: return WGPUTextureFormat_RG16Sint;
         case TextureFormat::RG16Float: return WGPUTextureFormat_RG16Float;
+        // RG16Unorm, RG16Snorm not supported in wgpu-native yet
+        case TextureFormat::RG16Unorm:
+        case TextureFormat::RG16Snorm:
+            LOG_WARNING("WebGPUConverters", 
+                "RG16Unorm/RG16Snorm not yet supported in wgpu-native, using RG16Float");
+            return WGPUTextureFormat_RG16Float;
         case TextureFormat::RGBA8Unorm: return WGPUTextureFormat_RGBA8Unorm;
         case TextureFormat::RGBA8UnormSrgb: return WGPUTextureFormat_RGBA8UnormSrgb;
         case TextureFormat::RGBA8Snorm: return WGPUTextureFormat_RGBA8Snorm;
@@ -34,6 +46,9 @@ WGPUTextureFormat WebGPUConverters::convertTextureFormat(TextureFormat format) {
         case TextureFormat::RGBA8Sint: return WGPUTextureFormat_RGBA8Sint;
         case TextureFormat::BGRA8Unorm: return WGPUTextureFormat_BGRA8Unorm;
         case TextureFormat::BGRA8UnormSrgb: return WGPUTextureFormat_BGRA8UnormSrgb;
+        case TextureFormat::RGB10A2Unorm: return WGPUTextureFormat_RGB10A2Unorm;
+        case TextureFormat::RGB9E5Ufloat: return WGPUTextureFormat_RGB9E5Ufloat;
+        case TextureFormat::RG11B10Ufloat: return WGPUTextureFormat_RG11B10Ufloat;
         
         // 64-bit formats
         case TextureFormat::RG32Float: return WGPUTextureFormat_RG32Float;
@@ -42,6 +57,12 @@ WGPUTextureFormat WebGPUConverters::convertTextureFormat(TextureFormat format) {
         case TextureFormat::RGBA16Uint: return WGPUTextureFormat_RGBA16Uint;
         case TextureFormat::RGBA16Sint: return WGPUTextureFormat_RGBA16Sint;
         case TextureFormat::RGBA16Float: return WGPUTextureFormat_RGBA16Float;
+        // RGBA16Unorm, RGBA16Snorm not supported in wgpu-native yet
+        case TextureFormat::RGBA16Unorm:
+        case TextureFormat::RGBA16Snorm:
+            LOG_WARNING("WebGPUConverters", 
+                "RGBA16Unorm/RGBA16Snorm not yet supported in wgpu-native, using RGBA16Float");
+            return WGPUTextureFormat_RGBA16Float;
         
         // 128-bit formats
         case TextureFormat::RGBA32Float: return WGPUTextureFormat_RGBA32Float;
@@ -55,6 +76,22 @@ WGPUTextureFormat WebGPUConverters::convertTextureFormat(TextureFormat format) {
         case TextureFormat::Depth32Float: return WGPUTextureFormat_Depth32Float;
         case TextureFormat::Depth32FloatStencil8: return WGPUTextureFormat_Depth32FloatStencil8;
         case TextureFormat::Stencil8: return WGPUTextureFormat_Stencil8;
+        
+        // BC compressed formats (Desktop only)
+        case TextureFormat::BC1RGBAUnorm: return WGPUTextureFormat_BC1RGBAUnorm;
+        case TextureFormat::BC1RGBAUnormSrgb: return WGPUTextureFormat_BC1RGBAUnormSrgb;
+        case TextureFormat::BC2RGBAUnorm: return WGPUTextureFormat_BC2RGBAUnorm;
+        case TextureFormat::BC2RGBAUnormSrgb: return WGPUTextureFormat_BC2RGBAUnormSrgb;
+        case TextureFormat::BC3RGBAUnorm: return WGPUTextureFormat_BC3RGBAUnorm;
+        case TextureFormat::BC3RGBAUnormSrgb: return WGPUTextureFormat_BC3RGBAUnormSrgb;
+        case TextureFormat::BC4RUnorm: return WGPUTextureFormat_BC4RUnorm;
+        case TextureFormat::BC4RSnorm: return WGPUTextureFormat_BC4RSnorm;
+        case TextureFormat::BC5RGUnorm: return WGPUTextureFormat_BC5RGUnorm;
+        case TextureFormat::BC5RGSnorm: return WGPUTextureFormat_BC5RGSnorm;
+        case TextureFormat::BC6HRGBUfloat: return WGPUTextureFormat_BC6HRGBUfloat;
+        case TextureFormat::BC6HRGBFloat: return WGPUTextureFormat_BC6HRGBFloat;
+        case TextureFormat::BC7RGBAUnorm: return WGPUTextureFormat_BC7RGBAUnorm;
+        case TextureFormat::BC7RGBAUnormSrgb: return WGPUTextureFormat_BC7RGBAUnormSrgb;
         
         case TextureFormat::Undefined:
         default:
@@ -76,6 +113,7 @@ TextureFormat WebGPUConverters::convertFromWGPUTextureFormat(WGPUTextureFormat f
         case WGPUTextureFormat_R16Uint: return TextureFormat::R16Uint;
         case WGPUTextureFormat_R16Sint: return TextureFormat::R16Sint;
         case WGPUTextureFormat_R16Float: return TextureFormat::R16Float;
+        // R16Unorm, R16Snorm not supported in wgpu-native yet
         case WGPUTextureFormat_RG8Unorm: return TextureFormat::RG8Unorm;
         case WGPUTextureFormat_RG8Snorm: return TextureFormat::RG8Snorm;
         case WGPUTextureFormat_RG8Uint: return TextureFormat::RG8Uint;
@@ -88,6 +126,7 @@ TextureFormat WebGPUConverters::convertFromWGPUTextureFormat(WGPUTextureFormat f
         case WGPUTextureFormat_RG16Uint: return TextureFormat::RG16Uint;
         case WGPUTextureFormat_RG16Sint: return TextureFormat::RG16Sint;
         case WGPUTextureFormat_RG16Float: return TextureFormat::RG16Float;
+        // RG16Unorm, RG16Snorm not supported in wgpu-native yet
         case WGPUTextureFormat_RGBA8Unorm: return TextureFormat::RGBA8Unorm;
         case WGPUTextureFormat_RGBA8UnormSrgb: return TextureFormat::RGBA8UnormSrgb;
         case WGPUTextureFormat_RGBA8Snorm: return TextureFormat::RGBA8Snorm;
@@ -95,6 +134,9 @@ TextureFormat WebGPUConverters::convertFromWGPUTextureFormat(WGPUTextureFormat f
         case WGPUTextureFormat_RGBA8Sint: return TextureFormat::RGBA8Sint;
         case WGPUTextureFormat_BGRA8Unorm: return TextureFormat::BGRA8Unorm;
         case WGPUTextureFormat_BGRA8UnormSrgb: return TextureFormat::BGRA8UnormSrgb;
+        case WGPUTextureFormat_RGB10A2Unorm: return TextureFormat::RGB10A2Unorm;
+        case WGPUTextureFormat_RGB9E5Ufloat: return TextureFormat::RGB9E5Ufloat;
+        case WGPUTextureFormat_RG11B10Ufloat: return TextureFormat::RG11B10Ufloat;
         
         // 64-bit formats
         case WGPUTextureFormat_RG32Float: return TextureFormat::RG32Float;
@@ -103,6 +145,7 @@ TextureFormat WebGPUConverters::convertFromWGPUTextureFormat(WGPUTextureFormat f
         case WGPUTextureFormat_RGBA16Uint: return TextureFormat::RGBA16Uint;
         case WGPUTextureFormat_RGBA16Sint: return TextureFormat::RGBA16Sint;
         case WGPUTextureFormat_RGBA16Float: return TextureFormat::RGBA16Float;
+        // RGBA16Unorm, RGBA16Snorm not supported in wgpu-native yet
         
         // 128-bit formats
         case WGPUTextureFormat_RGBA32Float: return TextureFormat::RGBA32Float;
@@ -116,6 +159,22 @@ TextureFormat WebGPUConverters::convertFromWGPUTextureFormat(WGPUTextureFormat f
         case WGPUTextureFormat_Depth32Float: return TextureFormat::Depth32Float;
         case WGPUTextureFormat_Depth32FloatStencil8: return TextureFormat::Depth32FloatStencil8;
         case WGPUTextureFormat_Stencil8: return TextureFormat::Stencil8;
+        
+        // BC compressed formats (Desktop only)
+        case WGPUTextureFormat_BC1RGBAUnorm: return TextureFormat::BC1RGBAUnorm;
+        case WGPUTextureFormat_BC1RGBAUnormSrgb: return TextureFormat::BC1RGBAUnormSrgb;
+        case WGPUTextureFormat_BC2RGBAUnorm: return TextureFormat::BC2RGBAUnorm;
+        case WGPUTextureFormat_BC2RGBAUnormSrgb: return TextureFormat::BC2RGBAUnormSrgb;
+        case WGPUTextureFormat_BC3RGBAUnorm: return TextureFormat::BC3RGBAUnorm;
+        case WGPUTextureFormat_BC3RGBAUnormSrgb: return TextureFormat::BC3RGBAUnormSrgb;
+        case WGPUTextureFormat_BC4RUnorm: return TextureFormat::BC4RUnorm;
+        case WGPUTextureFormat_BC4RSnorm: return TextureFormat::BC4RSnorm;
+        case WGPUTextureFormat_BC5RGUnorm: return TextureFormat::BC5RGUnorm;
+        case WGPUTextureFormat_BC5RGSnorm: return TextureFormat::BC5RGSnorm;
+        case WGPUTextureFormat_BC6HRGBUfloat: return TextureFormat::BC6HRGBUfloat;
+        case WGPUTextureFormat_BC6HRGBFloat: return TextureFormat::BC6HRGBFloat;
+        case WGPUTextureFormat_BC7RGBAUnorm: return TextureFormat::BC7RGBAUnorm;
+        case WGPUTextureFormat_BC7RGBAUnormSrgb: return TextureFormat::BC7RGBAUnormSrgb;
         
         case WGPUTextureFormat_Undefined:
         default:
@@ -267,6 +326,46 @@ WGPUBufferUsage WebGPUConverters::convertBufferUsage(BufferUsage usage) {
     }
     
     return flags;
+}
+
+WGPUTextureDimension WebGPUConverters::convertTextureDimension(TextureDimension dimension) {
+    switch (dimension) {
+        case TextureDimension::D1: return WGPUTextureDimension_1D;
+        case TextureDimension::D2: return WGPUTextureDimension_2D;
+        case TextureDimension::D3: return WGPUTextureDimension_3D;
+        default:
+            LOG_WARNING("WebGPUConverters", 
+                "Unknown texture dimension, defaulting to 2D");
+            return WGPUTextureDimension_2D;
+    }
+}
+
+WGPUTextureViewDimension WebGPUConverters::convertTextureViewDimension(TextureViewDimension dimension) {
+    switch (dimension) {
+        case TextureViewDimension::Undefined: return WGPUTextureViewDimension_Undefined;
+        case TextureViewDimension::D1: return WGPUTextureViewDimension_1D;
+        case TextureViewDimension::D2: return WGPUTextureViewDimension_2D;
+        case TextureViewDimension::D2Array: return WGPUTextureViewDimension_2DArray;
+        case TextureViewDimension::Cube: return WGPUTextureViewDimension_Cube;
+        case TextureViewDimension::CubeArray: return WGPUTextureViewDimension_CubeArray;
+        case TextureViewDimension::D3: return WGPUTextureViewDimension_3D;
+        default:
+            LOG_WARNING("WebGPUConverters", 
+                "Unknown texture view dimension, defaulting to 2D");
+            return WGPUTextureViewDimension_2D;
+    }
+}
+
+WGPUTextureAspect WebGPUConverters::convertTextureAspect(TextureAspect aspect) {
+    switch (aspect) {
+        case TextureAspect::All: return WGPUTextureAspect_All;
+        case TextureAspect::StencilOnly: return WGPUTextureAspect_StencilOnly;
+        case TextureAspect::DepthOnly: return WGPUTextureAspect_DepthOnly;
+        default:
+            LOG_WARNING("WebGPUConverters", 
+                "Unknown texture aspect, defaulting to All");
+            return WGPUTextureAspect_All;
+    }
 }
 
 } // namespace pers
