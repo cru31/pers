@@ -1,6 +1,6 @@
 #include "pers/graphics/backends/webgpu/WebGPURenderPassEncoder.h"
 #include "pers/graphics/backends/webgpu/WebGPURenderPipeline.h"
-#include "pers/graphics/backends/webgpu/WebGPUBuffer.h"
+#include "pers/graphics/backends/webgpu/buffers/WebGPUBuffer.h"
 #include "pers/utils/Logger.h"
 
 namespace pers {
@@ -39,7 +39,7 @@ void WebGPURenderPassEncoder::setPipeline(const std::shared_ptr<IRenderPipeline>
     }
     
     // Cast to WebGPU implementation
-    auto webgpuPipeline = std::dynamic_pointer_cast<webgpu::WebGPURenderPipeline>(pipeline);
+    auto webgpuPipeline = std::dynamic_pointer_cast<WebGPURenderPipeline>(pipeline);
     if (!webgpuPipeline) {
         LOG_ERROR("WebGPURenderPassEncoder", 
                               "Invalid pipeline type - not a WebGPURenderPipeline");
@@ -82,7 +82,7 @@ void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, const std::shared_p
     }
     
     // Cast to WebGPU implementation
-    auto webgpuBuffer = std::dynamic_pointer_cast<webgpu::WebGPUBuffer>(buffer);
+    auto webgpuBuffer = std::dynamic_pointer_cast<WebGPUBuffer>(buffer);
     if (!webgpuBuffer) {
         LOG_ERROR("WebGPURenderPassEncoder", 
                               "Invalid buffer type - not a WebGPUBuffer");
@@ -96,7 +96,8 @@ void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, const std::shared_p
     }
     
     // Set the vertex buffer
-    wgpuRenderPassEncoderSetVertexBuffer(_encoder, slot, webgpuBuffer->getNativeHandle(), offset, bufferSize);
+    WGPUBuffer wgpuBuffer = webgpuBuffer->getNativeHandle().as<WGPUBuffer>();
+    wgpuRenderPassEncoderSetVertexBuffer(_encoder, slot, wgpuBuffer, offset, bufferSize);
 }
 
 void WebGPURenderPassEncoder::setIndexBuffer(const std::shared_ptr<IBuffer>& buffer, 

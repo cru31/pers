@@ -4,7 +4,6 @@
 #include <string>
 
 namespace pers {
-namespace graphics {
 
 /**
  * Buffer state enum
@@ -45,12 +44,31 @@ enum class BufferUsage : uint32_t {
     All = 0xFFFFFFFF
 };
 
-inline BufferUsage operator|(BufferUsage a, BufferUsage b);
-inline BufferUsage operator&(BufferUsage a, BufferUsage b);
-inline BufferUsage& operator|=(BufferUsage& a, BufferUsage b);
-inline BufferUsage& operator&=(BufferUsage& a, BufferUsage b);
-inline bool operator!(BufferUsage a);
-inline bool hasFlag(BufferUsage flags, BufferUsage flag);
+inline BufferUsage operator|(BufferUsage a, BufferUsage b) {
+    return static_cast<BufferUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline BufferUsage operator&(BufferUsage a, BufferUsage b) {
+    return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
+inline BufferUsage& operator|=(BufferUsage& a, BufferUsage b) {
+    a = a | b;
+    return a;
+}
+
+inline BufferUsage& operator&=(BufferUsage& a, BufferUsage b) {
+    a = a & b;
+    return a;
+}
+
+inline bool operator!(BufferUsage a) {
+    return static_cast<uint32_t>(a) == 0;
+}
+
+inline bool hasFlag(BufferUsage flags, BufferUsage flag) {
+    return (flags & flag) == flag;
+}
 
 /**
  * Buffer memory location hint
@@ -134,5 +152,4 @@ struct BufferMapRange {
     static constexpr uint64_t WHOLE_BUFFER = static_cast<uint64_t>(-1);
 };
 
-} // namespace graphics
 } // namespace pers

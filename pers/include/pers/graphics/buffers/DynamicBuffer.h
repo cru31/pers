@@ -1,0 +1,65 @@
+#pragma once
+
+#include "pers/graphics/buffers/IBuffer.h"
+#include "pers/graphics/buffers/IMappableBuffer.h"
+#include "pers/graphics/buffers/IBufferFactory.h"
+#include <memory>
+#include <atomic>
+#include <vector>
+
+namespace pers {
+
+/**
+ * Ring buffer for per-frame dynamic data updates
+ * Automatically manages multiple buffer copies for frame overlap
+ */
+class DynamicBuffer : public IBuffer, public std::enable_shared_from_this<DynamicBuffer> {
+public:
+    static constexpr uint32_t DEFAULT_FRAME_COUNT = 3;
+    
+    struct UpdateHandle {
+        void* data;
+        uint64_t size;
+        uint32_t frameIndex;
+    };
+    
+    DynamicBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory, 
+                  uint32_t frameCount = DEFAULT_FRAME_COUNT);
+    virtual ~DynamicBuffer();
+    
+    DynamicBuffer(const DynamicBuffer&) = delete;
+    DynamicBuffer& operator=(const DynamicBuffer&) = delete;
+    
+    DynamicBuffer(DynamicBuffer&& other) noexcept;
+    DynamicBuffer& operator=(DynamicBuffer&& other) noexcept;
+    
+    // Dynamic update interface
+    UpdateHandle beginUpdate();
+    void endUpdate(const UpdateHandle& handle);
+    
+    // Get current frame's buffer for GPU use
+    std::shared_ptr<IBuffer> getCurrentFrameBuffer() const;
+    uint32_t getCurrentFrameIndex() const;
+    
+    // Frame synchronization
+    void nextFrame();
+    
+    // IBuffer interface
+    virtual uint64_t getSize() const override;
+    virtual BufferUsage getUsage() const override;
+    virtual const std::string& getDebugName() const override;
+    virtual NativeBufferHandle getNativeHandle() const override;
+    virtual bool isValid() const override;
+    virtual BufferState getState() const override;
+    virtual MemoryLocation getMemoryLocation() const override;
+    virtual AccessPattern getAccessPattern() const override;
+    
+protected:
+    BufferDesc _desc;
+    std::vector<std::shared_ptr<IMappableBuffer>> _buffers;
+    std::atomic<uint32_t> _currentFrame;
+    uint32_t _frameCount;
+    std::vector<bool> _mapped;
+};
+
+} // namespace pers

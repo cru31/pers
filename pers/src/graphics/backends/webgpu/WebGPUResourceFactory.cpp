@@ -1,5 +1,5 @@
 #include "pers/graphics/backends/webgpu/WebGPUResourceFactory.h"
-#include "pers/graphics/backends/webgpu/WebGPUBuffer.h"
+#include "pers/graphics/backends/webgpu/buffers/WebGPUBuffer.h"
 #include "pers/graphics/backends/webgpu/WebGPUTexture.h"
 #include "pers/graphics/backends/webgpu/WebGPUTextureView.h"
 #include "pers/graphics/backends/webgpu/WebGPUShaderModule.h"
@@ -8,9 +8,9 @@
 #include "pers/graphics/backends/webgpu/WebGPUConverters.h"
 #include "pers/utils/Logger.h"
 #include <webgpu/webgpu.h>
+#include <cstring>  // for memcpy
 
 namespace pers {
-namespace webgpu {
 
 WebGPUResourceFactory::WebGPUResourceFactory(const std::shared_ptr<WebGPULogicalDevice>& logicalDevice) 
     : _logicalDevice(logicalDevice) {
@@ -40,7 +40,7 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& d
     }
     
     WGPUDevice wgpuDevice = device->getNativeDeviceHandle().as<WGPUDevice>();
-    return std::make_shared<WebGPUBuffer>(desc, wgpuDevice);
+    return std::make_shared<WebGPUBuffer>(wgpuDevice, desc);
 }
 
 std::shared_ptr<ITexture> WebGPUResourceFactory::createTexture(const TextureDesc& desc) {
@@ -167,6 +167,56 @@ std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(con
     return std::make_shared<WebGPURenderPipeline>(desc, wgpuDevice);
 }
 
+std::shared_ptr<IBuffer> WebGPUResourceFactory::createInitializableDeviceBuffer(
+    const BufferDesc& desc,
+    const void* initialData,
+    size_t dataSize) {
+    
+    auto device = _logicalDevice.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create buffer without device");
+        return nullptr;
+    }
+    
+    if (!initialData || dataSize == 0) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Invalid initial data or size");
+        return nullptr;
+    }
+    
+    if (dataSize > desc.size) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Data size exceeds buffer size");
+        return nullptr;
+    }
+    
+    // Create buffer with mappedAtCreation for synchronous data write
+    BufferDesc syncDesc = desc;
+    syncDesc.mappedAtCreation = true;
+    // Add CopySrc flag to satisfy validation when using mappedAtCreation
+    syncDesc.usage |= BufferUsage::CopySrc;
+    
+    WGPUDevice wgpuDevice = device->getNativeDeviceHandle().as<WGPUDevice>();
+    auto buffer = std::make_shared<WebGPUBuffer>(wgpuDevice, syncDesc);
+    if (!buffer || !buffer->isValid()) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Failed to create buffer");
+        return nullptr;
+    }
+    
+    // Write data synchronously using mapped memory
+    void* mappedData = buffer->getMappedDataAtCreation();
+    if (mappedData) {
+        memcpy(mappedData, initialData, dataSize);
+        buffer->unmapAtCreation();
+    } else {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Failed to get mapped data");
+        return nullptr;
+    }
+    
+    return buffer;
+}
 
-} // namespace webgpu
 } // namespace pers

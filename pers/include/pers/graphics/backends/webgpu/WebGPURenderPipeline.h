@@ -5,7 +5,6 @@
 #include <string>
 
 namespace pers {
-namespace webgpu {
 
 class WebGPURenderPipeline final : public IRenderPipeline {
 public:
@@ -24,5 +23,4 @@ private:
     WGPURenderPipeline _pipeline = nullptr;
 };
 
-} // namespace webgpu
 } // namespace pers

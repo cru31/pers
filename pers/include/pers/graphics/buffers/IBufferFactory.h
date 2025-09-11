@@ -4,7 +4,6 @@
 #include "pers/graphics/buffers/BufferTypes.h"
 
 namespace pers {
-namespace graphics {
 
 class IBuffer;
 class IMappableBuffer;
@@ -27,6 +26,14 @@ public:
     virtual std::unique_ptr<IMappableBuffer> createMappableBuffer(const BufferDesc& desc) = 0;
     
     /**
+     * Create a buffer with initial data written synchronously
+     * Uses mappedAtCreation internally for efficient initialization
+     */
+    virtual std::unique_ptr<IBuffer> createBufferWithSyncWrite(
+        const BufferDesc& desc,
+        const void* initialData,
+        size_t dataSize) = 0;
+    /**
      * Check if buffer description is supported
      */
     virtual bool isSupported(const BufferDesc& desc) const = 0;
@@ -42,5 +49,4 @@ public:
     virtual uint64_t getAlignment(BufferUsage usage) const = 0;
 };
 
-} // namespace graphics
 } // namespace pers

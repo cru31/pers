@@ -6,9 +6,8 @@
 #include <sstream>
 
 namespace pers {
-namespace graphics {
 
-DeviceBuffer::DeviceBuffer(const BufferDesc& desc)
+DeviceBuffer::DeviceBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory)
     : _desc(desc)
     , _totalBytesTransferred(0)
     , _transferCount(0) {
@@ -18,12 +17,24 @@ DeviceBuffer::DeviceBuffer(const BufferDesc& desc)
         return;
     }
     
-    // Force GPU-only configuration
-    _desc.mappedAtCreation = false;
-    _desc.usage |= BufferUsage::CopyDst;
+    if (!factory) {
+        LOG_ERROR("DeviceBuffer", "Factory is null");
+        return;
+    }
     
-    if (_desc.memoryLocation == MemoryLocation::Auto) {
-        _desc.memoryLocation = MemoryLocation::DeviceLocal;
+    // Force GPU-only configuration
+    BufferDesc deviceDesc = desc;
+    deviceDesc.mappedAtCreation = false;
+    deviceDesc.usage |= BufferUsage::CopyDst;
+    
+    if (deviceDesc.memoryLocation == MemoryLocation::Auto) {
+        deviceDesc.memoryLocation = MemoryLocation::DeviceLocal;
+    }
+    
+    _buffer = factory->createBuffer(deviceDesc);
+    if (!_buffer) {
+        LOG_ERROR("DeviceBuffer", "Failed to create underlying buffer");
+        return;
     }
     
     std::stringstream ss;
@@ -43,7 +54,8 @@ DeviceBuffer::~DeviceBuffer() {
 }
 
 DeviceBuffer::DeviceBuffer(DeviceBuffer&& other) noexcept
-    : _desc(std::move(other._desc))
+    : _buffer(std::move(other._buffer))
+    , _desc(std::move(other._desc))
     , _totalBytesTransferred(other._totalBytesTransferred)
     , _transferCount(other._transferCount) {
     other._totalBytesTransferred = 0;
@@ -52,6 +64,7 @@ DeviceBuffer::DeviceBuffer(DeviceBuffer&& other) noexcept
 
 DeviceBuffer& DeviceBuffer::operator=(DeviceBuffer&& other) noexcept {
     if (this != &other) {
+        _buffer = std::move(other._buffer);
         _desc = std::move(other._desc);
         _totalBytesTransferred = other._totalBytesTransferred;
         _transferCount = other._transferCount;
@@ -131,8 +144,28 @@ bool DeviceBuffer::copyTo(const std::shared_ptr<ICommandEncoder>& encoder, const
     return false;
 }
 
+uint64_t DeviceBuffer::getSize() const {
+    return _buffer ? _buffer->getSize() : 0;
+}
+
+BufferUsage DeviceBuffer::getUsage() const {
+    return _buffer ? _buffer->getUsage() : BufferUsage::None;
+}
+
 const std::string& DeviceBuffer::getDebugName() const {
     return _desc.debugName;
+}
+
+NativeBufferHandle DeviceBuffer::getNativeHandle() const {
+    return _buffer ? _buffer->getNativeHandle() : NativeBufferHandle::fromBackend(nullptr);
+}
+
+bool DeviceBuffer::isValid() const {
+    return _buffer && _buffer->isValid();
+}
+
+BufferState DeviceBuffer::getState() const {
+    return _buffer ? _buffer->getState() : BufferState::Uninitialized;
 }
 
 MemoryLocation DeviceBuffer::getMemoryLocation() const {
@@ -143,5 +176,4 @@ AccessPattern DeviceBuffer::getAccessPattern() const {
     return _desc.accessPattern;
 }
 
-} // namespace graphics
 } // namespace pers

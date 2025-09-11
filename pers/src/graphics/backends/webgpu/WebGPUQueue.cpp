@@ -1,6 +1,6 @@
 #include "pers/graphics/backends/webgpu/WebGPUQueue.h"
 #include "pers/graphics/ICommandBuffer.h"
-#include "pers/graphics/IBuffer.h"
+#include "pers/graphics/buffers/IBuffer.h"
 #include "pers/graphics/ITexture.h"
 #include "pers/utils/Logger.h"
 #include <webgpu/webgpu.h>
@@ -111,7 +111,7 @@ bool WebGPUQueue::writeBuffer(const BufferWriteDesc& desc) {
     }
     
     // Get native buffer handle
-    NativeBufferHandle nativeHandle = desc.buffer->getNativeBufferHandle();
+    NativeBufferHandle nativeHandle = desc.buffer->getNativeHandle();
     if (!nativeHandle.isValid()) {
         LOG_ERROR("WebGPUQueue", "Invalid buffer handle");
         return false;

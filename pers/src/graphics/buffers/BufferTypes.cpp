@@ -1,33 +1,6 @@
 #include "pers/graphics/buffers/BufferTypes.h"
 
 namespace pers {
-namespace graphics {
-
-BufferUsage operator|(BufferUsage a, BufferUsage b) {
-    return static_cast<BufferUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-}
-
-BufferUsage operator&(BufferUsage a, BufferUsage b) {
-    return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-}
-
-BufferUsage& operator|=(BufferUsage& a, BufferUsage b) {
-    a = a | b;
-    return a;
-}
-
-BufferUsage& operator&=(BufferUsage& a, BufferUsage b) {
-    a = a & b;
-    return a;
-}
-
-bool operator!(BufferUsage a) {
-    return static_cast<uint32_t>(a) == 0;
-}
-
-bool hasFlag(BufferUsage flags, BufferUsage flag) {
-    return (flags & flag) == flag;
-}
 
 bool BufferDesc::isValid() const {
     if (size == 0) {
@@ -75,5 +48,4 @@ uint64_t BufferDesc::getAlignedSize(BufferUsage usage) const {
     return ((size + alignment - 1) / alignment) * alignment;
 }
 
-} // namespace graphics
 } // namespace pers

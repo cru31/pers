@@ -6,8 +6,6 @@
 #include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
-namespace graphics {
-
 /**
  * Base buffer interface for all GPU buffers
  */
@@ -56,5 +54,4 @@ public:
     virtual AccessPattern getAccessPattern() const = 0;
 };
 
-} // namespace graphics
 } // namespace pers

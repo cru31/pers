@@ -195,38 +195,4 @@ enum class IndexFormat {
     Uint32
 };
 
-/**
- * @brief Buffer usage flags
- */
-enum class BufferUsage : uint32_t {
-    None = 0,
-    MapRead = 1 << 0,
-    MapWrite = 1 << 1,
-    CopySrc = 1 << 2,
-    CopyDst = 1 << 3,
-    Index = 1 << 4,
-    Vertex = 1 << 5,
-    Uniform = 1 << 6,
-    Storage = 1 << 7,
-    Indirect = 1 << 8,
-    QueryResolve = 1 << 9
-};
-
-// Enable bitwise operations for BufferUsage
-inline BufferUsage operator|(BufferUsage a, BufferUsage b) {
-    return static_cast<BufferUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-}
-
-inline BufferUsage operator&(BufferUsage a, BufferUsage b) {
-    return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-}
-
-inline bool operator!(BufferUsage usage) {
-    return static_cast<uint32_t>(usage) == 0;
-}
-
-inline BufferUsage& operator&=(BufferUsage& a, BufferUsage b) {
-    return a = a & b;
-}
-
 } // namespace pers

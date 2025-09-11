@@ -5,17 +5,12 @@
 #include "pers/graphics/buffers/BufferTypes.h"
 
 namespace pers {
-
-// Forward declarations
-class ICommandBuffer;
-class IRenderPassEncoder;
-
-namespace graphics {
 class IBuffer;
 class DeviceBuffer;
 class ImmediateStagingBuffer;
 class DeferredStagingBuffer;
-}
+class ICommandBuffer;
+class IRenderPassEncoder;
 
 /**
  * @brief Command encoder interface for recording GPU commands
@@ -41,9 +36,9 @@ public:
      * @param copyDesc Copy parameters (offsets and size)
      * @return true if command was successfully encoded, false otherwise
      */
-    virtual bool uploadToDeviceBuffer(const std::shared_ptr<graphics::ImmediateStagingBuffer>& stagingBuffer,
-                                      const std::shared_ptr<graphics::DeviceBuffer>& deviceBuffer,
-                                      const graphics::BufferCopyDesc& copyDesc) = 0;
+    virtual bool uploadToDeviceBuffer(const std::shared_ptr<ImmediateStagingBuffer>& stagingBuffer,
+                                      const std::shared_ptr<DeviceBuffer>& deviceBuffer,
+                                      const BufferCopyDesc& copyDesc) = 0;
     
     /**
      * @brief Download data from device buffer to readback buffer
@@ -52,9 +47,9 @@ public:
      * @param copyDesc Copy parameters (offsets and size)
      * @return true if command was successfully encoded, false otherwise
      */
-    virtual bool downloadFromDeviceBuffer(const std::shared_ptr<graphics::DeviceBuffer>& deviceBuffer,
-                                          const std::shared_ptr<graphics::DeferredStagingBuffer>& readbackBuffer,
-                                          const graphics::BufferCopyDesc& copyDesc) = 0;
+    virtual bool downloadFromDeviceBuffer(const std::shared_ptr<DeviceBuffer>& deviceBuffer,
+                                          const std::shared_ptr<DeferredStagingBuffer>& readbackBuffer,
+                                          const BufferCopyDesc& copyDesc) = 0;
     
     /**
      * @brief Copy data between device buffers (GPU to GPU)
@@ -63,9 +58,9 @@ public:
      * @param copyDesc Copy parameters (offsets and size)
      * @return true if command was successfully encoded, false otherwise
      */
-    virtual bool copyDeviceToDevice(const std::shared_ptr<graphics::DeviceBuffer>& source,
-                                    const std::shared_ptr<graphics::DeviceBuffer>& destination,
-                                    const graphics::BufferCopyDesc& copyDesc) = 0;
+    virtual bool copyDeviceToDevice(const std::shared_ptr<DeviceBuffer>& source,
+                                    const std::shared_ptr<DeviceBuffer>& destination,
+                                    const BufferCopyDesc& copyDesc) = 0;
     
     /**
      * @brief Finish recording and create command buffer

@@ -7,7 +7,7 @@
 #include "pers/graphics/GraphicsTypes.h"
 #include "pers/graphics/GraphicsFormats.h"
 #include "pers/graphics/IShaderModule.h"
-#include "pers/graphics/IBuffer.h"  // Include for BufferDesc
+#include "pers/graphics/buffers/IBuffer.h"  // Include for BufferDesc
 #include "pers/graphics/IRenderPipeline.h"  // Include for RenderPipelineDesc
 #include "pers/graphics/ITexture.h"  // Include for TextureDesc
 
@@ -73,6 +73,18 @@ public:
      * @return Shared pointer to buffer or nullptr if failed
      */
     virtual std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) = 0;
+    /**
+     * @brief Create a buffer with initial data written synchronously
+     * Uses mappedAtCreation internally for efficient initialization
+     * @param desc Buffer description
+     * @param initialData Pointer to initial data
+     * @param dataSize Size of initial data in bytes
+     * @return Created buffer with data already uploaded
+     */
+    virtual std::shared_ptr<IBuffer> createInitializableDeviceBuffer(
+        const BufferDesc& desc,
+        const void* initialData,
+        size_t dataSize) = 0;
     
     /**
      * @brief Create a texture

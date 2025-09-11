@@ -3,7 +3,6 @@
 #include <webgpu/webgpu.h>
 
 namespace pers {
-namespace webgpu {
 
 // Auto-detect shader stage from WGSL code
 static ShaderStage detectShaderStage(const std::string& code) {
@@ -105,5 +104,4 @@ void WebGPUShaderModule::createShaderModule(WGPUDevice device) {
     }
 }
 
-} // namespace webgpu
 } // namespace pers

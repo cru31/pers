@@ -1,7 +1,6 @@
 #include "pers/graphics/buffers/IMappableBuffer.h"
 
 namespace pers {
-namespace graphics {
 
 MappedData::MappedData(void* data, uint64_t size, std::function<void()> unmapCallback)
     : _data(data)
@@ -55,5 +54,4 @@ uint64_t MappedData::count() const {
     return _size;
 }
 
-} // namespace graphics
 } // namespace pers

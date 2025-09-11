@@ -194,9 +194,9 @@ std::shared_ptr<IRenderPassEncoder> WebGPUCommandEncoder::beginRenderPass(const 
     return std::make_shared<WebGPURenderPassEncoder>(renderPassEncoder);
 }
 
-bool WebGPUCommandEncoder::uploadToDeviceBuffer(const std::shared_ptr<graphics::ImmediateStagingBuffer>& stagingBuffer,
-                                                const std::shared_ptr<graphics::DeviceBuffer>& deviceBuffer,
-                                                const graphics::BufferCopyDesc& copyDesc) {
+bool WebGPUCommandEncoder::uploadToDeviceBuffer(const std::shared_ptr<ImmediateStagingBuffer>& stagingBuffer,
+                                                const std::shared_ptr<DeviceBuffer>& deviceBuffer,
+                                                const BufferCopyDesc& copyDesc) {
     if (!stagingBuffer) {
         LOG_ERROR("WebGPUCommandEncoder", "Staging buffer is null");
         return false;
@@ -210,15 +210,15 @@ bool WebGPUCommandEncoder::uploadToDeviceBuffer(const std::shared_ptr<graphics::
     // Staging buffer must be finalized before upload
     if (!stagingBuffer->isFinalized()) {
         LOG_WARNING("WebGPUCommandEncoder", "Staging buffer not finalized, finalizing now");
-        const_cast<graphics::ImmediateStagingBuffer*>(stagingBuffer.get())->finalize();
+        const_cast<ImmediateStagingBuffer*>(stagingBuffer.get())->finalize();
     }
     
     return copyBufferToBuffer(stagingBuffer, deviceBuffer, copyDesc);
 }
 
-bool WebGPUCommandEncoder::downloadFromDeviceBuffer(const std::shared_ptr<graphics::DeviceBuffer>& deviceBuffer,
-                                                    const std::shared_ptr<graphics::DeferredStagingBuffer>& readbackBuffer,
-                                                    const graphics::BufferCopyDesc& copyDesc) {
+bool WebGPUCommandEncoder::downloadFromDeviceBuffer(const std::shared_ptr<DeviceBuffer>& deviceBuffer,
+                                                    const std::shared_ptr<DeferredStagingBuffer>& readbackBuffer,
+                                                    const BufferCopyDesc& copyDesc) {
     if (!deviceBuffer) {
         LOG_ERROR("WebGPUCommandEncoder", "Device buffer is null");
         return false;
@@ -232,17 +232,17 @@ bool WebGPUCommandEncoder::downloadFromDeviceBuffer(const std::shared_ptr<graphi
     // Readback buffer must be unmapped before transfer
     if (readbackBuffer->isMapped()) {
         LOG_WARNING("WebGPUCommandEncoder", "Readback buffer is mapped, unmapping now");
-        const_cast<graphics::DeferredStagingBuffer*>(readbackBuffer.get())->unmap();
+        const_cast<DeferredStagingBuffer*>(readbackBuffer.get())->unmap();
     }
     
-    return copyBufferToBuffer(std::static_pointer_cast<graphics::IBuffer>(deviceBuffer), 
-                             std::static_pointer_cast<graphics::IBuffer>(readbackBuffer), 
+    return copyBufferToBuffer(std::static_pointer_cast<IBuffer>(deviceBuffer), 
+                             std::static_pointer_cast<IBuffer>(readbackBuffer), 
                              copyDesc);
 }
 
-bool WebGPUCommandEncoder::copyDeviceToDevice(const std::shared_ptr<graphics::DeviceBuffer>& source,
-                                              const std::shared_ptr<graphics::DeviceBuffer>& destination,
-                                              const graphics::BufferCopyDesc& copyDesc) {
+bool WebGPUCommandEncoder::copyDeviceToDevice(const std::shared_ptr<DeviceBuffer>& source,
+                                              const std::shared_ptr<DeviceBuffer>& destination,
+                                              const BufferCopyDesc& copyDesc) {
     if (!source) {
         LOG_ERROR("WebGPUCommandEncoder", "Source device buffer is null");
         return false;
@@ -256,9 +256,9 @@ bool WebGPUCommandEncoder::copyDeviceToDevice(const std::shared_ptr<graphics::De
     return copyBufferToBuffer(source, destination, copyDesc);
 }
 
-bool WebGPUCommandEncoder::copyBufferToBuffer(const std::shared_ptr<graphics::IBuffer>& source,
-                                              const std::shared_ptr<graphics::IBuffer>& destination,
-                                              const graphics::BufferCopyDesc& copyDesc) {
+bool WebGPUCommandEncoder::copyBufferToBuffer(const std::shared_ptr<IBuffer>& source,
+                                              const std::shared_ptr<IBuffer>& destination,
+                                              const BufferCopyDesc& copyDesc) {
     if (!_encoder) {
         LOG_ERROR("WebGPUCommandEncoder", "Cannot copy buffers with null encoder");
         return false;
@@ -295,7 +295,7 @@ bool WebGPUCommandEncoder::copyBufferToBuffer(const std::shared_ptr<graphics::IB
     
     // Calculate copy size
     uint64_t size = copyDesc.size;
-    if (size == graphics::BufferCopyDesc::WHOLE_SIZE) {
+    if (size == BufferCopyDesc::WHOLE_SIZE) {
         size = std::min(source->getSize() - copyDesc.srcOffset,
                        destination->getSize() - copyDesc.dstOffset);
     }

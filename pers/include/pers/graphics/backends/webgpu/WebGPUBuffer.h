@@ -4,7 +4,6 @@
 #include <webgpu/webgpu.h>
 
 namespace pers {
-namespace webgpu {
 
 class WebGPUBuffer final : public IBuffer {
 public:
@@ -16,10 +15,7 @@ public:
     BufferUsage getUsage() const override;
     void* map(uint64_t offset = 0, uint64_t size = 0) override;
     void unmap() override;
-    NativeBufferHandle getNativeBufferHandle() const override;
-    
-    // WebGPU specific - internal use only
-    WGPUBuffer getNativeHandle() const;
+    NativeBufferHandle getNativeHandle() const override;
     
 private:
     // Helper method to get mapped range
@@ -32,5 +28,4 @@ private:
     void* _mappedData = nullptr;
 };
 
-} // namespace webgpu
 } // namespace pers

@@ -9,8 +9,6 @@ namespace pers {
 // Forward declaration
 class WebGPULogicalDevice;
 
-namespace webgpu {
-
 class WebGPUResourceFactory final : public IResourceFactory {
 public:
     explicit WebGPUResourceFactory(const std::shared_ptr<WebGPULogicalDevice>& logicalDevice);
@@ -18,6 +16,10 @@ public:
     
     // IResourceFactory interface
     std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) override;
+    std::shared_ptr<IBuffer> createInitializableDeviceBuffer(
+        const BufferDesc& desc,
+        const void* initialData,
+        size_t dataSize) override;
     std::shared_ptr<ITexture> createTexture(const TextureDesc& desc) override;
     std::shared_ptr<ITextureView> createTextureView(
         const std::shared_ptr<ITexture>& texture,
@@ -31,5 +33,4 @@ private:
     std::weak_ptr<WebGPULogicalDevice> _logicalDevice;
 };
 
-} // namespace webgpu
 } // namespace pers

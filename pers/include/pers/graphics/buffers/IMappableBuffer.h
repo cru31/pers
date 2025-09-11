@@ -5,7 +5,6 @@
 #include "pers/graphics/buffers/IBuffer.h"
 
 namespace pers {
-namespace graphics {
 
 /**
  * Mapped data wrapper with RAII auto-unmap
@@ -111,5 +110,4 @@ const T* MappedData::asArray() const {
     return static_cast<const T*>(_data);
 }
 
-} // namespace graphics
 } // namespace pers

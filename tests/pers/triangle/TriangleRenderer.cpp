@@ -11,7 +11,7 @@
 #include "pers/graphics/RenderPassConfig.h"
 #include "pers/graphics/IFramebuffer.h"
 #include "pers/graphics/IResourceFactory.h"
-#include "pers/graphics/IBuffer.h"
+#include "pers/graphics/buffers/IBuffer.h"
 #include "pers/graphics/IShaderModule.h"
 #include "pers/graphics/IRenderPipeline.h"
 #include "pers/graphics/IRenderPassEncoder.h"
@@ -267,21 +267,19 @@ bool TriangleRenderer::createTriangleResources() {
     pers::BufferDesc vertexBufferDesc;
     vertexBufferDesc.size = vertices.size() * sizeof(float);
     vertexBufferDesc.usage = pers::BufferUsage::Vertex | pers::BufferUsage::CopyDst;
-    vertexBufferDesc.mappedAtCreation = true;
     vertexBufferDesc.debugName = "TriangleVertexBuffer";
     
-    _vertexBuffer = factory->createBuffer(vertexBufferDesc);
+    // Use createInitializableDeviceBuffer for synchronous data upload
+    _vertexBuffer = factory->createInitializableDeviceBuffer(
+        vertexBufferDesc,
+        vertices.data(),
+        vertices.size() * sizeof(float)
+    );
+    
     if (!_vertexBuffer) {
         LOG_ERROR("TriangleRenderer",
-            "Failed to create vertex buffer");
+            "Failed to create vertex buffer with initial data");
         return false;
-    }
-    
-    // Copy vertex data if buffer was mapped at creation
-    void* mappedData = _vertexBuffer->map();
-    if (mappedData) {
-        memcpy(mappedData, vertices.data(), vertices.size() * sizeof(float));
-        _vertexBuffer->unmap();
     }
     
     // 2. Create shaders

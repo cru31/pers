@@ -37,7 +37,7 @@ struct PhysicalDeviceOptions {
      * 
      * // Step 2: Request adapter compatible with the surface
      * PhysicalDeviceOptions options;
-     * options.compatibleSurface = surface;  // ← Ensures GPU can render to this window
+     * options.compatibleSurface = surface;  //  Ensures GPU can render to this window
      * auto adapter = instance->requestPhysicalDevice(options);
      * 
      * // Step 3: Create device and swap chain

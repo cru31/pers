@@ -3,6 +3,7 @@
 #include "pers/graphics/GraphicsFormats.h"
 #include "pers/graphics/GraphicsTypes.h"
 #include "pers/graphics/SwapChainTypes.h"
+#include "pers/graphics/buffers/BufferTypes.h"
 #include <webgpu/webgpu.h>
 
 namespace pers {

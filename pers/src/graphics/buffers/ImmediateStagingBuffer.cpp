@@ -6,11 +6,11 @@
 #include <cstring>
 #include <algorithm>
 #include <sstream>
+#include <future>
 
 namespace pers {
-namespace graphics {
 
-ImmediateStagingBuffer::ImmediateStagingBuffer(const BufferDesc& desc)
+ImmediateStagingBuffer::ImmediateStagingBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory)
     : _desc(desc)
     , _mappedData(nullptr)
     , _finalized(false)
@@ -21,12 +21,29 @@ ImmediateStagingBuffer::ImmediateStagingBuffer(const BufferDesc& desc)
         return;
     }
     
-    // Force immediate mapping configuration
-    _desc.mappedAtCreation = true;
-    _desc.usage |= BufferUsage::CopySrc;
+    if (!factory) {
+        LOG_ERROR("ImmediateStagingBuffer", "Factory is null");
+        return;
+    }
     
-    if (_desc.memoryLocation == MemoryLocation::Auto) {
-        _desc.memoryLocation = MemoryLocation::HostVisible;
+    // Force immediate mapping configuration
+    BufferDesc stagingDesc = desc;
+    stagingDesc.mappedAtCreation = true;
+    stagingDesc.usage |= BufferUsage::CopySrc;
+    
+    if (stagingDesc.memoryLocation == MemoryLocation::Auto) {
+        stagingDesc.memoryLocation = MemoryLocation::HostVisible;
+    }
+    
+    _buffer = factory->createMappableBuffer(stagingDesc);
+    if (!_buffer) {
+        LOG_ERROR("ImmediateStagingBuffer", "Failed to create underlying buffer");
+        return;
+    }
+    
+    _mappedData = _buffer->getMappedData();
+    if (!_mappedData) {
+        LOG_ERROR("ImmediateStagingBuffer", "Failed to get mapped data");
     }
     
     std::stringstream ss;
@@ -44,7 +61,8 @@ ImmediateStagingBuffer::~ImmediateStagingBuffer() {
 }
 
 ImmediateStagingBuffer::ImmediateStagingBuffer(ImmediateStagingBuffer&& other) noexcept
-    : _desc(std::move(other._desc))
+    : _buffer(std::move(other._buffer))
+    , _desc(std::move(other._desc))
     , _mappedData(other._mappedData)
     , _finalized(other._finalized)
     , _bytesWritten(other._bytesWritten) {
@@ -59,6 +77,7 @@ ImmediateStagingBuffer& ImmediateStagingBuffer::operator=(ImmediateStagingBuffer
             finalize();
         }
         
+        _buffer = std::move(other._buffer);
         _desc = std::move(other._desc);
         _mappedData = other._mappedData;
         _finalized = other._finalized;
@@ -162,7 +181,7 @@ bool ImmediateStagingBuffer::uploadTo(const std::shared_ptr<ICommandEncoder>& en
     }
     
     // ImmediateStagingBuffer to DeviceBuffer upload
-    auto deviceTarget = std::dynamic_pointer_cast<graphics::DeviceBuffer>(target);
+    auto deviceTarget = std::dynamic_pointer_cast<DeviceBuffer>(target);
     if (deviceTarget) {
         bool result = encoder->uploadToDeviceBuffer(
             std::static_pointer_cast<ImmediateStagingBuffer>(shared_from_this()),
@@ -210,5 +229,65 @@ AccessPattern ImmediateStagingBuffer::getAccessPattern() const {
     return _desc.accessPattern;
 }
 
-} // namespace graphics
+// IBuffer interface - delegate to internal buffer
+uint64_t ImmediateStagingBuffer::getSize() const {
+    return _buffer ? _buffer->getSize() : 0;
+}
+
+BufferUsage ImmediateStagingBuffer::getUsage() const {
+    return _buffer ? _buffer->getUsage() : BufferUsage::None;
+}
+
+NativeBufferHandle ImmediateStagingBuffer::getNativeHandle() const {
+    return _buffer ? _buffer->getNativeHandle() : NativeBufferHandle::fromBackend(nullptr);
+}
+
+bool ImmediateStagingBuffer::isValid() const {
+    return _buffer && _buffer->isValid();
+}
+
+// IMappableBuffer interface - delegate to internal buffer
+void* ImmediateStagingBuffer::getMappedData() {
+    return _mappedData;
+}
+
+const void* ImmediateStagingBuffer::getMappedData() const {
+    return _mappedData;
+}
+
+std::future<MappedData> ImmediateStagingBuffer::mapAsync(MapMode mode, const BufferMapRange& range) {
+    if (!_buffer) {
+        std::promise<MappedData> promise;
+        promise.set_value(MappedData{nullptr, 0, nullptr});
+        return promise.get_future();
+    }
+    return _buffer->mapAsync(mode, range);
+}
+
+void ImmediateStagingBuffer::unmap() {
+    if (_buffer) {
+        _buffer->unmap();
+    }
+}
+
+bool ImmediateStagingBuffer::isMapped() const {
+    return _buffer ? _buffer->isMapped() : false;
+}
+
+bool ImmediateStagingBuffer::isMapPending() const {
+    return _buffer ? _buffer->isMapPending() : false;
+}
+
+void ImmediateStagingBuffer::flushMappedRange(uint64_t offset, uint64_t size) {
+    if (_buffer) {
+        _buffer->flushMappedRange(offset, size);
+    }
+}
+
+void ImmediateStagingBuffer::invalidateMappedRange(uint64_t offset, uint64_t size) {
+    if (_buffer) {
+        _buffer->invalidateMappedRange(offset, size);
+    }
+}
+
 } // namespace pers

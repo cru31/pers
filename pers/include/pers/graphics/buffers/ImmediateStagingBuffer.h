@@ -7,19 +7,15 @@
 namespace pers {
 
 class ICommandEncoder;
-
-namespace graphics {
-
 class DeviceBuffer;
 
 /**
  * Staging buffer with immediate CPU access (mappedAtCreation=true)
  * Ideal for initial data upload and static resources
- * This is an abstract base class - actual implementation in backend
  */
-class ImmediateStagingBuffer : public IMappableBuffer, public std::enable_shared_from_this<ImmediateStagingBuffer> {
+class ImmediateStagingBuffer final : public IMappableBuffer, public std::enable_shared_from_this<ImmediateStagingBuffer> {
 public:
-    explicit ImmediateStagingBuffer(const BufferDesc& desc);
+    ImmediateStagingBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory);
     ~ImmediateStagingBuffer() override;
     
     // No copy
@@ -65,25 +61,29 @@ public:
      */
     uint64_t getBytesWritten() const;
     
-    // IBuffer interface - derived classes must implement
-    uint64_t getSize() const override = 0;
-    BufferUsage getUsage() const override = 0;
+    // IBuffer interface
+    uint64_t getSize() const override;
+    BufferUsage getUsage() const override;
     const std::string& getDebugName() const override;
-    NativeBufferHandle getNativeHandle() const override = 0;
-    bool isValid() const override = 0;
+    NativeBufferHandle getNativeHandle() const override;
+    bool isValid() const override;
     BufferState getState() const override;
     MemoryLocation getMemoryLocation() const override;
     AccessPattern getAccessPattern() const override;
     
-    // IMappableBuffer interface - derived classes must implement
-    void* getMappedData() override = 0;
-    const void* getMappedData() const override = 0;
+    // IMappableBuffer interface
+    void* getMappedData() override;
+    const void* getMappedData() const override;
     std::future<MappedData> mapAsync(MapMode mode = MapMode::Write, 
-                                     const BufferMapRange& range = {0, BufferMapRange::WHOLE_BUFFER}) override = 0;
-    void unmap() override = 0;
-    bool isMapped() const override = 0;
+                                     const BufferMapRange& range = {0, BufferMapRange::WHOLE_BUFFER}) override;
+    void unmap() override;
+    bool isMapped() const override;
+    bool isMapPending() const override;
+    void flushMappedRange(uint64_t offset, uint64_t size) override;
+    void invalidateMappedRange(uint64_t offset, uint64_t size) override;
     
-protected:
+private:
+    std::unique_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
     BufferDesc _desc;
     void* _mappedData;
     bool _finalized;
@@ -107,5 +107,4 @@ void ImmediateStagingBuffer::write(const T* data, size_t count, size_t offsetEle
     writeBytes(data, byteSize, byteOffset);
 }
 
-} // namespace graphics
 } // namespace pers

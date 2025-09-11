@@ -5,7 +5,6 @@
 #include <vector>
 
 namespace pers {
-namespace webgpu {
 
 // Convert our enums to WebGPU enums
 static WGPUColorWriteMask convertColorWriteMask(ColorWriteMask mask) {
@@ -331,5 +330,4 @@ WGPURenderPipeline WebGPURenderPipeline::getNativeHandle() const {
     return _pipeline;
 }
 
-} // namespace webgpu
 } // namespace pers

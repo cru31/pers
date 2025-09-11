@@ -71,7 +71,7 @@ std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() cons
         // Use const_cast to get non-const shared_ptr from const method
         auto sharedThis = const_cast<WebGPULogicalDevice*>(this)->shared_from_this();
         
-        _resourceFactory = std::make_shared<webgpu::WebGPUResourceFactory>(sharedThis);
+        _resourceFactory = std::make_shared<WebGPUResourceFactory>(sharedThis);
         LOG_DEBUG("WebGPULogicalDevice",
             "Created and cached resource factory");
     }

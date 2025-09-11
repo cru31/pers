@@ -8,16 +8,13 @@ namespace pers {
 
 class ICommandEncoder;
 
-namespace graphics {
-
 /**
  * GPU-only buffer for maximum performance
  * No CPU access, data upload via staging buffers
- * This is an abstract base class - actual implementation in backend
  */
-class DeviceBuffer : public IBuffer, public std::enable_shared_from_this<DeviceBuffer> {
+class DeviceBuffer final : public IBuffer, public std::enable_shared_from_this<DeviceBuffer> {
 public:
-    explicit DeviceBuffer(const BufferDesc& desc);
+    DeviceBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory);
     ~DeviceBuffer() override;
     
     // No copy
@@ -40,21 +37,21 @@ public:
     bool copyTo(const std::shared_ptr<ICommandEncoder>& encoder, const std::shared_ptr<IBuffer>& destination,
                 const BufferCopyDesc& copyDesc = {0, 0, BufferCopyDesc::WHOLE_SIZE});
     
-    // IBuffer interface - derived classes must implement
-    uint64_t getSize() const override = 0;
-    BufferUsage getUsage() const override = 0;
+    // IBuffer interface
+    uint64_t getSize() const override;
+    BufferUsage getUsage() const override;
     const std::string& getDebugName() const override;
-    NativeBufferHandle getNativeHandle() const override = 0;
-    bool isValid() const override = 0;
-    BufferState getState() const override = 0;
+    NativeBufferHandle getNativeHandle() const override;
+    bool isValid() const override;
+    BufferState getState() const override;
     MemoryLocation getMemoryLocation() const override;
     AccessPattern getAccessPattern() const override;
     
-protected:
+private:
+    std::unique_ptr<IBuffer> _buffer;  // Internal WebGPU buffer
     BufferDesc _desc;
     uint64_t _totalBytesTransferred;
     uint32_t _transferCount;
 };
 
-} // namespace graphics
 } // namespace pers

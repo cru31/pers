@@ -5,7 +5,6 @@
 #include <string>
 
 namespace pers {
-namespace webgpu {
 
 class WebGPUShaderModule final : public IShaderModule {
 public:
@@ -30,5 +29,4 @@ private:
     WGPUShaderModule _shaderModule = nullptr;
 };
 
-} // namespace webgpu
 } // namespace pers
