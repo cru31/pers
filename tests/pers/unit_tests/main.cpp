@@ -57,16 +57,36 @@ void startWebServer(const std::string& sessionDir, const std::string& resultPath
     runBatch << "node server.js \"" << resultPath << "\"\n";
     runBatch.close();
     
-    // Start the server in a new hidden window
-    std::string serverCmd = "start /B \"\" \"" + runBatchFile + "\"";
-    system(serverCmd.c_str());
+    // Start the server in a new hidden window  
+    STARTUPINFOA si = {0};
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
     
-    std::cout << "[INFO] Starting web server from: " << sessionDir << std::endl;
-    Sleep(2000);
+    PROCESS_INFORMATION pi = {0};
+    std::string serverCmd = "cmd.exe /c \"" + runBatchFile + "\"";
     
-    // Open browser
-    std::cout << "[INFO] Opening test results viewer at http://localhost:5000" << std::endl;
-    system("start http://localhost:5000");
+    if (CreateProcessA(NULL, (LPSTR)serverCmd.c_str(), NULL, NULL, FALSE, 
+                       CREATE_NO_WINDOW, NULL, sessionDir.c_str(), &si, &pi)) {
+        std::cout << "[INFO] Starting web server from: " << sessionDir << std::endl;
+        Sleep(2000);
+        
+        // Open browser
+        std::cout << "[INFO] Opening test results viewer at http://localhost:5000" << std::endl;
+        system("start http://localhost:5000");
+        
+        // Wait for browser to load the page
+        std::cout << "[INFO] Waiting for browser to load..." << std::endl;
+        Sleep(5000);
+        
+        // Kill the server process
+        std::cout << "[INFO] Shutting down web server..." << std::endl;
+        TerminateProcess(pi.hProcess, 0);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    } else {
+        std::cerr << "[ERROR] Failed to start web server" << std::endl;
+    }
 }
 #endif
 
@@ -105,6 +125,8 @@ void registerAllHandlers() {
     registry.registerHandler("SwapChain Builder Negotiation", 
         std::make_shared<SwapChainBuilderNegotiationHandler>());
     registry.registerHandler("Buffer Data Verification",
+        std::make_shared<BufferDataVerificationHandler>());
+    registry.registerHandler("CPU → GPU → CPU Data Integrity Verification",
         std::make_shared<BufferDataVerificationHandler>());
     registry.registerHandler("WebGPUBuffer Test",
         std::make_shared<WebGPUBufferHandler>());

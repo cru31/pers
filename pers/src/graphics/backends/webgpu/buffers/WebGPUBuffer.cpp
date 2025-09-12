@@ -60,12 +60,24 @@ WebGPUBuffer::WebGPUBuffer(WGPUDevice device, const BufferDesc& desc)
         return;
     }
     
+    // Align buffer size to COPY_BUFFER_ALIGNMENT (4 bytes) if mapped at creation
+    size_t alignedSize = _desc.size;
+    if (_desc.mappedAtCreation) {
+        const size_t COPY_BUFFER_ALIGNMENT = 4;
+        if (alignedSize % COPY_BUFFER_ALIGNMENT != 0) {
+            size_t oldSize = alignedSize;
+            alignedSize = ((alignedSize / COPY_BUFFER_ALIGNMENT) + 1) * COPY_BUFFER_ALIGNMENT;
+            LOG_DEBUG("WebGPUBuffer", "Aligned buffer size from " + std::to_string(oldSize) + 
+                      " to " + std::to_string(alignedSize) + " for mapped buffer");
+        }
+    }
+    
     WGPUBufferDescriptor bufferDesc = {};
     bufferDesc.nextInChain = nullptr;
     WGPUStringView labelView = {_desc.debugName.c_str(), _desc.debugName.length()};
     bufferDesc.label = labelView;
     bufferDesc.usage = convertBufferUsage(_desc.usage);
-    bufferDesc.size = _desc.size;
+    bufferDesc.size = alignedSize;
     bufferDesc.mappedAtCreation = _desc.mappedAtCreation;
     
     _buffer = wgpuDeviceCreateBuffer(_device, &bufferDesc);
@@ -76,7 +88,7 @@ WebGPUBuffer::WebGPUBuffer(WGPUDevice device, const BufferDesc& desc)
     }
     
     if (_desc.mappedAtCreation) {
-        _mappedData = wgpuBufferGetMappedRange(_buffer, 0, _desc.size);
+        _mappedData = wgpuBufferGetMappedRange(_buffer, 0, alignedSize);
         if (!_mappedData) {
             LOG_ERROR("WebGPUBuffer", "Failed to get mapped range for buffer created with mappedAtCreation");
         }

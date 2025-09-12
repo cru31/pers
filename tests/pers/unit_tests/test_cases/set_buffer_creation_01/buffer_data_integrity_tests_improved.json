@@ -1,0 +1,314 @@
+{
+  "fileType": "test_cases",
+  "fileId": "buffer_data_integrity_tests_improved",
+  "metadata": {
+    "version": "2.0",
+    "category": "Buffer Data Integrity",
+    "description": "Improved tests with detailed execution flow descriptions"
+  },
+  "testTypes": [
+    {
+      "category": "Data Integrity",
+      "testType": "Buffer Data Verification",
+      "handlerClass": "BufferDataVerificationHandler",
+      "description": "Tests data integrity through complete CPU-GPU-CPU round trip with detailed sync/async operation descriptions",
+      "variations": [
+        {
+          "id": 1,
+          "variationName": "Small Buffer Fast Test (1KB) - No Logging",
+          "description": "[SYNC] CPU writes 1KB to ImmediateStagingBuffer (mapped at creation) → [SYNC] GPU CommandEncoder.copyBufferToBuffer() → [ASYNC] Queue.submit() → [WAIT] Queue.onSubmittedWorkDone() → [ASYNC] DeferredStagingBuffer.mapAsync() → [WAIT] await promise → [SYNC] Read and verify",
+          "options": {
+            "test_category": "data_integrity",
+            "size": 1024,
+            "pattern": "sequential",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] CPU writes 1KB to ImmediateStagingBuffer (mapped at creation) → [SYNC] GPU CommandEncoder.copyBufferToBuffer() → [ASYNC] Queue.submit() → [WAIT] Queue.onSubmittedWorkDone() → [ASYNC] DeferredStagingBuffer.mapAsync() → [WAIT] await promise → [SYNC] Read and verify",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] CPU writes 1KB to ImmediateStagingBuffer (mapped at creation) → [SYNC] GPU CommandEncoder.copyBufferToBuffer() → [ASYNC] Queue.submit() → [WAIT] Queue.onSubmittedWorkDone() → [ASYNC] DeferredStagingBuffer.mapAsync() → [WAIT] await promise → [SYNC] Read and verify"
+          }
+        },
+        {
+          "id": 2,
+          "variationName": "Medium Buffer with Logging (64KB)",
+          "description": "[SYNC] Generate 64KB alternating pattern → [SYNC] memcpy to ImmediateStagingBuffer → [SYNC] Encoder.copyBufferToBuffer(64KB) → [ASYNC] Submit commands → [WAIT] GPU execution → [ASYNC] mapAsync for readback → [WAIT] Promise resolution → [SYNC] Verify pattern",
+          "options": {
+            "test_category": "data_integrity",
+            "size": "64KB",
+            "pattern": "alternating",
+            "verify_method": "readback",
+            "enable_logging": true,
+            "enable_validation": true
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] Generate 64KB alternating pattern → [SYNC] memcpy to ImmediateStagingBuffer → [SYNC] Encoder.copyBufferToBuffer(64KB) → [ASYNC] Submit commands → [WAIT] GPU execution → [ASYNC] mapAsync for readback → [WAIT] Promise resolution → [SYNC] Verify pattern",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] Generate 64KB alternating pattern → [SYNC] memcpy to ImmediateStagingBuffer → [SYNC] Encoder.copyBufferToBuffer(64KB) → [ASYNC] Submit commands → [WAIT] GPU execution → [ASYNC] mapAsync for readback → [WAIT] Promise resolution → [SYNC] Verify pattern"
+          }
+        },
+        {
+          "id": 3,
+          "variationName": "Large Buffer Performance (256MB) - Max Size",
+          "description": "[SYNC] Allocate 256MB (WebGPU limit) → [SYNC] Fill sequential pattern → [SYNC] Write to staging → [ASYNC] GPU copy 256MB → [WAIT] Long transfer time → [ASYNC] mapAsync huge buffer → [WAIT] Extended wait → [SYNC] Verify all 268435456 bytes",
+          "options": {
+            "test_category": "data_integrity",
+            "size": "256MB",
+            "pattern": "sequential",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true,
+              "throughput_gbps": ">1"
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] Allocate 256MB (WebGPU limit) → [SYNC] Fill sequential pattern → [SYNC] Write to staging → [ASYNC] GPU copy 256MB → [WAIT] Long transfer time → [ASYNC] mapAsync huge buffer → [WAIT] Extended wait → [SYNC] Verify all 268435456 bytes",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] Allocate 256MB (WebGPU limit) → [SYNC] Fill sequential pattern → [SYNC] Write to staging → [ASYNC] GPU copy 256MB → [WAIT] Long transfer time → [ASYNC] mapAsync huge buffer → [WAIT] Extended wait → [SYNC] Verify all 268435456 bytes"
+          }
+        },
+        {
+          "id": 4,
+          "variationName": "Random Pattern with Seed (32KB)",
+          "description": "[SYNC] RNG with seed=12345 → [SYNC] Fill 32KB random → [SYNC] ImmediateStagingBuffer write → [ASYNC] GPU transfer → [WAIT] Queue sync → [ASYNC] Readback mapAsync → [WAIT] Map ready → [SYNC] Verify with same seed",
+          "options": {
+            "test_category": "data_integrity",
+            "size": "32KB",
+            "pattern": "random",
+            "verify_method": "readback",
+            "enable_logging": true,
+            "enable_validation": true,
+            "seed": 12345
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] RNG with seed=12345 → [SYNC] Fill 32KB random → [SYNC] ImmediateStagingBuffer write → [ASYNC] GPU transfer → [WAIT] Queue sync → [ASYNC] Readback mapAsync → [WAIT] Map ready → [SYNC] Verify with same seed",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] RNG with seed=12345 → [SYNC] Fill 32KB random → [SYNC] ImmediateStagingBuffer write → [ASYNC] GPU transfer → [WAIT] Queue sync → [ASYNC] Readback mapAsync → [WAIT] Map ready → [SYNC] Verify with same seed"
+          }
+        },
+        {
+          "id": 5,
+          "variationName": "Checksum Pattern Test (8KB)",
+          "description": "[SYNC] Generate data with CRC32 → [SYNC] Write to staging → [ASYNC] GPU copy → [WAIT] Submit → [ASYNC] Download to staging → [WAIT] mapAsync → [SYNC] Read data → [SYNC] Verify CRC32 matches",
+          "options": {
+            "test_category": "data_integrity",
+            "size": 8192,
+            "pattern": "checksum",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] Generate data with CRC32 → [SYNC] Write to staging → [ASYNC] GPU copy → [WAIT] Submit → [ASYNC] Download to staging → [WAIT] mapAsync → [SYNC] Read data → [SYNC] Verify CRC32 matches",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] Generate data with CRC32 → [SYNC] Write to staging → [ASYNC] GPU copy → [WAIT] Submit → [ASYNC] Download to staging → [WAIT] mapAsync → [SYNC] Read data → [SYNC] Verify CRC32 matches"
+          }
+        },
+        {
+          "id": 6,
+          "variationName": "All Zeros Quick Test (4KB)",
+          "description": "[SYNC] memset(0) → [SYNC] ImmediateStagingBuffer → [ASYNC] GPU copy zeros → [WAIT] Minimal wait → [ASYNC] mapAsync → [WAIT] Quick map → [SYNC] Verify all zeros",
+          "options": {
+            "test_category": "data_integrity",
+            "size": 4096,
+            "pattern": "zeros",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] memset(0) → [SYNC] ImmediateStagingBuffer → [ASYNC] GPU copy zeros → [WAIT] Minimal wait → [ASYNC] mapAsync → [WAIT] Quick map → [SYNC] Verify all zeros",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] memset(0) → [SYNC] ImmediateStagingBuffer → [ASYNC] GPU copy zeros → [WAIT] Minimal wait → [ASYNC] mapAsync → [WAIT] Quick map → [SYNC] Verify all zeros"
+          }
+        },
+        {
+          "id": 7,
+          "variationName": "All Ones Pattern (4KB)",
+          "description": "[SYNC] memset(0xFF) → [SYNC] Write ones to staging → [ASYNC] GPU transfer → [WAIT] Queue sync → [ASYNC] Readback → [WAIT] Map → [SYNC] Verify all 0xFF",
+          "options": {
+            "test_category": "data_integrity",
+            "size": 4096,
+            "pattern": "ones",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] memset(0xFF) → [SYNC] Write ones to staging → [ASYNC] GPU transfer → [WAIT] Queue sync → [ASYNC] Readback → [WAIT] Map → [SYNC] Verify all 0xFF",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] memset(0xFF) → [SYNC] Write ones to staging → [ASYNC] GPU transfer → [WAIT] Queue sync → [ASYNC] Readback → [WAIT] Map → [SYNC] Verify all 0xFF"
+          }
+        },
+        {
+          "id": 8,
+          "variationName": "Alternating 0xAA/0x55 with Validation (16KB)",
+          "description": "[SYNC] Fill 0xAA/0x55 pattern → [SYNC] Upload via staging → [ASYNC] GPU copy with validation → [WAIT] Validation checks → [ASYNC] Download → [WAIT] mapAsync with validation → [SYNC] Pattern verification",
+          "options": {
+            "test_category": "data_integrity",
+            "size": "16KB",
+            "pattern": "alternating",
+            "verify_method": "readback",
+            "enable_logging": true,
+            "enable_validation": true
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] Fill 0xAA/0x55 pattern → [SYNC] Upload via staging → [ASYNC] GPU copy with validation → [WAIT] Validation checks → [ASYNC] Download → [WAIT] mapAsync with validation → [SYNC] Pattern verification",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] Fill 0xAA/0x55 pattern → [SYNC] Upload via staging → [ASYNC] GPU copy with validation → [WAIT] Validation checks → [ASYNC] Download → [WAIT] mapAsync with validation → [SYNC] Pattern verification"
+          }
+        },
+        {
+          "id": 9,
+          "variationName": "Large Sequential Test (128MB)",
+          "description": "[SYNC] Generate 0-255 repeating → [SYNC] Write 128MB to staging → [ASYNC] Large GPU transfer → [WAIT] Extended GPU time → [ASYNC] mapAsync 128MB → [WAIT] Long map wait → [SYNC] Verify sequence",
+          "options": {
+            "test_category": "data_integrity",
+            "size": "128MB",
+            "pattern": "sequential",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] Generate 0-255 repeating → [SYNC] Write 128MB to staging → [ASYNC] Large GPU transfer → [WAIT] Extended GPU time → [ASYNC] mapAsync 128MB → [WAIT] Long map wait → [SYNC] Verify sequence",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] Generate 0-255 repeating → [SYNC] Write 128MB to staging → [ASYNC] Large GPU transfer → [WAIT] Extended GPU time → [ASYNC] mapAsync 128MB → [WAIT] Long map wait → [SYNC] Verify sequence"
+          }
+        },
+        {
+          "id": 10,
+          "variationName": "Boundary Test (256MB - 1)",
+          "description": "[SYNC] Test max size minus 1 byte (268435455) → [SYNC] Fill pattern → [ASYNC] GPU copy near-max → [WAIT] Boundary handling → [ASYNC] Readback → [WAIT] Map → [SYNC] Verify boundary",
+          "options": {
+            "test_category": "data_integrity",
+            "size": 268435455,
+            "pattern": "sequential",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] Test max size minus 1 byte (268435455) → [SYNC] Fill pattern → [ASYNC] GPU copy near-max → [WAIT] Boundary handling → [ASYNC] Readback → [WAIT] Map → [SYNC] Verify boundary",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] Test max size minus 1 byte (268435455) → [SYNC] Fill pattern → [ASYNC] GPU copy near-max → [WAIT] Boundary handling → [ASYNC] Readback → [WAIT] Map → [SYNC] Verify boundary"
+          }
+        },
+        {
+          "id": 11,
+          "variationName": "Small Random with Full Debug (2KB)",
+          "description": "[SYNC] Small 2KB for detailed logging → [SYNC] Log each operation → [ASYNC] GPU copy with logging → [WAIT] Log wait times → [ASYNC] mapAsync logged → [WAIT] Log map time → [SYNC] Log verification",
+          "options": {
+            "test_category": "data_integrity",
+            "size": 2048,
+            "pattern": "random",
+            "verify_method": "readback",
+            "enable_logging": true,
+            "enable_validation": true,
+            "verbose": true
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] Small 2KB for detailed logging → [SYNC] Log each operation → [ASYNC] GPU copy with logging → [WAIT] Log wait times → [ASYNC] mapAsync logged → [WAIT] Log map time → [SYNC] Log verification",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] Small 2KB for detailed logging → [SYNC] Log each operation → [ASYNC] GPU copy with logging → [WAIT] Log wait times → [ASYNC] mapAsync logged → [WAIT] Log map time → [SYNC] Log verification"
+          }
+        },
+        {
+          "id": 12,
+          "variationName": "Performance Benchmark (100MB)",
+          "description": "[SYNC] 100MB for bandwidth test → [SYNC] Time CPU write → [ASYNC] Time GPU copy → [WAIT] Measure GPU time → [ASYNC] Time readback → [WAIT] Measure map time → [SYNC] Calculate throughput",
+          "options": {
+            "test_category": "data_integrity",
+            "size": "100MB",
+            "pattern": "sequential",
+            "verify_method": "readback",
+            "enable_logging": false,
+            "enable_validation": false,
+            "measure_performance": true
+          },
+          "expectedBehavior": {
+            "returnValue": "success",
+            "properties": {
+              "data_verified": true,
+              "throughput_gbps": ">5"
+            }
+          },
+          "execution_details": {
+            "flow": "[SYNC] 100MB for bandwidth test → [SYNC] Time CPU write → [ASYNC] Time GPU copy → [WAIT] Measure GPU time → [ASYNC] Time readback → [WAIT] Measure map time → [SYNC] Calculate throughput",
+            "what_measured": "Data integrity through complete CPU-GPU-CPU round trip",
+            "sync_async_flow": "[SYNC] 100MB for bandwidth test → [SYNC] Time CPU write → [ASYNC] Time GPU copy → [WAIT] Measure GPU time → [ASYNC] Time readback → [WAIT] Measure map time → [SYNC] Calculate throughput"
+          }
+        }
+      ],
+      "execution_flow": "Complete round-trip data transfer with integrity verification: CPU writes → GPU copy → CPU readback → Verify",
+      "testOverview": "CPU→GPU→CPU Round Trip: [SYNC] Write → [ASYNC] Transfer → [WAIT] GPU → [ASYNC] Read → [SYNC] Verify"
+    }
+  ]
+}

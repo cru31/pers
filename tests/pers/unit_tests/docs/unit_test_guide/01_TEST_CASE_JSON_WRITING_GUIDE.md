@@ -177,6 +177,36 @@ Each variation is a specific test case with different parameters:
 }
 ```
 
+## Special Options
+
+### Performance Control Options
+These options control logging and validation for performance testing:
+
+```json
+"options": {
+  "enable_logging": false,      // Disable all engine logging for performance tests
+  "enable_validation": false,   // Disable WebGPU validation layers
+  "verbose": false              // Control verbose output from handler
+}
+```
+
+- **enable_logging** (bool): Controls whether engine logging is enabled. Default: true
+  - Set to `false` for performance benchmarks to reduce overhead
+  - Affects all log levels (INFO, DEBUG, TRACE, WARNING)
+  
+- **enable_validation** (bool): Controls WebGPU validation layers. Default: true
+  - Set to `false` for performance tests to reduce GPU driver overhead
+  - Should be `true` for correctness testing
+
+### Buffer Test Specific Options
+```json
+"options": {
+  "size": 268435456,           // Buffer size in bytes (256MB)
+  "pattern": "sequential",      // Data pattern: sequential, random, gradient, binary
+  "verify_method": "readback"   // Verification method: readback, mapping, compute_shader
+}
+```
+
 ## Best Practices
 
 1. **Unique IDs**: Ensure each variation has a unique ID within the file
@@ -185,6 +215,8 @@ Each variation is a specific test case with different parameters:
 4. **Edge Cases**: Test boundary conditions and error scenarios
 5. **Minimal Options**: Only include parameters relevant to what's being tested
 6. **Clear Expectations**: Be explicit about expected outcomes
+7. **Performance Testing**: Use `enable_logging: false` and `enable_validation: false` for accurate benchmarks
+8. **Debug Testing**: Keep logging and validation enabled when testing correctness
 
 ## Common Patterns
 

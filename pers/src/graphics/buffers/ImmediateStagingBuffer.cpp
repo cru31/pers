@@ -12,6 +12,16 @@
 
 namespace pers {
 
+// Helper to align buffer size to 4-byte boundary for WebGPU
+static size_t alignBufferSize(size_t size) {
+    const size_t COPY_BUFFER_ALIGNMENT = 4;
+    if (size % COPY_BUFFER_ALIGNMENT != 0) {
+        return ((size / COPY_BUFFER_ALIGNMENT) + 1) * COPY_BUFFER_ALIGNMENT;
+    }
+    return size;
+}
+
+
 ImmediateStagingBuffer::ImmediateStagingBuffer()
     : _desc()
     , _mappedData(nullptr)

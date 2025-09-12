@@ -384,6 +384,33 @@ private:
 };
 ```
 
+## Source Location Tracking
+
+Test handlers can track their execution path by adding source locations to the TestResult:
+
+```cpp
+TestResult MyHandler::execute(const TestVariation& variation) {
+    TestResult result;
+    
+    // Add source location at entry point
+    result.addSourceLocation(__FUNCTION__, __FILE__, __LINE__);
+    
+    // ... perform test operations ...
+    
+    // Add another location when calling helper
+    result.addSourceLocation("MyHandler::helperMethod", __FILE__, __LINE__);
+    helperMethod();
+    
+    return result;
+}
+```
+
+The source locations are:
+- Stored as an array in the result
+- Formatted as "functionName fileName.cpp:lineNumber"
+- Displayed as clickable VS Code links in the WebView
+- Allow tracking the execution path through complex handlers
+
 ## Best Practices
 
 1. **Parameter Validation**: Always validate required parameters before use

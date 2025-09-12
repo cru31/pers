@@ -72,6 +72,10 @@ bool JsonTestLoader::loadTestTypes(const std::string& filePath,
             testType.handlerClass = testTypeObj["handlerClass"].GetString();
         }
         
+        if (testTypeObj.HasMember("testOverview") && testTypeObj["testOverview"].IsString()) {
+            testType.testOverview = testTypeObj["testOverview"].GetString();
+        }
+        
         // Parse variations with file ID
         if (testTypeObj.HasMember("variations") && testTypeObj["variations"].IsArray()) {
             const auto& variations = testTypeObj["variations"];
@@ -101,6 +105,14 @@ TestVariation JsonTestLoader::parseVariation(const void* jsonObj) {
     
     if (obj.HasMember("variationName") && obj["variationName"].IsString()) {
         variation.variationName = obj["variationName"].GetString();
+    }
+    
+    if (obj.HasMember("description") && obj["description"].IsString()) {
+        variation.description = obj["description"].GetString();
+    }
+    
+    if (obj.HasMember("execution_details") && obj["execution_details"].IsObject()) {
+        variation.executionDetails = parseOptions(&obj["execution_details"]);
     }
     
     if (obj.HasMember("options") && obj["options"].IsObject()) {
@@ -346,6 +358,9 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
             
             resultObj.AddMember("category", Value().SetString(testType.category.c_str(), allocator), allocator);
             resultObj.AddMember("testType", Value().SetString(testType.testType.c_str(), allocator), allocator);
+            resultObj.AddMember("testOverview", Value().SetString(testType.testOverview.c_str(), allocator), allocator);
+            resultObj.AddMember("variationName", Value().SetString(variation.variationName.c_str(), allocator), allocator);
+            resultObj.AddMember("description", Value().SetString(variation.description.c_str(), allocator), allocator);
             
             // Helper lambda to convert std::any to JSON Value
             std::function<void(Value&, const std::any&)> anyToValue = [&](Value& target, const std::any& value) {
@@ -396,6 +411,19 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
                 inputParams.AddMember(keyVal, valVal, allocator);
             }
             resultObj.AddMember("input_parameters", inputParams, allocator);
+            
+            // Add execution_details if available
+            if (!variation.executionDetails.empty()) {
+                Value execDetails(kObjectType);
+                for (const auto& [key, value] : variation.executionDetails) {
+                    Value keyVal;
+                    keyVal.SetString(key.c_str(), allocator);
+                    Value valVal;
+                    anyToValue(valVal, value);
+                    execDetails.AddMember(keyVal, valVal, allocator);
+                }
+                resultObj.AddMember("execution_details", execDetails, allocator);
+            }
             
             // Build input string from options (keep for compatibility)
             std::string inputStr = "type=" + testType.testType;
@@ -484,6 +512,17 @@ bool JsonTestLoader::saveTestResults(const std::string& filePath,
                     actualProps.AddMember(keyVal, valVal, allocator);
                 }
                 resultObj.AddMember("actual_properties", actualProps, allocator);
+            }
+            
+            // Add handler source locations if available
+            if (!result.handlerSourceLocations.empty()) {
+                Value sourceLocs(kArrayType);
+                for (const auto& loc : result.handlerSourceLocations) {
+                    Value locStr;
+                    locStr.SetString(loc.toString().c_str(), allocator);
+                    sourceLocs.PushBack(locStr, allocator);
+                }
+                resultObj.AddMember("handler_source_locations", sourceLocs, allocator);
             }
             
             resultsArray.PushBack(resultObj, allocator);

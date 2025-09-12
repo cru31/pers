@@ -17,7 +17,9 @@
           "variationName": "Default Instance",
           "options": {
             "debugEnabled": false,
-            "validationEnabled": false
+            "validationEnabled": false,
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null",
@@ -32,7 +34,9 @@
           "variationName": "Debug Enabled Instance",
           "options": {
             "debugEnabled": true,
-            "validationEnabled": false
+            "validationEnabled": false,
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null",
@@ -47,7 +51,9 @@
           "variationName": "Validation Enabled Instance",
           "options": {
             "debugEnabled": false,
-            "validationEnabled": true
+            "validationEnabled": true,
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null",

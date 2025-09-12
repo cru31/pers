@@ -17,7 +17,9 @@
           "variationName": "Basic Device",
           "options": {
             "requiredFeatures": [],
-            "requiredLimits": {}
+            "requiredLimits": {},
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null",
@@ -31,8 +33,12 @@
           "id": 2,
           "variationName": "Device With Timestamp Query",
           "options": {
-            "requiredFeatures": ["timestamp-query"],
-            "requiredLimits": {}
+            "requiredFeatures": [
+              "timestamp-query"
+            ],
+            "requiredLimits": {},
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null",
@@ -45,8 +51,12 @@
           "id": 3,
           "variationName": "Device With Texture Compression BC",
           "options": {
-            "requiredFeatures": ["texture-compression-bc"],
-            "requiredLimits": {}
+            "requiredFeatures": [
+              "texture-compression-bc"
+            ],
+            "requiredLimits": {},
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null",
@@ -63,7 +73,9 @@
             "requiredLimits": {
               "maxBindGroups": 8,
               "maxStorageBufferBindingSize": 134217728
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null",

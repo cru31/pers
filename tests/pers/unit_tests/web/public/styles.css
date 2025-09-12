@@ -2500,3 +2500,67 @@ body.modal-open {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
 }
+
+
+/* Table column width adjustments */
+#results-table th:nth-child(1),
+#results-table td:nth-child(1) {
+    width: 30px; /* Checkbox column */
+}
+
+#results-table th:nth-child(2),
+#results-table td:nth-child(2) {
+    width: 80px; /* ID - shortened */
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#results-table th:nth-child(3),
+#results-table td:nth-child(3) {
+    width: 100px; /* Category - shortened */
+}
+
+#results-table th:nth-child(4),
+#results-table td:nth-child(4) {
+    width: 150px; /* Test Type - compact */
+}
+
+#results-table th:nth-child(5),
+#results-table td:nth-child(5) {
+    width: 40%; /* Overview - main content, expanded */
+    min-width: 350px;
+}
+
+#results-table th:nth-child(6),
+#results-table td:nth-child(6) {
+    width: 80px; /* Status */
+}
+
+#results-table th:nth-child(7),
+#results-table td:nth-child(7) {
+    width: 80px; /* Time */
+}
+
+#results-table th:nth-child(8),
+#results-table td:nth-child(8) {
+    width: 120px; /* Expected - fixed width */
+}
+
+/* Style for overview cell */
+.overview-cell {
+    font-size: 12px;
+    color: #888;
+    font-family: 'Courier New', monospace;
+}
+
+/* Ensure table uses full width */
+#results-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* Make ID column text smaller if needed */
+#results-table td:nth-child(2) {
+    font-size: 12px;
+}

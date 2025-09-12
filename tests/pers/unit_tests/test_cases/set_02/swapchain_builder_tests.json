@@ -19,9 +19,14 @@
             "builder_width": 4096,
             "builder_height": 4096,
             "preferred_format": "RGBA16Float",
-            "format_fallbacks": ["BGRA8UnormSrgb", "BGRA8Unorm"],
+            "format_fallbacks": [
+              "BGRA8UnormSrgb",
+              "BGRA8Unorm"
+            ],
             "preferred_present_mode": "Immediate",
-            "preferred_alpha_mode": "Opaque"
+            "preferred_alpha_mode": "Opaque",
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "properties": {
@@ -38,9 +43,14 @@
             "builder_width": 2390,
             "builder_height": 1000,
             "preferred_format": "BGRA8UnormSrgb",
-            "format_fallbacks": ["RGBA8UnormSrgb", "BGRA8Unorm"],
+            "format_fallbacks": [
+              "RGBA8UnormSrgb",
+              "BGRA8Unorm"
+            ],
             "preferred_present_mode": "Fifo",
-            "preferred_alpha_mode": "Opaque"
+            "preferred_alpha_mode": "Opaque",
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "properties": {

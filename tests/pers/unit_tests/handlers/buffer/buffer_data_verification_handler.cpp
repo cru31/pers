@@ -27,15 +27,30 @@ std::string BufferDataVerificationHandler::getTestType() const {
     return "Buffer Data Verification";
 }
 
-bool BufferDataVerificationHandler::initializeDevice() {
-    if (_logicalDevice) {
-        return true;
+bool BufferDataVerificationHandler::initializeDevice(bool enableLogging, bool enableValidation) {
+    // ALWAYS control logging based on JSON option for EACH test
+    // This must happen BEFORE checking if device exists
+    // Otherwise first test's logging setting will stick for all tests
+    if (!enableLogging) {
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Info, false);
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Debug, false);
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Trace, false);
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Warning, false);
+    } else {
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Info, true);
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Debug, true);
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Trace, true);
+        pers::Logger::Instance().SetLogLevelEnabled(pers::LogLevel::Warning, true);
     }
     
+    if (_logicalDevice) {
+        return true;  // Device already initialized
+    }
+
     // Create instance
     InstanceDesc instanceDesc;
     instanceDesc.applicationName = "Buffer Data Verification Test";
-    instanceDesc.enableValidation = true; // Enable validation for data verification
+    instanceDesc.enableValidation = enableValidation;
     
     _instance = _factory->createInstance(instanceDesc);
     if (!_instance) {
@@ -54,7 +69,7 @@ bool BufferDataVerificationHandler::initializeDevice() {
     
     // Create logical device
     LogicalDeviceDesc deviceDesc;
-    deviceDesc.enableValidation = true;
+    deviceDesc.enableValidation = enableValidation;
     _logicalDevice = _physicalDevice->createLogicalDevice(deviceDesc);
     if (!_logicalDevice) {
         
@@ -85,7 +100,15 @@ TestResult BufferDataVerificationHandler::execute(const TestVariation& variation
     
     TestResult result;
     
-    if (!initializeDevice()) {
+    
+    // Set source location info
+    result.addSourceLocation(__FUNCTION__, __FILE__, __LINE__);
+    
+    // Get JSON options for logging and validation
+    bool enableLogging = getOption<bool>(variation.options, "enable_logging", true);
+    bool enableValidation = getOption<bool>(variation.options, "enable_validation", true);
+    
+    if (!initializeDevice(enableLogging, enableValidation)) {
         result.passed = false;
         result.actualBehavior = "Device initialization failed";
         result.failureReason = "Failed to create WebGPU device";
@@ -117,7 +140,7 @@ TestResult BufferDataVerificationHandler::execute(const TestVariation& variation
         result.passed = false;
         result.failureReason = "Unknown verification method: " + verifyMethod;
     }
-    
+
     transferLogsToResult(result);
     
     // Add aggregate metrics
@@ -146,6 +169,9 @@ TestResult BufferDataVerificationHandler::execute(const TestVariation& variation
 
 TestResult BufferDataVerificationHandler::verifyInitializableDeviceBuffer(const TestVariation& variation) {
     TestResult result;
+    
+    // Set source location info
+    result.addSourceLocation(__FUNCTION__, __FILE__, __LINE__);
     
     // Get test parameters
     size_t bufferSize = getOption<size_t>(variation.options, "size", 4096);
@@ -365,6 +391,9 @@ TestResult BufferDataVerificationHandler::verifyInitializableDeviceBuffer(const 
 
 TestResult BufferDataVerificationHandler::verifyThroughStagingCopy(const TestVariation& variation) {
     TestResult result;
+    
+    // Set source location info
+    result.addSourceLocation(__FUNCTION__, __FILE__, __LINE__);
 
     size_t bufferSize = getOption<size_t>(variation.options, "size", 4096);
     std::string patternType = getOption<std::string>(variation.options, "pattern", "sequential");
@@ -770,6 +799,9 @@ TestResult BufferDataVerificationHandler::verifyThroughDirectMapping(const TestV
 TestResult BufferDataVerificationHandler::verifyThroughComputeShader(const TestVariation& variation) {
     TestResult result;
     
+    // Set source location info
+    result.addSourceLocation(__FUNCTION__, __FILE__, __LINE__);
+    
     size_t bufferSize = getOption<size_t>(variation.options, "size", 4096);
     std::string patternType = getOption<std::string>(variation.options, "pattern", "sequential");
     
@@ -786,6 +818,9 @@ TestResult BufferDataVerificationHandler::verifyThroughComputeShader(const TestV
 
 TestResult BufferDataVerificationHandler::verifyThroughRendering(const TestVariation& variation) {
     TestResult result;
+    
+    // Set source location info
+    result.addSourceLocation(__FUNCTION__, __FILE__, __LINE__);
     
     size_t bufferSize = getOption<size_t>(variation.options, "size", 4096);
     std::string patternType = getOption<std::string>(variation.options, "pattern", "sequential");

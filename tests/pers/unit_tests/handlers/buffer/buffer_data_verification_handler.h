@@ -48,7 +48,7 @@ private:
     TestResult verifyInitializableDeviceBuffer(const TestVariation& variation);
     
     // Helper methods
-    bool initializeDevice();
+    bool initializeDevice(bool enableLogging = true, bool enableValidation = true);
     void cleanupDevice();
     
     // Data generation methods

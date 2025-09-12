@@ -29,6 +29,8 @@ struct TestVariation {
     int id;
     std::string combinedId;  // Combined ID with file ID (e.g., "001-a")
     std::string variationName;
+    std::string description;  // Test description
+    std::unordered_map<std::string, std::any> executionDetails;  // execution_details object
     std::unordered_map<std::string, std::any> options;
     ExpectedBehavior expectedBehavior;
 };
@@ -38,6 +40,7 @@ struct TestTypeDefinition {
     std::string category;
     std::string testType;
     std::string handlerClass;
+    std::string testOverview;
     std::vector<TestVariation> variations;
 };
 
@@ -52,6 +55,20 @@ struct LogEntry {
     std::string function;       // Function name
 };
 
+// Source location info
+struct SourceLocation {
+    std::string function;   // Function name
+    std::string file;       // File name (not full path)
+    int line;              // Line number
+    
+    // Format as "functionName filename.cpp:123"
+    std::string toString() const {
+        size_t lastSlash = file.find_last_of("/\\");
+        std::string fileName = (lastSlash != std::string::npos) ? file.substr(lastSlash + 1) : file;
+        return function + " " + fileName + ":" + std::to_string(line);
+    }
+};
+
 // Test execution result
 struct TestResult {
     bool passed;
@@ -59,6 +76,14 @@ struct TestResult {
     std::string failureReason;
     std::unordered_map<std::string, std::any> actualProperties;
     std::vector<LogEntry> logMessages;  // Structured log messages
+    
+    // Source code locations for handler execution path
+    std::vector<SourceLocation> handlerSourceLocations;
+    
+    // Helper to add source location
+    void addSourceLocation(const std::string& func, const std::string& file, int line) {
+        handlerSourceLocations.push_back({func, file, line});
+    }
 };
 
 // Helper to parse size strings like "1MB", "64KB", etc.

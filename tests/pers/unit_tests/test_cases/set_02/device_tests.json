@@ -15,7 +15,10 @@
         {
           "id": 1,
           "variationName": "Basic Device - No Features No Limits",
-          "options": {},
+          "options": {
+            "enable_logging": true,
+            "enable_validation": true
+          },
           "expectedBehavior": {
             "returnValue": "not_null"
           }
@@ -24,7 +27,9 @@
           "id": 2,
           "variationName": "Device With Validation Enabled",
           "options": {
-            "enableValidation": true
+            "enableValidation": true,
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -34,7 +39,9 @@
           "id": 3,
           "variationName": "Device With Debug Name",
           "options": {
-            "debugName": "TestDevice"
+            "debugName": "TestDevice",
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -44,7 +51,9 @@
           "id": 4,
           "variationName": "Device With Long Debug Name",
           "options": {
-            "debugName": "[LONG_STRING_1024]"
+            "debugName": "[LONG_STRING_1024]",
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -54,7 +63,11 @@
           "id": 5,
           "variationName": "Device With Timestamp Query",
           "options": {
-            "requiredFeatures": ["timestamp-query"]
+            "requiredFeatures": [
+              "timestamp-query"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -64,7 +77,11 @@
           "id": 6,
           "variationName": "Device With Depth Clip Control",
           "options": {
-            "requiredFeatures": ["depth-clip-control"]
+            "requiredFeatures": [
+              "depth-clip-control"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -74,7 +91,11 @@
           "id": 7,
           "variationName": "Device With Depth32Float Stencil8",
           "options": {
-            "requiredFeatures": ["depth32float-stencil8"]
+            "requiredFeatures": [
+              "depth32float-stencil8"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -84,7 +105,11 @@
           "id": 8,
           "variationName": "Device With Texture Compression BC",
           "options": {
-            "requiredFeatures": ["texture-compression-bc"]
+            "requiredFeatures": [
+              "texture-compression-bc"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -94,7 +119,11 @@
           "id": 9,
           "variationName": "Device With Texture Compression ETC2",
           "options": {
-            "requiredFeatures": ["texture-compression-etc2"]
+            "requiredFeatures": [
+              "texture-compression-etc2"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -104,7 +133,11 @@
           "id": 10,
           "variationName": "Device With Texture Compression ASTC",
           "options": {
-            "requiredFeatures": ["texture-compression-astc"]
+            "requiredFeatures": [
+              "texture-compression-astc"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -118,7 +151,9 @@
               "texture-compression-bc",
               "texture-compression-etc2",
               "texture-compression-astc"
-            ]
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -128,7 +163,11 @@
           "id": 12,
           "variationName": "Device With Indirect First Instance",
           "options": {
-            "requiredFeatures": ["indirect-first-instance"]
+            "requiredFeatures": [
+              "indirect-first-instance"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -138,7 +177,11 @@
           "id": 13,
           "variationName": "Device With Shader F16",
           "options": {
-            "requiredFeatures": ["shader-f16"]
+            "requiredFeatures": [
+              "shader-f16"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -148,7 +191,11 @@
           "id": 14,
           "variationName": "Device With RG11B10Ufloat Renderable",
           "options": {
-            "requiredFeatures": ["rg11b10ufloat-renderable"]
+            "requiredFeatures": [
+              "rg11b10ufloat-renderable"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -158,7 +205,11 @@
           "id": 15,
           "variationName": "Device With BGRA8Unorm Storage",
           "options": {
-            "requiredFeatures": ["bgra8unorm-storage"]
+            "requiredFeatures": [
+              "bgra8unorm-storage"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -168,7 +219,11 @@
           "id": 16,
           "variationName": "Device With Float32 Filterable",
           "options": {
-            "requiredFeatures": ["float32-filterable"]
+            "requiredFeatures": [
+              "float32-filterable"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -178,7 +233,11 @@
           "id": 17,
           "variationName": "Device With Pipeline Statistics Query",
           "options": {
-            "requiredFeatures": ["pipeline-statistics-query"]
+            "requiredFeatures": [
+              "pipeline-statistics-query"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -193,7 +252,9 @@
               "shader-f16",
               "rg11b10ufloat-renderable",
               "float32-filterable"
-            ]
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -215,7 +276,9 @@
               "rg11b10ufloat-renderable",
               "bgra8unorm-storage",
               "float32-filterable"
-            ]
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -229,7 +292,9 @@
               "maxTextureDimension1D": 1024,
               "maxTextureDimension2D": 1024,
               "maxTextureDimension3D": 256
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -244,7 +309,9 @@
               "maxTextureDimension2D": 4096,
               "maxTextureDimension3D": 1024,
               "maxTextureArrayLayers": 256
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -259,7 +326,9 @@
               "maxTextureDimension2D": 8192,
               "maxTextureDimension3D": 2048,
               "maxTextureArrayLayers": 2048
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -272,7 +341,9 @@
             "requiredLimits": {
               "maxBindGroups": 4,
               "maxBindingsPerBindGroup": 640
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -285,7 +356,9 @@
             "requiredLimits": {
               "maxDynamicUniformBuffersPerPipelineLayout": 8,
               "maxDynamicStorageBuffersPerPipelineLayout": 4
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -301,7 +374,9 @@
               "maxStorageBuffersPerShaderStage": 8,
               "maxStorageTexturesPerShaderStage": 8,
               "maxUniformBuffersPerShaderStage": 12
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -314,7 +389,9 @@
             "requiredLimits": {
               "maxUniformBufferBindingSize": 65536,
               "maxStorageBufferBindingSize": 134217728
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -328,7 +405,9 @@
               "maxVertexBuffers": 8,
               "maxVertexAttributes": 16,
               "maxVertexBufferArrayStride": 2048
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -340,7 +419,9 @@
           "options": {
             "requiredLimits": {
               "maxInterStageShaderVariables": 16
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -354,7 +435,9 @@
               "maxComputeWorkgroupSizeX": 256,
               "maxComputeWorkgroupSizeY": 256,
               "maxComputeWorkgroupSizeZ": 64
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -368,7 +451,9 @@
               "maxComputeWorkgroupStorageSize": 16384,
               "maxComputeInvocationsPerWorkgroup": 256,
               "maxComputeWorkgroupsPerDimension": 65535
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -378,11 +463,15 @@
           "id": 31,
           "variationName": "Device With Combined Basic Features and Limits",
           "options": {
-            "requiredFeatures": ["timestamp-query"],
+            "requiredFeatures": [
+              "timestamp-query"
+            ],
             "requiredLimits": {
               "maxBindGroups": 4,
               "maxTextureDimension2D": 4096
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -392,11 +481,15 @@
           "id": 32,
           "variationName": "Device With Combined Texture Features and Limits",
           "options": {
-            "requiredFeatures": ["texture-compression-bc"],
+            "requiredFeatures": [
+              "texture-compression-bc"
+            ],
             "requiredLimits": {
               "maxTextureDimension2D": 8192,
               "maxTextureArrayLayers": 256
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -406,11 +499,15 @@
           "id": 33,
           "variationName": "Device With Combined Compute Features and Limits",
           "options": {
-            "requiredFeatures": ["shader-f16"],
+            "requiredFeatures": [
+              "shader-f16"
+            ],
             "requiredLimits": {
               "maxComputeWorkgroupSizeX": 256,
               "maxComputeWorkgroupStorageSize": 16384
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -421,7 +518,12 @@
           "variationName": "Device With Validation and Features",
           "options": {
             "enableValidation": true,
-            "requiredFeatures": ["depth-clip-control", "timestamp-query"]
+            "requiredFeatures": [
+              "depth-clip-control",
+              "timestamp-query"
+            ],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -435,7 +537,9 @@
             "requiredLimits": {
               "maxBindGroups": 4,
               "maxStorageBufferBindingSize": 134217728
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -447,11 +551,15 @@
           "options": {
             "enableValidation": false,
             "debugName": "BasicDevice",
-            "requiredFeatures": ["timestamp-query"],
+            "requiredFeatures": [
+              "timestamp-query"
+            ],
             "requiredLimits": {
               "maxBindGroups": 2,
               "maxTextureDimension2D": 2048
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -475,7 +583,9 @@
               "maxStorageBufferBindingSize": 134217728,
               "maxSampledTexturesPerShaderStage": 16,
               "maxComputeWorkgroupSizeX": 256
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -485,7 +595,9 @@
           "id": 38,
           "variationName": "Device With Empty Features Array",
           "options": {
-            "requiredFeatures": []
+            "requiredFeatures": [],
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -495,7 +607,9 @@
           "id": 39,
           "variationName": "Device With Empty Limits Object",
           "options": {
-            "requiredLimits": {}
+            "requiredLimits": {},
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -505,7 +619,9 @@
           "id": 40,
           "variationName": "Device With Empty String Debug Name",
           "options": {
-            "debugName": ""
+            "debugName": "",
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"
@@ -556,7 +672,9 @@
               "maxComputeWorkgroupSizeY": 256,
               "maxComputeWorkgroupSizeZ": 64,
               "maxComputeWorkgroupsPerDimension": 65535
-            }
+            },
+            "enable_logging": true,
+            "enable_validation": true
           },
           "expectedBehavior": {
             "returnValue": "not_null"

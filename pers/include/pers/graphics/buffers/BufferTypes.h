@@ -110,7 +110,7 @@ struct BufferAlignment {
 struct BufferLimits {
     static constexpr uint64_t MAX_BUFFER_SIZE = 2147483648;        // 2GB
     static constexpr uint64_t MAX_UNIFORM_BUFFER_SIZE = 65536;     // 64KB
-    static constexpr uint64_t MAX_STORAGE_BUFFER_SIZE = 134217728; // 128MB
+    static constexpr uint64_t MAX_STORAGE_BUFFER_SIZE = 1073741824; // 1GB
     static constexpr uint32_t MAX_VERTEX_ATTRIBUTES = 32;
     static constexpr uint32_t MAX_VERTEX_BUFFER_STRIDE = 2048;
 };

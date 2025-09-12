@@ -97,6 +97,10 @@ build/
     "stack": "string (optional)"
   },
   "logs": ["array of related log entries"],
+  "handler_source_locations": [
+    "BufferDataVerificationHandler::execute buffer_data_verification_handler.cpp:106",
+    "BufferDataVerificationHandler::verifyThroughStagingCopy buffer_data_verification_handler.cpp:245"
+  ],
   "performance": {
     "cpu_time_ms": 2.1,
     "gpu_time_ms": 1.3,
@@ -104,6 +108,30 @@ build/
     "draw_calls": 0
   }
 }
+```
+
+### Handler Source Locations
+
+The `handler_source_locations` field contains an array of source code locations from the test handler execution path.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `handler_source_locations` | array | List of source locations in format "functionName fileName.cpp:lineNumber" |
+
+Each entry follows the format: `"functionName fileName.cpp:lineNumber"`
+
+This allows:
+- Tracking the execution path through the handler
+- Creating clickable VS Code links in the WebView
+- Multiple source locations from different parts of the handler
+
+Example:
+```json
+"handler_source_locations": [
+  "BufferHandler::execute buffer_handler.cpp:45",
+  "BufferHandler::verifyData buffer_handler.cpp:123",
+  "HelperClass::validate helper.cpp:67"
+]
 ```
 
 ### Status Values

@@ -583,11 +583,11 @@ function displayResults() {
             </td>
             <td onclick="toggleDetails(${index})"><strong>${result.id}</strong></td>
             <td onclick="toggleDetails(${index})">${result.category || '-'}</td>
-            <td onclick="toggleDetails(${index})">${result.testType || '-'}</td>
+            <td onclick="toggleDetails(${index})">${truncate(result.testType, 30)}</td>
+            <td onclick="toggleDetails(${index})">${result.testOverview ? truncate(result.testOverview, 60) : ''}</td>
             <td onclick="toggleDetails(${index})">${badgeHtml}</td>
             <td onclick="toggleDetails(${index})">${result.execution_time_ms ? result.execution_time_ms.toFixed(2) : '-'}</td>
             <td onclick="toggleDetails(${index})">${truncate(result.expected_result, 30)}</td>
-            <td onclick="toggleDetails(${index})">${truncate(result.actual_result, 30)}</td>
         `;
         tbody.appendChild(row);
         
@@ -623,6 +623,115 @@ function displayResults() {
             actualPropsHtml = formatInputParameters(result.actual_properties);
         }
         
+        // Create source code links if handler locations are available
+        let sourceCodeLink = '';
+        if (result.handler_source_locations && result.handler_source_locations.length > 0) {
+            const locations = result.handler_source_locations.map(location => {
+                // Parse the location string format: "functionName filename.cpp:123"
+                const parts = location.split(' ');
+                let functionName = '';
+                let fileAndLine = '';
+                
+                if (parts.length >= 2) {
+                    functionName = parts.slice(0, -1).join(' ');
+                    fileAndLine = parts[parts.length - 1];
+                } else {
+                    fileAndLine = location;
+                }
+                
+                // Extract file name and line number
+                const colonIndex = fileAndLine.lastIndexOf(':');
+                let fileName = fileAndLine;
+                let lineNumber = '';
+                
+                if (colonIndex > 0) {
+                    fileName = fileAndLine.substring(0, colonIndex);
+                    lineNumber = fileAndLine.substring(colonIndex + 1);
+                }
+                
+                // Create VS Code link - need full path from somewhere or use relative
+                // For now, we'll use a placeholder path that can be configured
+                const vscodeLink = `vscode://file/D:/cru31.dev/pers_work/pers_repo/tests/pers/unit_tests/handlers/buffer/${fileName}${lineNumber ? ':' + lineNumber : ''}`;
+                
+                return `<a href="${vscodeLink}" style="color: #4fc3f7; text-decoration: underline;" title="Open in VS Code">${functionName || 'Handler'} ${fileName}:${lineNumber}</a>`;
+            }).join('\n');
+            
+            sourceCodeLink = `
+                <h4>Handler Source Locations</h4>
+                <pre>${locations}</pre>
+            `;
+
+        // Backward compatibility for old single location format
+        if (!sourceCodeLink && (result.handler_file || result.handler_function || result.handler_line)) {
+            const filePath = result.handler_file || '';
+            const functionName = result.handler_function || '';
+            const lineNumber = result.handler_line || 0;
+            
+            // Extract just filename from path
+            const fileName = filePath.split(/[\/\\]/).pop() || 'unknown';
+            
+            // Create VS Code link
+            const vscodeLink = `vscode://file/${filePath.replace(/\\/g, '/')}${lineNumber ? ':' + lineNumber : ''}`;
+            
+            sourceCodeLink = `
+                <h4>Test Handler Source</h4>
+                <div class="input-params">
+                    <div class="param-item">
+                        <a href="${vscodeLink}" style="color: #4fc3f7; text-decoration: underline;" title="Open in VS Code">
+                            ${functionName} ${fileName}:${lineNumber}
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        }
+        
+        // Build execution details HTML with better formatting
+        let executionDetailsHtml = '';
+        if (result.execution_details) {
+            executionDetailsHtml = '<div class="input-params">';
+            
+            // Show sync_async_flow with step-by-step formatting (primary flow)
+            if (result.execution_details.sync_async_flow) {
+                const syncAsyncSteps = result.execution_details.sync_async_flow.split('→').map(step => step.trim());
+                executionDetailsHtml += '<div class="param-item">';
+                executionDetailsHtml += '<strong>Execution Flow:</strong>';
+                executionDetailsHtml += '<div style="margin-left: 20px; margin-top: 8px; line-height: 1.8;">';
+                syncAsyncSteps.forEach((step, index) => {
+                    // Color code based on type
+                    let color = '#333';
+                    let fontWeight = 'normal';
+                    if (step.includes('[SYNC]')) {
+                        color = '#2196F3';
+                        fontWeight = '500';
+                    } else if (step.includes('[ASYNC]')) {
+                        color = '#FF9800';
+                        fontWeight = '500';
+                    } else if (step.includes('[WAIT]')) {
+                        color = '#9C27B0';
+                        fontWeight = '500';
+                    }
+                    
+                    executionDetailsHtml += `<div style="margin: 6px 0;">`;
+                    executionDetailsHtml += `<span style="color: #888; margin-right: 8px;">${String(index + 1).padStart(2, '0')}.</span>`;
+                    executionDetailsHtml += `<span style="color: ${color}; font-weight: ${fontWeight};">${step}</span>`;
+                    executionDetailsHtml += '</div>';
+                });
+                executionDetailsHtml += '</div>';
+                executionDetailsHtml += '</div>';
+            }
+            
+            // Show what_measured with better formatting
+            if (result.execution_details.what_measured) {
+                executionDetailsHtml += `<div class="param-item">`;
+                executionDetailsHtml += `<strong>Performance Metrics:</strong>`;
+                executionDetailsHtml += `<div style="margin-left: 20px; margin-top: 8px; color: #555;">${result.execution_details.what_measured}</div>`;
+                executionDetailsHtml += `</div>`;
+            }
+            
+            executionDetailsHtml += '</div>';
+        }
+        
         detailCell.innerHTML = `
             <div class="detail-content">
                 <div class="detail-buttons-container">
@@ -631,8 +740,24 @@ function displayResults() {
                     </button>
                 </div>
                 
+                ${result.variationName ? `
+                    <h4>Test Variation</h4>
+                    <div class="input-params">
+                        <div class="param-item">${result.variationName}</div>
+                    </div>
+                ` : ''}
+                
+
+                
+                ${executionDetailsHtml ? `
+                    <h4>Execution Flow</h4>
+                    ${executionDetailsHtml}
+                ` : ''}
+                
                 <h4>Input Parameters</h4>
                 ${inputHtml || '<p>No input parameters</p>'}
+                
+                ${sourceCodeLink}
                 
                 <h4>Expected Result</h4>
                 <pre>${result.expected_result || 'N/A'}</pre>
@@ -1321,6 +1446,29 @@ function showTestModal(testResult) {
             <h3>Status</h3>
             <p>${testResult.passed ? '<span style="color: #48bb78">PASSED</span>' : '<span style="color: #f56565">FAILED</span>'}</p>
         </div>
+        
+        ${testResult.description ? `
+        <div class="test-detail">
+            <h3>Description</h3>
+            <pre>${testResult.description}</pre>
+        </div>
+        ` : ''}
+        
+        ${testResult.execution_flow ? `
+        <div class="test-detail">
+            <h3>Execution Flow</h3>
+            <pre>${testResult.execution_flow}</pre>
+        </div>
+        ` : ''}
+        
+        ${testResult.execution_details ? `
+        <div class="test-detail">
+            <h3>Execution Details</h3>
+            <pre>${typeof testResult.execution_details === 'object' ? 
+                JSON.stringify(testResult.execution_details, null, 2) : 
+                testResult.execution_details}</pre>
+        </div>
+        ` : ''}
         
         <div class="test-detail">
             <h3>Input Parameters</h3>

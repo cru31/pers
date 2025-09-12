@@ -311,6 +311,42 @@ bool WebGPUCommandEncoder::copyBufferToBuffer(const std::shared_ptr<IBuffer>& so
         return false;
     }
     
+    // Check WebGPU COPY_BUFFER_ALIGNMENT requirements (4 bytes)
+    const uint64_t COPY_BUFFER_ALIGNMENT = 4;
+    
+    // Check offset alignment - must be aligned, cannot adjust
+    if (copyDesc.srcOffset % COPY_BUFFER_ALIGNMENT != 0) {
+        LOG_ERROR("WebGPUCommandEncoder", 
+                  "Source offset must be 4-byte aligned. srcOffset=" + std::to_string(copyDesc.srcOffset));
+        return false;
+    }
+    
+    if (copyDesc.dstOffset % COPY_BUFFER_ALIGNMENT != 0) {
+        LOG_ERROR("WebGPUCommandEncoder", 
+                  "Destination offset must be 4-byte aligned. dstOffset=" + std::to_string(copyDesc.dstOffset));
+        return false;
+    }
+    
+    // Align size if needed - can adjust safely
+    uint64_t alignedSize = size;
+    if (size % COPY_BUFFER_ALIGNMENT != 0) {
+        uint64_t oldSize = size;
+        alignedSize = ((size + COPY_BUFFER_ALIGNMENT - 1) / COPY_BUFFER_ALIGNMENT) * COPY_BUFFER_ALIGNMENT;
+        
+        // Check if aligned size would exceed buffer bounds
+        if (copyDesc.srcOffset + alignedSize > source->getSize() ||
+            copyDesc.dstOffset + alignedSize > destination->getSize()) {
+            LOG_ERROR("WebGPUCommandEncoder", 
+                      "Cannot align copy size to " + std::to_string(alignedSize) + 
+                      " bytes - would exceed buffer bounds");
+            return false;
+        }
+        
+        LOG_WARNING("WebGPUCommandEncoder", 
+                    "Aligned copy size from " + std::to_string(oldSize) + 
+                    " to " + std::to_string(alignedSize) + " bytes for 4-byte alignment");
+    }
+    
     // Perform the copy
     wgpuCommandEncoderCopyBufferToBuffer(
         _encoder,
@@ -318,11 +354,11 @@ bool WebGPUCommandEncoder::copyBufferToBuffer(const std::shared_ptr<IBuffer>& so
         copyDesc.srcOffset,
         dstHandle.as<WGPUBuffer>(),
         copyDesc.dstOffset,
-        size
+        alignedSize
     );
     
     std::stringstream ss;
-    ss << "Copied " << size << " bytes from offset " << copyDesc.srcOffset << " to offset " << copyDesc.dstOffset;
+    ss << "Copied " << alignedSize << " bytes from offset " << copyDesc.srcOffset << " to offset " << copyDesc.dstOffset;
     LOG_DEBUG("WebGPUCommandEncoder", ss.str());
     
     return true;

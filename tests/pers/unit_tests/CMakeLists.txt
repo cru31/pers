@@ -12,7 +12,6 @@ add_executable(pers_unit_tests
     handlers/swapchain_builder_handler.cpp
     # Buffer handlers
     handlers/buffer/webgpu_buffer_handler.cpp
-    handlers/buffer/buffer_comprehensive_handler.cpp
     handlers/buffer/buffer_data_verification_handler.cpp
 )
 
