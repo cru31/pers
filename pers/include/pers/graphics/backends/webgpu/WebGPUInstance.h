@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pers/graphics/IInstance.h"
-#include "pers/graphics/backends/IGraphicsBackendFactory.h"  // For InstanceDesc
+#include "pers/graphics/backends/IGraphicsInstanceFactory.h"  // For InstanceDesc
 #include <webgpu/webgpu.h>
 
 namespace pers {
@@ -35,6 +35,11 @@ public:
      * @return Native surface handle or nullptr if failed
      */
     NativeSurfaceHandle createSurface(void* windowHandle) override;
+    
+    /**
+     * @brief Process pending events (for testing/headless environments)
+     */
+    void processEvents() override;
     
 private:
     WGPUInstance _instance = nullptr;

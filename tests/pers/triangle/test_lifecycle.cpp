@@ -1,6 +1,6 @@
 #include "PersTriangleApp.h"
 #include "GLFWWindow.h"
-#include "pers/graphics/backends/webgpu/WebGPUBackendFactory.h"
+#include "pers/graphics/backends/webgpu/WebGPUInstanceFactory.h"
 #include <iostream>
 #include <memory>
 
@@ -8,7 +8,7 @@ int main() {
     std::cout << "=== Lifecycle Test Start ===" << std::endl;
     
     // Create the graphics backend factory
-    auto factory = std::make_shared<pers::WebGPUBackendFactory>();
+    auto factory = std::make_shared<pers::WebGPUInstanceFactory>();
     std::cout << "[main] Created factory: " << factory->getBackendName() << std::endl;
     
     // Create the window

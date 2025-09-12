@@ -80,7 +80,7 @@ void SurfaceFramebuffer::destroy() {
 }
 
 void SurfaceFramebuffer::createDepthBuffer() {
-    auto factory = _device->getResourceFactory();
+    const auto& factory = _device->getResourceFactory();
     if (!factory) {
         LOG_ERROR("SurfaceFramebuffer", "Failed to get resource factory");
         return;

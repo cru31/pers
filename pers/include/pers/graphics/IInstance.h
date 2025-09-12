@@ -107,6 +107,17 @@ public:
      * @return Native surface handle or nullptr if failed
      */
     virtual NativeSurfaceHandle createSurface(void* windowHandle) = 0;
+    
+    /**
+     * @brief Process pending events (for testing/headless environments)
+     * 
+     * In headless/testing environments, WebGPU callbacks don't fire automatically.
+     * This method processes pending events to trigger callbacks.
+     * 
+     * @note This is primarily for testing. Production code with swapchain/present
+     *       typically doesn't need explicit event processing.
+     */
+    virtual void processEvents() = 0;
 };
 
 } // namespace pers

@@ -10,6 +10,10 @@ add_executable(pers_unit_tests
     handlers/request_adapter_handler.cpp
     handlers/device_creation_handler.cpp
     handlers/swapchain_builder_handler.cpp
+    # Buffer handlers
+    handlers/buffer/webgpu_buffer_handler.cpp
+    handlers/buffer/buffer_comprehensive_handler.cpp
+    handlers/buffer/buffer_data_verification_handler.cpp
 )
 
 # Find rapidjson
@@ -34,7 +38,7 @@ target_include_directories(pers_unit_tests PRIVATE
 # Define paths as compile definitions
 target_compile_definitions(pers_unit_tests PRIVATE
     WEB_SERVER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/web"
-    TEST_CASES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_cases/set_02"
+    TEST_CASES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_cases/set_buffer_creation_01"
 )
 
 # Include the centralized copy function

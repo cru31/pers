@@ -126,7 +126,7 @@ CompositeAlphaMode SwapChainBuilderNegotiationHandler::stringToAlphaMode(const s
     }
 
 SwapChainBuilderNegotiationHandler::SwapChainBuilderNegotiationHandler()
-    : _factory(std::make_shared<WebGPUBackendFactory>()) {
+    : _factory(std::make_shared<WebGPUInstanceFactory>()) {
 }
 
 SwapChainBuilderNegotiationHandler::~SwapChainBuilderNegotiationHandler() {
@@ -231,7 +231,7 @@ TestResult SwapChainBuilderNegotiationHandler::execute(const TestVariation& vari
         }
         
         // Query real surface capabilities from the SwapChain
-        SurfaceCapabilities caps = _swapChain->querySurfaceCapabilities(_physicalDevice);
+        SurfaceCapabilities caps = _swapChain->querySurfaceCapabilities();
         
         // Process window events to keep window responsive
         glfwPollEvents();

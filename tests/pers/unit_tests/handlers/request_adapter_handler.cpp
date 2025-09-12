@@ -1,6 +1,6 @@
 #include "request_adapter_handler.h"
 #include <pers/graphics/IPhysicalDevice.h>
-#include <pers/graphics/backends/IGraphicsBackendFactory.h>
+#include <pers/graphics/backends/IGraphicsInstanceFactory.h>
 
 namespace pers::tests {
 
@@ -18,7 +18,7 @@ bool RequestAdapterHandler::initializeInstance() {
     }
 
 RequestAdapterHandler::RequestAdapterHandler() 
-    : _factory(std::make_shared<WebGPUBackendFactory>()) {
+    : _factory(std::make_shared<WebGPUInstanceFactory>()) {
 }
 
 std::string RequestAdapterHandler::getTestType() const {

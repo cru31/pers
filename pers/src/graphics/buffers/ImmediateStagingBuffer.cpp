@@ -1,6 +1,8 @@
 #include "pers/graphics/buffers/ImmediateStagingBuffer.h"
 #include "pers/graphics/buffers/DeviceBuffer.h"
 #include "pers/graphics/ICommandEncoder.h"
+#include "pers/graphics/ILogicalDevice.h"
+#include "pers/graphics/IResourceFactory.h"
 #include "pers/graphics/GraphicsTypes.h"
 #include "pers/utils/Logger.h"
 #include <cstring>
@@ -10,21 +12,41 @@
 
 namespace pers {
 
-ImmediateStagingBuffer::ImmediateStagingBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory)
-    : _desc(desc)
+ImmediateStagingBuffer::ImmediateStagingBuffer()
+    : _desc()
     , _mappedData(nullptr)
     , _finalized(false)
-    , _bytesWritten(0) {
+    , _bytesWritten(0)
+    , _created(false) {
+}
+
+ImmediateStagingBuffer::~ImmediateStagingBuffer() {
+    destroy();
+}
+
+bool ImmediateStagingBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device) {
+    if (_created) {
+        LOG_ERROR("ImmediateStagingBuffer", "Buffer already created");
+        return false;
+    }
     
     if (!desc.isValid()) {
         LOG_ERROR("ImmediateStagingBuffer", "Invalid buffer description");
-        return;
+        return false;
     }
     
-    if (!factory) {
-        LOG_ERROR("ImmediateStagingBuffer", "Factory is null");
-        return;
+    if (!device) {
+        LOG_ERROR("ImmediateStagingBuffer", "Device is null");
+        return false;
     }
+    
+    const auto& resourceFactory = device->getResourceFactory();
+    if (!resourceFactory) {
+        LOG_ERROR("ImmediateStagingBuffer", "Failed to get resource factory from device");
+        return false;
+    }
+    
+    _desc = desc;
     
     // Force immediate mapping configuration
     BufferDesc stagingDesc = desc;
@@ -35,29 +57,57 @@ ImmediateStagingBuffer::ImmediateStagingBuffer(const BufferDesc& desc, const std
         stagingDesc.memoryLocation = MemoryLocation::HostVisible;
     }
     
-    _buffer = factory->createMappableBuffer(stagingDesc);
+    _buffer = resourceFactory->createMappableBuffer(stagingDesc);
     if (!_buffer) {
         LOG_ERROR("ImmediateStagingBuffer", "Failed to create underlying buffer");
-        return;
+        return false;
     }
     
     _mappedData = _buffer->getMappedData();
     if (!_mappedData) {
         LOG_ERROR("ImmediateStagingBuffer", "Failed to get mapped data");
+        _buffer.reset();
+        return false;
     }
+    
+    _created = true;
+    _finalized = false;
+    _bytesWritten = 0;
     
     std::stringstream ss;
     ss << "Created staging buffer '" << _desc.debugName << "' size=" << _desc.size << " mapped=true";
     LOG_DEBUG("ImmediateStagingBuffer", ss.str().c_str());
+    
+    return true;
 }
 
-ImmediateStagingBuffer::~ImmediateStagingBuffer() {
-    if (!_finalized) {
+void ImmediateStagingBuffer::destroy() {
+
+    LOG_DEBUG("ImmediateStagingBuffer", "about to destroy immediate staging buffer");
+    if (!_created) {
+        return;
+    }
+    
+    if (!_finalized && _mappedData) {
+        // Only unmap if we still have mapped data (not already finalized)
         std::stringstream ss;
         ss << "Buffer '" << _desc.debugName << "' destroyed without being finalized";
         LOG_WARNING("ImmediateStagingBuffer", ss.str().c_str());
-        finalize();
+        
+        // Check if buffer is actually mapped before unmapping
+        if (_buffer && _buffer->isMapped()) {
+            _buffer->unmap();
+        }
     }
+    
+    _buffer.reset();
+    _mappedData = nullptr;
+    _finalized = false;
+    _bytesWritten = 0;
+    _created = false;
+    _desc = BufferDesc();
+    
+    LOG_DEBUG("ImmediateStagingBuffer", "Destroyed staging buffer");
 }
 
 ImmediateStagingBuffer::ImmediateStagingBuffer(ImmediateStagingBuffer&& other) noexcept
@@ -65,73 +115,56 @@ ImmediateStagingBuffer::ImmediateStagingBuffer(ImmediateStagingBuffer&& other) n
     , _desc(std::move(other._desc))
     , _mappedData(other._mappedData)
     , _finalized(other._finalized)
-    , _bytesWritten(other._bytesWritten) {
+    , _bytesWritten(other._bytesWritten)
+    , _created(other._created) {
     other._mappedData = nullptr;
-    other._finalized = true;
+    other._finalized = false;
     other._bytesWritten = 0;
+    other._created = false;
 }
 
 ImmediateStagingBuffer& ImmediateStagingBuffer::operator=(ImmediateStagingBuffer&& other) noexcept {
     if (this != &other) {
-        if (!_finalized) {
-            finalize();
-        }
+        destroy();
         
         _buffer = std::move(other._buffer);
         _desc = std::move(other._desc);
         _mappedData = other._mappedData;
         _finalized = other._finalized;
         _bytesWritten = other._bytesWritten;
+        _created = other._created;
         
         other._mappedData = nullptr;
-        other._finalized = true;
+        other._finalized = false;
         other._bytesWritten = 0;
+        other._created = false;
     }
     return *this;
 }
 
-void ImmediateStagingBuffer::writeBytes(const void* data, uint64_t size, uint64_t offset) {
-    if (_finalized) {
-        LOG_ERROR("ImmediateStagingBuffer", "Cannot write to finalized buffer");
-        return;
-    }
-    
-    if (!_mappedData) {
-        LOG_ERROR("ImmediateStagingBuffer", "Buffer is not mapped");
-        return;
-    }
-    
-    if (!data) {
-        LOG_ERROR("ImmediateStagingBuffer", "Source data is null");
-        return;
+uint64_t ImmediateStagingBuffer::writeBytes(const void* data, uint64_t size, uint64_t offset) {
+    if (!_created || _finalized || !_mappedData || !data) {
+        return 0;
     }
     
     if (offset + size > _desc.size) {
         std::stringstream ss;
-        ss << "Write exceeds buffer size: offset=" << offset << " + size=" << size << " > buffer_size=" << _desc.size;
+        ss << "Write would exceed buffer size (offset=" << offset << ", size=" << size << ", buffer=" << _desc.size << ")";
         LOG_ERROR("ImmediateStagingBuffer", ss.str().c_str());
-        return;
+        return 0;
     }
     
-    uint8_t* dst = static_cast<uint8_t*>(_mappedData) + offset;
-    std::memcpy(dst, data, size);
-    
+    std::memcpy(static_cast<char*>(_mappedData) + offset, data, size);
     _bytesWritten = std::max(_bytesWritten, offset + size);
-    
-    std::stringstream ss2;
-    ss2 << "Wrote " << size << " bytes at offset " << offset << " to buffer '" << _desc.debugName << "'";
-    LOG_DEBUG("ImmediateStagingBuffer", ss2.str().c_str());
+    return size;
 }
 
 void ImmediateStagingBuffer::finalize() {
-    if (_finalized) {
+    if (!_created || _finalized || !_buffer) {
         return;
     }
     
-    if (isMapped()) {
-        unmap();
-    }
-    
+    _buffer->unmap();
     _mappedData = nullptr;
     _finalized = true;
     
@@ -143,60 +176,43 @@ void ImmediateStagingBuffer::finalize() {
 bool ImmediateStagingBuffer::uploadTo(const std::shared_ptr<ICommandEncoder>& encoder, 
                                       const std::shared_ptr<DeviceBuffer>& target,
                                       const BufferCopyDesc& copyDesc) {
-    return uploadTo(encoder, std::static_pointer_cast<IBuffer>(target), copyDesc);
-}
-
-bool ImmediateStagingBuffer::uploadTo(const std::shared_ptr<ICommandEncoder>& encoder, 
-                                      const std::shared_ptr<IBuffer>& target,
-                                      const BufferCopyDesc& copyDesc) {
-    if (!encoder) {
-        LOG_ERROR("ImmediateStagingBuffer", "uploadTo: encoder is null");
-        return false;
-    }
-    
-    if (!target) {
-        LOG_ERROR("ImmediateStagingBuffer", "uploadTo: target is null");
-        return false;
-    }
-    
-    if (!isValid()) {
-        LOG_ERROR("ImmediateStagingBuffer", "uploadTo: source buffer not valid");
+    if (!_created) {
+        LOG_ERROR("ImmediateStagingBuffer", "Buffer not created");
         return false;
     }
     
     if (!_finalized) {
-        LOG_WARNING("ImmediateStagingBuffer", "Buffer not finalized, finalizing now");
         finalize();
     }
     
-    uint64_t size = copyDesc.size;
-    if (size == BufferCopyDesc::WHOLE_SIZE) {
-        size = std::min(_bytesWritten - copyDesc.srcOffset, 
-                       target->getSize() - copyDesc.dstOffset);
+    if (!encoder || !target || !_buffer) {
+        return false;
     }
     
-    if (size == 0) {
-        LOG_WARNING("ImmediateStagingBuffer", "Nothing to upload (size=0)");
-        return true;
+    BufferCopyDesc actualDesc = copyDesc;
+    if (actualDesc.size == BufferCopyDesc::WHOLE_SIZE) {
+        actualDesc.size = std::min(_bytesWritten, _desc.size);
     }
     
-    // ImmediateStagingBuffer to DeviceBuffer upload
-    auto deviceTarget = std::dynamic_pointer_cast<DeviceBuffer>(target);
-    if (deviceTarget) {
-        bool result = encoder->uploadToDeviceBuffer(
-            std::static_pointer_cast<ImmediateStagingBuffer>(shared_from_this()),
-            deviceTarget,
-            copyDesc);
-        if (result) {
-            std::stringstream ss;
-            ss << "Uploaded " << size << " bytes from '" << _desc.debugName << "' to target";
-            LOG_DEBUG("ImmediateStagingBuffer", ss.str().c_str());
-        }
-        return result;
+    encoder->uploadToDeviceBuffer(std::dynamic_pointer_cast<ImmediateStagingBuffer>(shared_from_this()), target, actualDesc);
+    return true;
+}
+
+bool ImmediateStagingBuffer::uploadTo(const std::shared_ptr<ICommandEncoder>& encoder,
+                                      const std::shared_ptr<IBuffer>& target,
+                                      const BufferCopyDesc& copyDesc) {
+    if (!_created) {
+        LOG_ERROR("ImmediateStagingBuffer", "Buffer not created");
+        return false;
     }
     
-    LOG_ERROR("ImmediateStagingBuffer", "uploadTo: target is not a DeviceBuffer");
-    return false;
+    auto deviceBuffer = std::dynamic_pointer_cast<DeviceBuffer>(target);
+    if (!deviceBuffer) {
+        LOG_ERROR("ImmediateStagingBuffer", "Target is not a device buffer");
+        return false;
+    }
+    
+    return uploadTo(encoder, deviceBuffer, copyDesc);
 }
 
 bool ImmediateStagingBuffer::isFinalized() const {
@@ -207,46 +223,41 @@ uint64_t ImmediateStagingBuffer::getBytesWritten() const {
     return _bytesWritten;
 }
 
-const std::string& ImmediateStagingBuffer::getDebugName() const {
-    return _desc.debugName;
-}
-
-BufferState ImmediateStagingBuffer::getState() const {
-    if (_finalized) {
-        return BufferState::Ready;
-    } else if (_mappedData) {
-        return BufferState::Mapped;
-    } else {
-        return BufferState::Uninitialized;
-    }
-}
-
-MemoryLocation ImmediateStagingBuffer::getMemoryLocation() const {
-    return _desc.memoryLocation;
-}
-
-AccessPattern ImmediateStagingBuffer::getAccessPattern() const {
-    return _desc.accessPattern;
-}
-
-// IBuffer interface - delegate to internal buffer
 uint64_t ImmediateStagingBuffer::getSize() const {
-    return _buffer ? _buffer->getSize() : 0;
+    return _created && _buffer ? _buffer->getSize() : 0;
 }
 
 BufferUsage ImmediateStagingBuffer::getUsage() const {
-    return _buffer ? _buffer->getUsage() : BufferUsage::None;
+    return _created && _buffer ? _buffer->getUsage() : BufferUsage::None;
+}
+
+const std::string& ImmediateStagingBuffer::getDebugName() const {
+    static const std::string empty;
+    return _created ? _desc.debugName : empty;
 }
 
 NativeBufferHandle ImmediateStagingBuffer::getNativeHandle() const {
-    return _buffer ? _buffer->getNativeHandle() : NativeBufferHandle::fromBackend(nullptr);
+    return _created && _buffer ? _buffer->getNativeHandle() : NativeBufferHandle{};
 }
 
 bool ImmediateStagingBuffer::isValid() const {
-    return _buffer && _buffer->isValid();
+    return _created && _buffer && _buffer->isValid();
 }
 
-// IMappableBuffer interface - delegate to internal buffer
+BufferState ImmediateStagingBuffer::getState() const {
+    if (!_created || !_buffer) return BufferState::Uninitialized;
+    if (!_finalized) return BufferState::Mapped;
+    return BufferState::Ready;
+}
+
+MemoryLocation ImmediateStagingBuffer::getMemoryLocation() const {
+    return _created && _buffer ? _buffer->getMemoryLocation() : MemoryLocation::Auto;
+}
+
+AccessPattern ImmediateStagingBuffer::getAccessPattern() const {
+    return AccessPattern::Static;
+}
+
 void* ImmediateStagingBuffer::getMappedData() {
     return _mappedData;
 }
@@ -256,38 +267,39 @@ const void* ImmediateStagingBuffer::getMappedData() const {
 }
 
 std::future<MappedData> ImmediateStagingBuffer::mapAsync(MapMode mode, const BufferMapRange& range) {
-    if (!_buffer) {
-        std::promise<MappedData> promise;
+    std::promise<MappedData> promise;
+    
+    if (!_created || _finalized) {
         promise.set_value(MappedData{nullptr, 0, nullptr});
-        return promise.get_future();
+    } else if (_mappedData) {
+        promise.set_value(MappedData{_mappedData, _desc.size, nullptr});
+    } else {
+        promise.set_value(MappedData{nullptr, 0, nullptr});
     }
-    return _buffer->mapAsync(mode, range);
+    
+    return promise.get_future();
 }
 
 void ImmediateStagingBuffer::unmap() {
-    if (_buffer) {
-        _buffer->unmap();
+    if (_created && !_finalized) {
+        finalize();
     }
 }
 
 bool ImmediateStagingBuffer::isMapped() const {
-    return _buffer ? _buffer->isMapped() : false;
+    return _created && !_finalized && _mappedData != nullptr;
 }
 
 bool ImmediateStagingBuffer::isMapPending() const {
-    return _buffer ? _buffer->isMapPending() : false;
+    return false;
 }
 
 void ImmediateStagingBuffer::flushMappedRange(uint64_t offset, uint64_t size) {
-    if (_buffer) {
-        _buffer->flushMappedRange(offset, size);
-    }
+    // No-op for immediate buffers
 }
 
 void ImmediateStagingBuffer::invalidateMappedRange(uint64_t offset, uint64_t size) {
-    if (_buffer) {
-        _buffer->invalidateMappedRange(offset, size);
-    }
+    // No-op for immediate buffers
 }
 
 } // namespace pers

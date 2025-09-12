@@ -49,9 +49,9 @@ struct InstanceDesc {
  * Each graphics backend implements this interface.
  * The factory is responsible for creating backend-specific instances.
  */
-class IGraphicsBackendFactory {
+class IGraphicsInstanceFactory {
 public:
-    virtual ~IGraphicsBackendFactory() = default;
+    virtual ~IGraphicsInstanceFactory() = default;
     
     /**
      * @brief Create a graphics instance

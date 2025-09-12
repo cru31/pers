@@ -1,6 +1,7 @@
 #include "pers/graphics/backends/webgpu/WebGPUResourceFactory.h"
 #include "pers/graphics/backends/webgpu/buffers/WebGPUBuffer.h"
 #include "pers/graphics/backends/webgpu/WebGPUTexture.h"
+#include "pers/graphics/backends/webgpu/buffers/WebGPUMappableBuffer.h"
 #include "pers/graphics/backends/webgpu/WebGPUTextureView.h"
 #include "pers/graphics/backends/webgpu/WebGPUShaderModule.h"
 #include "pers/graphics/backends/webgpu/WebGPURenderPipeline.h"
@@ -24,7 +25,7 @@ WebGPUResourceFactory::~WebGPUResourceFactory() {
     // No need to release device, shared_ptr handles it
 }
 
-std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& desc) {
+std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& desc) const {
     auto device = _logicalDevice.lock();
     if (!device) {
         LOG_ERROR("WebGPUResourceFactory",
@@ -43,7 +44,7 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& d
     return std::make_shared<WebGPUBuffer>(wgpuDevice, desc);
 }
 
-std::shared_ptr<ITexture> WebGPUResourceFactory::createTexture(const TextureDesc& desc) {
+std::shared_ptr<ITexture> WebGPUResourceFactory::createTexture(const TextureDesc& desc) const {
     auto device = _logicalDevice.lock();
     if (!device) {
         LOG_ERROR("WebGPUResourceFactory", "Cannot create texture without device");
@@ -84,7 +85,7 @@ std::shared_ptr<ITexture> WebGPUResourceFactory::createTexture(const TextureDesc
 
 std::shared_ptr<ITextureView> WebGPUResourceFactory::createTextureView(
     const std::shared_ptr<ITexture>& texture,
-    const TextureViewDesc& desc) {
+    const TextureViewDesc& desc) const {
     if (!texture) {
         LOG_ERROR("WebGPUResourceFactory", "Cannot create texture view from null texture");
         return nullptr;
@@ -126,13 +127,13 @@ std::shared_ptr<ITextureView> WebGPUResourceFactory::createTextureView(
     );
 }
 
-std::shared_ptr<ISampler> WebGPUResourceFactory::createSampler(const SamplerDesc& desc) {
+std::shared_ptr<ISampler> WebGPUResourceFactory::createSampler(const SamplerDesc& desc) const {
     TODO_OR_DIE("WebGPUResourceFactory::createSampler", 
                    "Implement WebGPUSampler");
     return nullptr;
 }
 
-std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const ShaderModuleDesc& desc) {
+std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const ShaderModuleDesc& desc) const {
     auto device = _logicalDevice.lock();
     if (!device) {
         LOG_ERROR("WebGPUResourceFactory",
@@ -155,7 +156,7 @@ std::shared_ptr<IShaderModule> WebGPUResourceFactory::createShaderModule(const S
     return shader;
 }
 
-std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(const RenderPipelineDesc& desc) {
+std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(const RenderPipelineDesc& desc) const {
     auto device = _logicalDevice.lock();
     if (!device) {
         LOG_ERROR("WebGPUResourceFactory",
@@ -170,7 +171,7 @@ std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(con
 std::shared_ptr<IBuffer> WebGPUResourceFactory::createInitializableDeviceBuffer(
     const BufferDesc& desc,
     const void* initialData,
-    size_t dataSize) {
+    size_t dataSize) const {
     
     auto device = _logicalDevice.lock();
     if (!device) {
@@ -217,6 +218,26 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createInitializableDeviceBuffer(
     }
     
     return buffer;
+}
+
+std::shared_ptr<IMappableBuffer> WebGPUResourceFactory::createMappableBuffer(const BufferDesc& desc) const {
+
+    auto device = _logicalDevice.lock();
+    if (!device) {
+        LOG_ERROR("WebGPUResourceFactory",
+            "Cannot create mappable buffer without device");
+        return nullptr;
+    }
+    
+    // Validate buffer size - WebGPU requires size > 0
+    if (desc.size == 0) {
+        LOG_WARNING("WebGPUResourceFactory",
+            "Cannot create mappable buffer with size 0 - WebGPU requires size > 0");
+        return nullptr;
+    }
+    
+    WGPUDevice wgpuDevice = device->getNativeDeviceHandle().as<WGPUDevice>();
+    return std::make_shared<WebGPUMappableBuffer>(wgpuDevice, desc);
 }
 
 } // namespace pers

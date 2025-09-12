@@ -2,12 +2,13 @@
 
 #include <memory>
 #include "pers/graphics/buffers/IMappableBuffer.h"
-#include "pers/graphics/buffers/IBufferFactory.h"
+
 
 namespace pers {
 
 class ICommandEncoder;
 class DeviceBuffer;
+class ILogicalDevice;
 
 /**
  * Staging buffer with immediate CPU access (mappedAtCreation=true)
@@ -15,8 +16,20 @@ class DeviceBuffer;
  */
 class ImmediateStagingBuffer final : public IMappableBuffer, public std::enable_shared_from_this<ImmediateStagingBuffer> {
 public:
-    ImmediateStagingBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory);
+    ImmediateStagingBuffer();
     ~ImmediateStagingBuffer() override;
+    /**
+     * Create and initialize the staging buffer
+     * @param desc Buffer description
+     * @param device Logical device to create resources
+     * @return true if creation succeeded
+     */
+    bool create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device);
+
+    /**
+     * Destroy the staging buffer and release resources
+     */
+    void destroy();
     
     // No copy
     ImmediateStagingBuffer(const ImmediateStagingBuffer&) = delete;
@@ -32,7 +45,7 @@ public:
     template<typename T>
     void write(const T* data, size_t count, size_t offsetElements = 0);
     
-    void writeBytes(const void* data, uint64_t size, uint64_t offset = 0);
+    uint64_t writeBytes(const void* data, uint64_t size, uint64_t offset = 0);
     
     /**
      * Finalize buffer (unmap and prepare for GPU transfer)
@@ -83,11 +96,12 @@ public:
     void invalidateMappedRange(uint64_t offset, uint64_t size) override;
     
 private:
-    std::unique_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
+    std::shared_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
     BufferDesc _desc;
     void* _mappedData;
     bool _finalized;
     uint64_t _bytesWritten;
+    bool _created;
 };
 
 // Template implementation

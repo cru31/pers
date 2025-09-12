@@ -15,18 +15,19 @@ public:
     ~WebGPUResourceFactory() override;
     
     // IResourceFactory interface
-    std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) override;
+    std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) const override;
     std::shared_ptr<IBuffer> createInitializableDeviceBuffer(
         const BufferDesc& desc,
         const void* initialData,
-        size_t dataSize) override;
-    std::shared_ptr<ITexture> createTexture(const TextureDesc& desc) override;
+        size_t dataSize) const override;
+    std::shared_ptr<ITexture> createTexture(const TextureDesc& desc) const override;
     std::shared_ptr<ITextureView> createTextureView(
         const std::shared_ptr<ITexture>& texture,
-        const TextureViewDesc& desc) override;
-    std::shared_ptr<ISampler> createSampler(const SamplerDesc& desc) override;
-    std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc) override;
-    std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) override;
+        const TextureViewDesc& desc) const override;
+    std::shared_ptr<ISampler> createSampler(const SamplerDesc& desc) const override;
+    std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc) const override;
+    std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) const override;
+    std::shared_ptr<IMappableBuffer> createMappableBuffer(const BufferDesc& desc) const override;
     
     
 private:

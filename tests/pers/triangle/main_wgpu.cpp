@@ -180,9 +180,9 @@ int main() {
     // Create WebGPU instance
     // [PERS V2 CALL STACK]
     // Application::Initialize()
-    // └─> auto factory = pers::renderer::CreateWebGPUBackendFactory()
+    // └─> auto factory = pers::renderer::CreateWebGPUInstanceFactory()
     // └─> factory->CreateInstance(InstanceDescriptor{.enableValidation = true})
-    //     └─> WebGPUBackendFactory::CreateInstance(const InstanceDescriptor& desc)
+    //     └─> WebGPUInstanceFactory::CreateInstance(const InstanceDescriptor& desc)
     //         └─> WGPUInstanceDescriptor wgpuDesc = {};
     //         └─> // Setup validation if desc.enableValidation
     //         └─> WGPUInstance instance = wgpuCreateInstance(&wgpuDesc)

@@ -2,11 +2,11 @@
 
 #include <memory>
 #include "pers/graphics/buffers/IBuffer.h"
-#include "pers/graphics/buffers/IBufferFactory.h"
 
 namespace pers {
 
 class ICommandEncoder;
+class ILogicalDevice;
 
 /**
  * GPU-only buffer for maximum performance
@@ -14,8 +14,21 @@ class ICommandEncoder;
  */
 class DeviceBuffer final : public IBuffer, public std::enable_shared_from_this<DeviceBuffer> {
 public:
-    DeviceBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory);
+    DeviceBuffer();
     ~DeviceBuffer() override;
+    
+    /**
+     * Create and initialize the device buffer
+     * @param desc Buffer description
+     * @param device Logical device to create resources
+     * @return true if creation succeeded
+     */
+    bool create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device);
+    
+    /**
+     * Destroy the device buffer and release resources
+     */
+    void destroy();
     
     // No copy
     DeviceBuffer(const DeviceBuffer&) = delete;
@@ -48,10 +61,11 @@ public:
     AccessPattern getAccessPattern() const override;
     
 private:
-    std::unique_ptr<IBuffer> _buffer;  // Internal WebGPU buffer
+    std::shared_ptr<IBuffer> _buffer;  // Internal WebGPU buffer
     BufferDesc _desc;
     uint64_t _totalBytesTransferred;
     uint32_t _transferCount;
+    bool _created;
 };
 
 } // namespace pers

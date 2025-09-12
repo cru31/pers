@@ -1,66 +1,25 @@
 #include "pers/graphics/buffers/DynamicBuffer.h"
-#include "pers/graphics/buffers/IBufferFactory.h"
 #include "pers/utils/Logger.h"
-#include <sstream>
 
 namespace pers {
 
-DynamicBuffer::DynamicBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory, 
-                           uint32_t frameCount)
-    : _desc(desc)
-    , _currentFrame(0)
-    , _frameCount(frameCount) {
-    
-    if (!factory) {
-        LOG_ERROR("DynamicBuffer", "Factory is null");
-        return;
-    }
-    
-    if (frameCount == 0 || frameCount > 10) {
-        LOG_ERROR("DynamicBuffer", "Invalid frame count (must be 1-10)");
-        return;
-    }
-    
-    // Create ring buffer instances
-    _buffers.reserve(frameCount);
-    _mapped.resize(frameCount, false);
-    
-    BufferDesc bufferDesc = desc;
-    bufferDesc.usage |= BufferUsage::MapWrite | BufferUsage::CopySrc;
-    bufferDesc.mappedAtCreation = false;
-    bufferDesc.accessPattern = AccessPattern::Dynamic;
-    
-    if (bufferDesc.memoryLocation == MemoryLocation::Auto) {
-        bufferDesc.memoryLocation = MemoryLocation::HostVisible;
-    }
-    
-    for (uint32_t i = 0; i < frameCount; ++i) {
-        std::stringstream ss;
-        ss << desc.debugName << "_Frame" << i;
-        bufferDesc.debugName = ss.str();
-        
-        auto buffer = factory->createMappableBuffer(bufferDesc);
-        if (!buffer) {
-            LOG_ERROR("DynamicBuffer", "Failed to create buffer for frame");
-            _buffers.clear();
-            return;
-        }
-        
-        _buffers.push_back(std::move(buffer));
-    }
-    
-    std::stringstream ss;
-    ss << "Created dynamic buffer '" << desc.debugName 
-       << "' with " << frameCount << " frames, size=" << desc.size;
-    LOG_DEBUG("DynamicBuffer", ss.str().c_str());
+DynamicBuffer::DynamicBuffer() 
+    : _currentFrame(0)
+    , _frameCount(0)
+    , _created(false) {
 }
 
 DynamicBuffer::~DynamicBuffer() {
-    for (size_t i = 0; i < _buffers.size(); ++i) {
-        if (_mapped[i] && _buffers[i]) {
-            _buffers[i]->unmap();
-        }
-    }
+    TODO_OR_DIE("DynamicBuffer", "Implement destructor");
+}
+
+bool DynamicBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device, uint32_t frameCount) {
+    TODO_OR_DIE("DynamicBuffer", "Implement create method");
+    return false;
+}
+
+void DynamicBuffer::destroy() {
+    TODO_OR_DIE("DynamicBuffer", "Implement destroy method");
 }
 
 DynamicBuffer::DynamicBuffer(DynamicBuffer&& other) noexcept
@@ -68,93 +27,45 @@ DynamicBuffer::DynamicBuffer(DynamicBuffer&& other) noexcept
     , _buffers(std::move(other._buffers))
     , _currentFrame(other._currentFrame.load())
     , _frameCount(other._frameCount)
-    , _mapped(std::move(other._mapped)) {
-    
-    other._frameCount = 0;
-    other._currentFrame = 0;
+    , _mapped(std::move(other._mapped))
+    , _created(other._created) {
+    other._created = false;
 }
 
 DynamicBuffer& DynamicBuffer::operator=(DynamicBuffer&& other) noexcept {
     if (this != &other) {
-        // Unmap any mapped buffers
-        for (size_t i = 0; i < _buffers.size(); ++i) {
-            if (_mapped[i] && _buffers[i]) {
-                _buffers[i]->unmap();
-            }
-        }
-        
+        destroy();
         _desc = std::move(other._desc);
         _buffers = std::move(other._buffers);
         _currentFrame = other._currentFrame.load();
         _frameCount = other._frameCount;
         _mapped = std::move(other._mapped);
-        
-        other._frameCount = 0;
-        other._currentFrame = 0;
+        _created = other._created;
+        other._created = false;
     }
     return *this;
 }
 
 DynamicBuffer::UpdateHandle DynamicBuffer::beginUpdate() {
-    uint32_t frameIndex = _currentFrame % _frameCount;
-    
-    if (frameIndex >= _buffers.size() || !_buffers[frameIndex]) {
-        LOG_ERROR("DynamicBuffer", "Invalid frame buffer");
-        return UpdateHandle{nullptr, 0, frameIndex};
-    }
-    
-    auto& buffer = _buffers[frameIndex];
-    
-    // Unmap if previously mapped
-    if (_mapped[frameIndex]) {
-        buffer->unmap();
-        _mapped[frameIndex] = false;
-    }
-    
-    // Map for writing
-    auto mappedData = buffer->mapAsync(MapMode::Write).get();
-    
-    if (!mappedData.data()) {
-        LOG_ERROR("DynamicBuffer", "Failed to map buffer for update");
-        return UpdateHandle{nullptr, 0, frameIndex};
-    }
-    
-    _mapped[frameIndex] = true;
-    
-    return UpdateHandle{
-        mappedData.data(),
-        mappedData.size(),
-        frameIndex
-    };
+    TODO_OR_DIE("DynamicBuffer", "Implement beginUpdate");
+    return UpdateHandle{nullptr, 0, 0};
 }
 
 void DynamicBuffer::endUpdate(const UpdateHandle& handle) {
-    if (handle.frameIndex >= _frameCount || handle.frameIndex >= _buffers.size()) {
-        return;
-    }
-    
-    if (_mapped[handle.frameIndex] && _buffers[handle.frameIndex]) {
-        _buffers[handle.frameIndex]->unmap();
-        _mapped[handle.frameIndex] = false;
-    }
+    TODO_OR_DIE("DynamicBuffer", "Implement endUpdate");
 }
 
 std::shared_ptr<IBuffer> DynamicBuffer::getCurrentFrameBuffer() const {
-    uint32_t frameIndex = _currentFrame % _frameCount;
-    
-    if (frameIndex < _buffers.size()) {
-        return _buffers[frameIndex];
-    }
-    
+    TODO_OR_DIE("DynamicBuffer", "Implement getCurrentFrameBuffer");
     return nullptr;
 }
 
 uint32_t DynamicBuffer::getCurrentFrameIndex() const {
-    return _currentFrame % _frameCount;
+    return _currentFrame.load();
 }
 
 void DynamicBuffer::nextFrame() {
-    _currentFrame++;
+    _currentFrame = (_currentFrame + 1) % _frameCount;
 }
 
 uint64_t DynamicBuffer::getSize() const {
@@ -170,22 +81,21 @@ const std::string& DynamicBuffer::getDebugName() const {
 }
 
 NativeBufferHandle DynamicBuffer::getNativeHandle() const {
-    auto currentBuffer = getCurrentFrameBuffer();
-    return currentBuffer ? currentBuffer->getNativeHandle() : NativeBufferHandle::fromBackend(nullptr);
+    TODO_OR_DIE("DynamicBuffer", "Implement getNativeHandle");
+    return NativeBufferHandle{};
 }
 
 bool DynamicBuffer::isValid() const {
-    return !_buffers.empty() && _buffers[0] && _buffers[0]->isValid();
+    return _created && !_buffers.empty();
 }
 
 BufferState DynamicBuffer::getState() const {
-    uint32_t frameIndex = _currentFrame % _frameCount;
-    
-    if (frameIndex < _buffers.size() && _buffers[frameIndex]) {
-        return _buffers[frameIndex]->getState();
+    if (!_created) return BufferState::Uninitialized;
+    uint32_t idx = _currentFrame.load();
+    if (idx < _mapped.size() && _mapped[idx]) {
+        return BufferState::Mapped;
     }
-    
-    return BufferState::Uninitialized;
+    return BufferState::Ready;
 }
 
 MemoryLocation DynamicBuffer::getMemoryLocation() const {

@@ -335,19 +335,63 @@ if(NOT WGPU_NATIVE_AVAILABLE)
 endif()
 
 # Pers Engine Library Sources
-file(GLOB_RECURSE PERS_SOURCES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc
+# Pers Engine Library Sources - Explicitly listed for better CMake practice
+set(PERS_SOURCES
+    # Core
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/Application.cpp
+    
+    # Graphics - Main
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/GraphicsEnumStrings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/OffscreenFramebuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/RenderPassConfig.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/SurfaceFramebuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/SwapChainDescBuilder.cpp
+    
+    # Graphics - Buffers
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/BufferTypes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/DeferredStagingBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/DeviceBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/DynamicBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/ImmediateStagingBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/MappedData.cpp
+    
+    # Graphics - WebGPU Backend
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUCommandBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUCommandEncoder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUConverters.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUInstance.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUInstanceFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPULogicalDevice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUPhysicalDevice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUQueue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPURenderPassEncoder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPURenderPipeline.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUResourceFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUShaderModule.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUSwapChain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUTexture.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUTextureView.cpp
+    
+    # Graphics - WebGPU Backend Buffers
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/buffers/WebGPUBuffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/buffers/WebGPUMappableBuffer.cpp
+    
+    # Utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Logger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Mutex.cpp
 )
 
 # Add macOS-specific sources
 if(APPLE)
-    file(GLOB_RECURSE PERS_SOURCES_OBJC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.mm
+    set(PERS_SOURCES_OBJC
+        # Add .mm files here when they exist
+        # ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/macos/MacOSHelper.mm
     )
     list(APPEND PERS_SOURCES ${PERS_SOURCES_OBJC})
 endif()
 
+# Headers are still found via GLOB_RECURSE since they don't affect build behavior
+# But we could also list them explicitly if preferred
 file(GLOB_RECURSE PERS_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp

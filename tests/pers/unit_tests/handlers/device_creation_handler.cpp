@@ -24,7 +24,7 @@ bool DeviceCreationHandler::initializeAdapter() {
     }
 
 DeviceCreationHandler::DeviceCreationHandler() 
-    : _factory(std::make_shared<WebGPUBackendFactory>()) {
+    : _factory(std::make_shared<WebGPUInstanceFactory>()) {
 }
 
 std::string DeviceCreationHandler::getTestType() const {
@@ -397,7 +397,7 @@ TestResult DeviceCreationHandler::execute(const TestVariation& variation) {
             result.actualProperties["returnValue"] = std::string("not_null");
             
             // Check if resource factory is available
-            auto resourceFactory = device->getResourceFactory();
+            const auto& resourceFactory = device->getResourceFactory();
             result.actualProperties["resourceFactoryAvailable"] = (resourceFactory != nullptr);
             
             // Check if queue is available

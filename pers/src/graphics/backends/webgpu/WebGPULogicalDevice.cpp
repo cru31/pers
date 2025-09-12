@@ -59,11 +59,11 @@ std::shared_ptr<IQueue> WebGPULogicalDevice::getQueue() const {
     return _defaultQueue;
 }
 
-std::shared_ptr<IResourceFactory> WebGPULogicalDevice::getResourceFactory() const {
+const std::shared_ptr<IResourceFactory>& WebGPULogicalDevice::getResourceFactory() const {
     if (!_device) {
         LOG_ERROR("WebGPULogicalDevice",
             "Cannot create resource factory without device");
-        return nullptr;
+        static std::shared_ptr<IResourceFactory> nullFactory; return nullFactory;
     }
     
     // Create and cache resource factory on first access

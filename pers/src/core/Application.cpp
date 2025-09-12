@@ -1,7 +1,7 @@
 #include "pers/core/Application.h"
 #include "pers/core/IWindow.h"
 #include "pers/core/IWindowFactory.h"
-#include "pers/graphics/backends/IGraphicsBackendFactory.h"
+#include "pers/graphics/backends/IGraphicsInstanceFactory.h"
 #include "pers/graphics/IInstance.h"
 #include "pers/utils/Logger.h"
 #include <chrono>
@@ -14,7 +14,7 @@ namespace pers {
     }
 
     bool Application::initialize(const std::shared_ptr<IWindowFactory>& windowFactory,
-                                const std::shared_ptr<pers::IGraphicsBackendFactory>& graphicsFactory) {
+                                const std::shared_ptr<pers::IGraphicsInstanceFactory>& graphicsFactory) {
         LOG_INFO("Application", "=== Application Initialization ===");
 
         // Store factories

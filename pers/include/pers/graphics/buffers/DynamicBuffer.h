@@ -2,12 +2,13 @@
 
 #include "pers/graphics/buffers/IBuffer.h"
 #include "pers/graphics/buffers/IMappableBuffer.h"
-#include "pers/graphics/buffers/IBufferFactory.h"
 #include <memory>
 #include <atomic>
 #include <vector>
 
 namespace pers {
+
+class ILogicalDevice;
 
 /**
  * Ring buffer for per-frame dynamic data updates
@@ -23,9 +24,23 @@ public:
         uint32_t frameIndex;
     };
     
-    DynamicBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory, 
-                  uint32_t frameCount = DEFAULT_FRAME_COUNT);
+    DynamicBuffer();
     virtual ~DynamicBuffer();
+    
+    /**
+     * Create and initialize the dynamic buffer
+     * @param desc Buffer description
+     * @param device Logical device to create resources
+     * @param frameCount Number of frames to buffer (default 3)
+     * @return true if creation succeeded
+     */
+    bool create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device,
+                uint32_t frameCount = DEFAULT_FRAME_COUNT);
+    
+    /**
+     * Destroy the dynamic buffer and release resources
+     */
+    void destroy();
     
     DynamicBuffer(const DynamicBuffer&) = delete;
     DynamicBuffer& operator=(const DynamicBuffer&) = delete;
@@ -60,6 +75,7 @@ protected:
     std::atomic<uint32_t> _currentFrame;
     uint32_t _frameCount;
     std::vector<bool> _mapped;
+    bool _created;
 };
 
 } // namespace pers

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pers/graphics/buffers/IMappableBuffer.h"
-#include "pers/graphics/buffers/IBufferFactory.h"
+
 #include <memory>
 #include <future>
 
@@ -9,6 +9,7 @@ namespace pers {
 
 class ICommandEncoder;
 class DeviceBuffer;
+class ILogicalDevice;
 
 /**
  * Deferred mapping staging buffer for asynchronous CPU access
@@ -21,8 +22,20 @@ class DeviceBuffer;
  */
 class DeferredStagingBuffer final : public IMappableBuffer, public std::enable_shared_from_this<DeferredStagingBuffer> {
 public:
-    DeferredStagingBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory);
+    DeferredStagingBuffer();
     ~DeferredStagingBuffer() override;
+    /**
+     * Create and initialize the staging buffer
+     * @param desc Buffer description
+     * @param device Logical device to create resources
+     * @return true if creation succeeded
+     */
+    bool create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device);
+
+    /**
+     * Destroy the staging buffer and release resources
+     */
+    void destroy();
     
     // No copy
     DeferredStagingBuffer(const DeferredStagingBuffer&) = delete;
@@ -69,11 +82,12 @@ public:
                      const BufferCopyDesc& copyDesc = {});
     
 private:
-    std::unique_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
+    std::shared_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
     BufferDesc _desc;
     mutable MappedData _currentMapping;
     mutable std::future<MappedData> _mappingFuture;
     mutable bool _mappingPending;
+    bool _created;
 };
 
 // Template implementation

@@ -23,6 +23,7 @@ class IBindGroupLayout;
 class IBindGroup;
 class IPipelineLayout;
 class IFramebuffer;
+class IMappableBuffer;
 
 /**
  * @brief Texture view descriptor
@@ -72,7 +73,7 @@ public:
      * @param desc Buffer descriptor
      * @return Shared pointer to buffer or nullptr if failed
      */
-    virtual std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) = 0;
+    virtual std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) const = 0;
     /**
      * @brief Create a buffer with initial data written synchronously
      * Uses mappedAtCreation internally for efficient initialization
@@ -84,14 +85,14 @@ public:
     virtual std::shared_ptr<IBuffer> createInitializableDeviceBuffer(
         const BufferDesc& desc,
         const void* initialData,
-        size_t dataSize) = 0;
+        size_t dataSize) const = 0;
     
     /**
      * @brief Create a texture
      * @param desc Texture descriptor
      * @return Shared pointer to texture or nullptr if failed
      */
-    virtual std::shared_ptr<ITexture> createTexture(const TextureDesc& desc) = 0;
+    virtual std::shared_ptr<ITexture> createTexture(const TextureDesc& desc) const = 0;
     
     /**
      * @brief Create a texture view
@@ -101,28 +102,34 @@ public:
      */
     virtual std::shared_ptr<ITextureView> createTextureView(
         const std::shared_ptr<ITexture>& texture,
-        const TextureViewDesc& desc) = 0;
+        const TextureViewDesc& desc) const = 0;
     
     /**
      * @brief Create a sampler
      * @param desc Sampler descriptor
      * @return Shared pointer to sampler or nullptr if failed
      */
-    virtual std::shared_ptr<ISampler> createSampler(const SamplerDesc& desc) = 0;
+    virtual std::shared_ptr<ISampler> createSampler(const SamplerDesc& desc) const = 0;
     
     /**
      * @brief Create a shader module
      * @param desc Shader module descriptor
      * @return Shared pointer to shader module or nullptr if failed
      */
-    virtual std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc) = 0;
+    virtual std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc) const = 0;
     
     /**
      * @brief Create a render pipeline
      * @param desc Render pipeline descriptor
      * @return Shared pointer to render pipeline or nullptr if failed
      */
-    virtual std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) = 0;
+    virtual std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) const = 0;
+    /**
+     * @brief Create a mappable buffer for CPU-GPU data transfer
+     * @param desc Buffer descriptor
+     * @return Shared pointer to mappable buffer or nullptr if failed
+     */
+    virtual std::shared_ptr<IMappableBuffer> createMappableBuffer(const BufferDesc& desc) const = 0;
     
 };
 

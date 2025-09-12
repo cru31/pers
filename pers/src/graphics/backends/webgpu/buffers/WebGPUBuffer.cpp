@@ -90,10 +90,6 @@ WebGPUBuffer::WebGPUBuffer(WGPUDevice device, const BufferDesc& desc)
 
 WebGPUBuffer::~WebGPUBuffer() {
     if (_buffer) {
-        if (_mappedData) {
-            wgpuBufferUnmap(_buffer);
-            _mappedData = nullptr;
-        }
         wgpuBufferDestroy(_buffer);
         wgpuBufferRelease(_buffer);
         _buffer = nullptr;

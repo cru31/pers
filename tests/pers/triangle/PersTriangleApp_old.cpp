@@ -2,7 +2,7 @@
 #include "TriangleRenderer.h"
 #include "IWindow.h"
 #include "IWindowFactory.h"
-#include "pers/graphics/backends/IGraphicsBackendFactory.h"
+#include "pers/graphics/backends/IGraphicsInstanceFactory.h"
 #include "pers/graphics/IInstance.h"
 #include <iostream>
 #include <chrono>
@@ -14,7 +14,7 @@ PersTriangleApp::~PersTriangleApp() {
     cleanup();
 }
 
-bool PersTriangleApp::initialize(std::shared_ptr<IWindowFactory> windowFactory, std::shared_ptr<pers::IGraphicsBackendFactory> graphicsFactory) {
+bool PersTriangleApp::initialize(std::shared_ptr<IWindowFactory> windowFactory, std::shared_ptr<pers::IGraphicsInstanceFactory> graphicsFactory) {
     std::cout << "=== PERS RAL Triangle Example ===" << std::endl;
     
     // Store factories

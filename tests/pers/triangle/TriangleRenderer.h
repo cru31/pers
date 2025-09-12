@@ -9,7 +9,7 @@
 #include "pers/graphics/RenderPassConfig.h"
 
 namespace pers {
-    class IGraphicsBackendFactory;
+    class IGraphicsInstanceFactory;
     class IInstance;
     class IPhysicalDevice;
     class ILogicalDevice;

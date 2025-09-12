@@ -1,16 +1,16 @@
 #pragma once
 
-#include "pers/graphics/backends/IGraphicsBackendFactory.h"
+#include "pers/graphics/backends/IGraphicsInstanceFactory.h"
 
 namespace pers {
 
 /**
  * @brief WebGPU backend factory implementation
  */
-class WebGPUBackendFactory : public IGraphicsBackendFactory {
+class WebGPUInstanceFactory : public IGraphicsInstanceFactory {
 public:
-    WebGPUBackendFactory() = default;
-    ~WebGPUBackendFactory() override = default;
+    WebGPUInstanceFactory() = default;
+    ~WebGPUInstanceFactory() override = default;
     
     /**
      * @brief Create a WebGPU instance

@@ -1,6 +1,6 @@
 #include "PersTriangleApp.h"
 #include "GLFWWindowFactory.h"
-#include "pers/graphics/backends/webgpu/WebGPUBackendFactory.h"
+#include "pers/graphics/backends/webgpu/WebGPUInstanceFactory.h"
 #include <iostream>
 #include <memory>
 
@@ -9,7 +9,7 @@ int main() {
     auto windowFactory = std::make_shared<GLFWWindowFactory>();
     std::cout << "Using window system: " << windowFactory->getFactoryName() << std::endl;
     
-    auto graphicsFactory = std::make_shared<pers::WebGPUBackendFactory>();
+    auto graphicsFactory = std::make_shared<pers::WebGPUInstanceFactory>();
     std::cout << "Using graphics backend: " << graphicsFactory->getBackendName() << std::endl;
     
     // Create app and pass the factories

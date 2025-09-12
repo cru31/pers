@@ -1,6 +1,6 @@
 #include "pers/graphics/backends/webgpu/WebGPUInstance.h"
 #include "pers/graphics/backends/webgpu/WebGPUPhysicalDevice.h"
-#include "pers/graphics/backends/IGraphicsBackendFactory.h"
+#include "pers/graphics/backends/IGraphicsInstanceFactory.h"
 #include "pers/utils/Logger.h"
 #include "pers/core/platform/NativeWindowHandle.h"
 #include <webgpu/webgpu.h>
@@ -419,6 +419,12 @@ NativeSurfaceHandle WebGPUInstance::createSurface(void* windowHandle) {
     LOG_INFO("WebGPUInstance",
         "Surface created successfully");
     return NativeSurfaceHandle::fromBackend(surface);
+}
+
+void WebGPUInstance::processEvents() {
+    if (_instance) {
+        wgpuInstanceProcessEvents(_instance);
+    }
 }
 
 } // namespace pers

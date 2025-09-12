@@ -5,6 +5,7 @@
 #include <any>
 #include <vector>
 
+#include <iostream>
 namespace pers::tests {
 
 // Expected behavior for test validation
@@ -60,28 +61,79 @@ struct TestResult {
     std::vector<LogEntry> logMessages;  // Structured log messages
 };
 
-// Helper to get option value with type safety
+// Helper to parse size strings like "1MB", "64KB", etc.
+inline size_t parseSizeString(const std::string& sizeStr) {
+    size_t value = 0;
+    size_t multiplier = 1;
+    
+    // Try to find unit suffix
+    size_t numEnd = sizeStr.find_first_not_of("0123456789");
+    if (numEnd == std::string::npos) {
+        // Plain number, no suffix
+        return std::stoull(sizeStr);
+    }
+    
+    // Parse the numeric part
+    value = std::stoull(sizeStr.substr(0, numEnd));
+    
+    // Parse the unit suffix
+    std::string unit = sizeStr.substr(numEnd);
+    if (unit == "KB" || unit == "kb" || unit == "K" || unit == "k") {
+        multiplier = 1024;
+    } else if (unit == "MB" || unit == "mb" || unit == "M" || unit == "m") {
+        multiplier = 1024 * 1024;
+    } else if (unit == "GB" || unit == "gb" || unit == "G" || unit == "g") {
+        multiplier = 1024 * 1024 * 1024;
+    }
+    
+    return value * multiplier;
+}
+
+// Helper to get option value with type safety - NO TRY-CATCH!
 template<typename T>
 T getOption(const std::unordered_map<std::string, std::any>& options, 
             const std::string& key, 
             const T& defaultValue = T{}) {
     auto it = options.find(key);
-    if (it != options.end()) {
-        try {
-            return std::any_cast<T>(it->second);
-        } catch (const std::bad_any_cast&) {
-            // Try to convert if possible
-            if constexpr (std::is_same_v<T, std::string>) {
-                try {
-                    // Try to get as const char*
-                    return std::string(std::any_cast<const char*>(it->second));
-                } catch (...) {}
-            }
-            return defaultValue;
+    if (it == options.end()) {
+        return defaultValue;
+    }
+    
+    // Direct cast attempt - if it works, return immediately
+    if (it->second.type() == typeid(T)) {
+        return std::any_cast<T>(it->second);
+    }
+    
+    // Special handling for size_t when source is string
+    if constexpr (std::is_same_v<T, size_t>) {
+        if (it->second.type() == typeid(std::string)) {
+            const std::string& strValue = std::any_cast<const std::string&>(it->second);
+            return parseSizeString(strValue);
+        }
+        if (it->second.type() == typeid(const char*)) {
+            std::string strValue(std::any_cast<const char*>(it->second));
+            return parseSizeString(strValue);
+        }
+        // Try int conversion
+        if (it->second.type() == typeid(int)) {
+            return static_cast<size_t>(std::any_cast<int>(it->second));
         }
     }
+    
+    // Special handling for string
+    if constexpr (std::is_same_v<T, std::string>) {
+        if (it->second.type() == typeid(const char*)) {
+            return std::string(std::any_cast<const char*>(it->second));
+        }
+    }
+    
+    // If we cant convert, log error and return default
+    std::cerr << "[ERROR] getOption: Type mismatch for key " << key 
+              << ". Expected type: " << typeid(T).name() 
+              << ", Actual type: " << it->second.type().name() << std::endl;
     return defaultValue;
 }
+
 
 // Helper to check numeric conditions
 inline bool checkNumericCondition(const std::string& condition, double actualValue) {

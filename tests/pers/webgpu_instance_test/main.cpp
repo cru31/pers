@@ -2,8 +2,8 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <pers/graphics/backends/IGraphicsBackendFactory.h>
-#include <pers/graphics/backends/webgpu/WebGPUBackendFactory.h>
+#include <pers/graphics/backends/IGraphicsInstanceFactory.h>
+#include <pers/graphics/backends/webgpu/WebGPUInstanceFactory.h>
 
 struct TestCase {
     std::string name;
@@ -17,7 +17,7 @@ void runTest(const TestCase& test) {
     std::cout << "========================================" << std::endl;
     
     // Create factory
-    auto factory = std::make_shared<pers::WebGPUBackendFactory>();
+    auto factory = std::make_shared<pers::WebGPUInstanceFactory>();
     std::cout << "Backend: " << factory->getBackendName() << std::endl;
     
     // Log configuration

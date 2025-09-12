@@ -89,6 +89,8 @@ void printTestResult(const TestTypeDefinition& testType,
 #include "handlers/request_adapter_handler.h"  
 #include "handlers/device_creation_handler.h"
 #include "handlers/swapchain_builder_handler.h"
+#include "handlers/buffer/buffer_data_verification_handler.h"
+#include "handlers/buffer/webgpu_buffer_handler.h"
 
 void registerAllHandlers() {
     auto& registry = TestHandlerRegistry::Instance();
@@ -102,8 +104,12 @@ void registerAllHandlers() {
         std::make_shared<DeviceCreationHandler>());
     registry.registerHandler("SwapChain Builder Negotiation", 
         std::make_shared<SwapChainBuilderNegotiationHandler>());
-}
+    registry.registerHandler("Buffer Data Verification",
+        std::make_shared<BufferDataVerificationHandler>());
+    registry.registerHandler("WebGPUBuffer Test",
+        std::make_shared<WebGPUBufferHandler>());
 
+}
 int main(int argc, char* argv[]) {
     // Register all handlers at the start of main
     registerAllHandlers();

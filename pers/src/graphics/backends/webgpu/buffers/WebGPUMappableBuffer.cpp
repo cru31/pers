@@ -35,7 +35,7 @@ WebGPUMappableBuffer::WebGPUMappableBuffer(WGPUDevice device, const BufferDesc& 
 }
 
 WebGPUMappableBuffer::~WebGPUMappableBuffer() {
-    if (_isMapped && _impl) {
+    if (_isMapped.load() && _impl) {
         unmap();
     }
 }
@@ -150,24 +150,32 @@ std::future<MappedData> WebGPUMappableBuffer::mapAsync(MapMode mode, const Buffe
     context->offset = offset;
     context->size = size;
     
+    // Must get future before calling wgpuBufferMapAsync because the callback
+    // might run synchronously with WGPUCallbackMode_AllowSpontaneous and delete context
+    auto future = context->promise.get_future();
+    
     WGPUBufferMapCallbackInfo callbackInfo{};
     callbackInfo.nextInChain = nullptr;
-    callbackInfo.mode = WGPUCallbackMode_AllowProcessEvents;
+    callbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
     callbackInfo.callback = mapAsyncCallback;
     callbackInfo.userdata1 = context;
     callbackInfo.userdata2 = nullptr;
     
     wgpuBufferMapAsync(wgpuBuffer, mapMode, offset, size, callbackInfo);
     
-    return context->promise.get_future();
+    return future;
 }
 
 void WebGPUMappableBuffer::unmap() {
-    if (!_impl || !_impl->isValid()) {
-        return;
+    // Use atomic exchange to ensure unmap is only called once
+    bool wasMapped = _isMapped.exchange(false);
+    if (!wasMapped) {
+        return;  // Already unmapped
     }
     
-    if (!_isMapped) {
+    if (!_impl || !_impl->isValid()) {
+        _mappedData = nullptr;
+        _mappedRange = {0, 0};
         return;
     }
     
@@ -177,7 +185,6 @@ void WebGPUMappableBuffer::unmap() {
     }
     
     _mappedData = nullptr;
-    _isMapped = false;
     _mappedRange = {0, 0};
 }
 

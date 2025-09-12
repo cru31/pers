@@ -1,12 +1,12 @@
 #include "instance_creation_handler.h"
 #include <pers/graphics/IInstance.h>
-#include <pers/graphics/backends/IGraphicsBackendFactory.h>
+#include <pers/graphics/backends/IGraphicsInstanceFactory.h>
 #include <iostream>
 
 namespace pers::tests {
 
 InstanceCreationHandler::InstanceCreationHandler() 
-    : _factory(std::make_shared<WebGPUBackendFactory>()) {
+    : _factory(std::make_shared<WebGPUInstanceFactory>()) {
 }
 
 std::string InstanceCreationHandler::getTestType() const {

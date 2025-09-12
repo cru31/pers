@@ -1,6 +1,8 @@
 #include "pers/graphics/buffers/DeferredStagingBuffer.h"
 #include "pers/graphics/buffers/DeviceBuffer.h"
 #include "pers/graphics/ICommandEncoder.h"
+#include "pers/graphics/ILogicalDevice.h"
+#include "pers/graphics/IResourceFactory.h"
 #include "pers/graphics/GraphicsTypes.h"
 #include "pers/utils/Logger.h"
 #include <cstring>
@@ -9,91 +11,129 @@
 
 namespace pers {
 
-DeferredStagingBuffer::DeferredStagingBuffer(const BufferDesc& desc, const std::shared_ptr<IBufferFactory>& factory)
-    : _desc(desc)
-    , _currentMapping(nullptr, 0, nullptr)
-    , _mappingPending(false) {
+DeferredStagingBuffer::DeferredStagingBuffer()
+    : _desc()
+    , _currentMapping{nullptr, 0, 0}
+    , _mappingPending(false)
+    , _created(false) {
+}
+
+DeferredStagingBuffer::~DeferredStagingBuffer() {
+    destroy();
+}
+
+bool DeferredStagingBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device) {
+    if (_created) {
+        LOG_ERROR("DeferredStagingBuffer", "Buffer already created");
+        return false;
+    }
     
     if (!desc.isValid()) {
         LOG_ERROR("DeferredStagingBuffer", "Invalid buffer description");
-        return;
+        return false;
     }
     
-    if (!factory) {
-        LOG_ERROR("DeferredStagingBuffer", "Factory is null");
-        return;
+    if (!device) {
+        LOG_ERROR("DeferredStagingBuffer", "Device is null");
+        return false;
     }
+    
+    const auto& resourceFactory = device->getResourceFactory();
+    if (!resourceFactory) {
+        LOG_ERROR("DeferredStagingBuffer", "Failed to get resource factory from device");
+        return false;
+    }
+    
+    _desc = desc;
     
     // Force deferred mapping configuration
     BufferDesc stagingDesc = desc;
     stagingDesc.mappedAtCreation = false;
-    stagingDesc.usage |= BufferUsage::MapRead | BufferUsage::MapWrite;
     
-    // Readback buffers primarily need CopyDst
-    stagingDesc.usage |= BufferUsage::CopyDst;
+    // Don't force both MapRead and MapWrite - respect what the user requested
+    // The user should specify MapRead for readback or MapWrite for upload
+    // We just ensure the corresponding COPY flags are present for WebGPU compliance
+    if (static_cast<uint32_t>(stagingDesc.usage & BufferUsage::MapRead)) {
+        stagingDesc.usage |= BufferUsage::CopyDst;  // For GPU->CPU readback
+    }
+    if (static_cast<uint32_t>(stagingDesc.usage & BufferUsage::MapWrite)) {
+        stagingDesc.usage |= BufferUsage::CopySrc;  // For CPU->GPU upload
+    }
     
     if (stagingDesc.memoryLocation == MemoryLocation::Auto) {
         stagingDesc.memoryLocation = MemoryLocation::HostVisible;
     }
     
-    _buffer = factory->createMappableBuffer(stagingDesc);
+    _buffer = resourceFactory->createMappableBuffer(stagingDesc);
     if (!_buffer) {
         LOG_ERROR("DeferredStagingBuffer", "Failed to create underlying buffer");
-        return;
+        return false;
     }
+    
+    _created = true;
+    _mappingPending = false;
     
     std::stringstream ss;
     ss << "Created deferred staging buffer '" << _desc.debugName << "' size=" << _desc.size;
     LOG_DEBUG("DeferredStagingBuffer", ss.str().c_str());
+    
+    return true;
 }
 
-DeferredStagingBuffer::~DeferredStagingBuffer() {
+void DeferredStagingBuffer::destroy() {
+    if (!_created) {
+        return;
+    }
+    
     if (isMapped()) {
         std::stringstream ss;
         ss << "Buffer '" << _desc.debugName << "' destroyed while mapped";
         LOG_WARNING("DeferredStagingBuffer", ss.str().c_str());
         unmap();
     }
+    
+    _buffer.reset();
+    _currentMapping = MappedData{nullptr, 0, nullptr};
+    _mappingPending = false;
+    _created = false;
+    _desc = BufferDesc();
+    
+    LOG_DEBUG("DeferredStagingBuffer", "Destroyed deferred staging buffer");
 }
 
 DeferredStagingBuffer::DeferredStagingBuffer(DeferredStagingBuffer&& other) noexcept
     : _buffer(std::move(other._buffer))
     , _desc(std::move(other._desc))
-    , _mappingFuture(std::move(other._mappingFuture))
     , _currentMapping(std::move(other._currentMapping))
-    , _mappingPending(other._mappingPending) {
+    , _mappingFuture(std::move(other._mappingFuture))
+    , _mappingPending(other._mappingPending)
+    , _created(other._created) {
+    other._currentMapping = MappedData{nullptr, 0, nullptr};
     other._mappingPending = false;
+    other._created = false;
 }
 
 DeferredStagingBuffer& DeferredStagingBuffer::operator=(DeferredStagingBuffer&& other) noexcept {
     if (this != &other) {
-        if (isMapped()) {
-            unmap();
-        }
+        destroy();
         
         _buffer = std::move(other._buffer);
         _desc = std::move(other._desc);
-        _mappingFuture = std::move(other._mappingFuture);
         _currentMapping = std::move(other._currentMapping);
+        _mappingFuture = std::move(other._mappingFuture);
         _mappingPending = other._mappingPending;
+        _created = other._created;
         
+        other._currentMapping = MappedData{nullptr, 0, nullptr};
         other._mappingPending = false;
+        other._created = false;
     }
     return *this;
 }
 
-
-uint64_t DeferredStagingBuffer::getSize() const {
-    return _buffer ? _buffer->getSize() : 0;
-}
-
-BufferUsage DeferredStagingBuffer::getUsage() const {
-    return _buffer ? _buffer->getUsage() : BufferUsage::None;
-}
-
 bool DeferredStagingBuffer::writeBytes(const void* data, uint64_t size, uint64_t offset) {
-    if (!data) {
-        LOG_ERROR("DeferredStagingBuffer", "Source data is null");
+    if (!_created || !data) {
+        LOG_ERROR("DeferredStagingBuffer", "Buffer not created or source data is null");
         return false;
     }
     
@@ -126,8 +166,8 @@ bool DeferredStagingBuffer::writeBytes(const void* data, uint64_t size, uint64_t
 }
 
 bool DeferredStagingBuffer::readBytes(void* data, uint64_t size, uint64_t offset) const {
-    if (!data) {
-        LOG_ERROR("DeferredStagingBuffer", "Destination data is null");
+    if (!_created || !data) {
+        LOG_ERROR("DeferredStagingBuffer", "Buffer not created or destination data is null");
         return false;
     }
     
@@ -163,6 +203,11 @@ bool DeferredStagingBuffer::readBytes(void* data, uint64_t size, uint64_t offset
 bool DeferredStagingBuffer::downloadFrom(const std::shared_ptr<ICommandEncoder>& encoder,
                                          const std::shared_ptr<DeviceBuffer>& source,
                                          const BufferCopyDesc& copyDesc) {
+    if (!_created) {
+        LOG_ERROR("DeferredStagingBuffer", "Buffer not created");
+        return false;
+    }
+    
     if (!encoder) {
         LOG_ERROR("DeferredStagingBuffer", "downloadFrom: encoder is null");
         return false;
@@ -207,38 +252,44 @@ bool DeferredStagingBuffer::downloadFrom(const std::shared_ptr<ICommandEncoder>&
     return result;
 }
 
-// IBuffer interface - delegate to internal buffer
+// IBuffer interface
+uint64_t DeferredStagingBuffer::getSize() const {
+    return _created && _buffer ? _buffer->getSize() : 0;
+}
+
+BufferUsage DeferredStagingBuffer::getUsage() const {
+    return _created && _buffer ? _buffer->getUsage() : BufferUsage::None;
+}
+
 const std::string& DeferredStagingBuffer::getDebugName() const {
-    return _desc.debugName;
+    static const std::string empty;
+    return _created ? _desc.debugName : empty;
 }
 
 NativeBufferHandle DeferredStagingBuffer::getNativeHandle() const {
-    return _buffer ? _buffer->getNativeHandle() : NativeBufferHandle::fromBackend(nullptr);
+    return _created && _buffer ? _buffer->getNativeHandle() : NativeBufferHandle{};
 }
 
 bool DeferredStagingBuffer::isValid() const {
-    return _buffer && _buffer->isValid();
+    return _created && _buffer && _buffer->isValid();
 }
 
 BufferState DeferredStagingBuffer::getState() const {
-    if (isMapped()) {
-        return BufferState::Mapped;
-    } else if (_mappingPending) {
-        return BufferState::MapPending;
-    } else {
-        return BufferState::Ready;
-    }
+    if (!_created || !_buffer) return BufferState::Uninitialized;
+    if (isMapped()) return BufferState::Mapped;
+    if (_mappingPending) return BufferState::MapPending;
+    return BufferState::Ready;
 }
 
 MemoryLocation DeferredStagingBuffer::getMemoryLocation() const {
-    return _desc.memoryLocation;
+    return _created && _buffer ? _buffer->getMemoryLocation() : MemoryLocation::Auto;
 }
 
 AccessPattern DeferredStagingBuffer::getAccessPattern() const {
     return _desc.accessPattern;
 }
 
-// IMappableBuffer interface - delegate to internal buffer
+// IMappableBuffer interface
 void* DeferredStagingBuffer::getMappedData() {
     return _currentMapping.data();
 }
@@ -248,28 +299,29 @@ const void* DeferredStagingBuffer::getMappedData() const {
 }
 
 std::future<MappedData> DeferredStagingBuffer::mapAsync(MapMode mode, const BufferMapRange& range) {
-    if (!_buffer) {
+    if (!_created || !_buffer) {
         std::promise<MappedData> promise;
         promise.set_value(MappedData{nullptr, 0, nullptr});
         return promise.get_future();
     }
     
     _mappingPending = true;
-    _mappingFuture = _buffer->mapAsync(mode, range);
     
-    // Store the future to complete mapping later
+    // Can't copy future, need to get a new one from buffer
+    // The buffer should handle multiple mapAsync calls properly
     return _buffer->mapAsync(mode, range);
 }
 
 void DeferredStagingBuffer::unmap() {
-    if (_buffer) {
+    if (_created && _buffer) {
         _buffer->unmap();
         _currentMapping = MappedData{nullptr, 0, nullptr};
+        _mappingPending = false;
     }
 }
 
 bool DeferredStagingBuffer::isMapped() const {
-    return _buffer ? _buffer->isMapped() : false;
+    return _created && _buffer && _buffer->isMapped();
 }
 
 bool DeferredStagingBuffer::isMapPending() const {
@@ -277,15 +329,16 @@ bool DeferredStagingBuffer::isMapPending() const {
 }
 
 void DeferredStagingBuffer::flushMappedRange(uint64_t offset, uint64_t size) {
-    if (_buffer) {
+    if (_created && _buffer) {
         _buffer->flushMappedRange(offset, size);
     }
 }
 
 void DeferredStagingBuffer::invalidateMappedRange(uint64_t offset, uint64_t size) {
-    if (_buffer) {
+    if (_created && _buffer) {
         _buffer->invalidateMappedRange(offset, size);
     }
 }
 
 } // namespace pers
+

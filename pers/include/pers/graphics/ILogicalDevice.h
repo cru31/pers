@@ -35,7 +35,7 @@ public:
      * @brief Get the resource factory for creating GPU resources
      * @return Shared pointer to resource factory
      */
-    virtual std::shared_ptr<IResourceFactory> getResourceFactory() const = 0;
+    virtual const std::shared_ptr<IResourceFactory>& getResourceFactory() const = 0;
     
     /**
      * @brief Create a command encoder for recording GPU commands

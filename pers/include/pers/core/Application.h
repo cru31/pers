@@ -9,7 +9,7 @@ class IWindow;
 class IWindowFactory;
 
 namespace pers {
-    class IGraphicsBackendFactory;
+    class IGraphicsInstanceFactory;
     class IInstance;
 
 /**
@@ -23,7 +23,7 @@ public:
     
     // Initialize application with factories
     bool initialize(const std::shared_ptr<IWindowFactory>& windowFactory, 
-                   const std::shared_ptr<pers::IGraphicsBackendFactory>& graphicsFactory);
+                   const std::shared_ptr<pers::IGraphicsInstanceFactory>& graphicsFactory);
     
     // Main run loop
     void run();
@@ -73,7 +73,7 @@ protected:
 private:
     // Factories
     std::shared_ptr<IWindowFactory> _windowFactory;
-    std::shared_ptr<pers::IGraphicsBackendFactory> _graphicsFactory;
+    std::shared_ptr<pers::IGraphicsInstanceFactory> _graphicsFactory;
     
     // Created resources
     std::unique_ptr<IWindow> _window;

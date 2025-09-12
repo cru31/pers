@@ -38,7 +38,7 @@ public:
     std::shared_ptr<IQueue> getQueue() const override;
     
     // Resource creation factory
-    std::shared_ptr<IResourceFactory> getResourceFactory() const override;
+    const std::shared_ptr<IResourceFactory>& getResourceFactory() const override;
     
     // Command operations
     std::shared_ptr<ICommandEncoder> createCommandEncoder() override;

@@ -112,7 +112,7 @@ bool TriangleRenderer::initializeGraphics(const pers::NativeSurfaceHandle& surfa
     }
     
     // Get resource factory from logical device
-    auto resourceFactory = logicalDevice->getResourceFactory();
+    const auto& resourceFactory = logicalDevice->getResourceFactory();
     if (!resourceFactory) {
         LOG_ERROR("TriangleRenderer",
             "Failed to get resource factory from device");
@@ -248,7 +248,7 @@ bool TriangleRenderer::createTriangleResources() {
     }
     
     // Get resource factory
-    auto factory = _device->getResourceFactory();
+    const auto& factory = _device->getResourceFactory();
     if (!factory) {
         LOG_ERROR("TriangleRenderer",
             "Failed to get resource factory");
