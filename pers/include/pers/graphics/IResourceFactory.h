@@ -18,11 +18,13 @@ class ITexture;
 class ITextureView;
 class ISampler;
 class IRenderPipeline;
+class INativeMappableBuffer;
 class IComputePipeline;
 class IBindGroupLayout;
 class IBindGroup;
 class IPipelineLayout;
 class IFramebuffer;
+class INativeBuffer;
 class IMappableBuffer;
 
 /**
@@ -73,7 +75,7 @@ public:
      * @param desc Buffer descriptor
      * @return Shared pointer to buffer or nullptr if failed
      */
-    virtual std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) const = 0;
+    virtual std::shared_ptr<INativeBuffer> createBuffer(const BufferDesc& desc) const = 0;
     /**
      * @brief Create a buffer with initial data written synchronously
      * Uses mappedAtCreation internally for efficient initialization
@@ -82,7 +84,7 @@ public:
      * @param dataSize Size of initial data in bytes
      * @return Created buffer with data already uploaded
      */
-    virtual std::shared_ptr<IBuffer> createInitializableDeviceBuffer(
+    virtual std::shared_ptr<INativeBuffer> createInitializableDeviceBuffer(
         const BufferDesc& desc,
         const void* initialData,
         size_t dataSize) const = 0;
@@ -129,7 +131,7 @@ public:
      * @param desc Buffer descriptor
      * @return Shared pointer to mappable buffer or nullptr if failed
      */
-    virtual std::shared_ptr<IMappableBuffer> createMappableBuffer(const BufferDesc& desc) const = 0;
+    virtual std::shared_ptr<INativeMappableBuffer> createMappableBuffer(const BufferDesc& desc) const = 0;
     
 };
 

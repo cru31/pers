@@ -10,6 +10,7 @@ namespace pers {
 class ICommandEncoder;
 class DeviceBuffer;
 class ILogicalDevice;
+class INativeMappableBuffer;
 
 /**
  * Deferred mapping staging buffer for asynchronous CPU access
@@ -26,24 +27,22 @@ public:
     ~DeferredStagingBuffer() override;
     /**
      * Create and initialize the staging buffer
-     * @param desc Buffer description
+     * @param size Buffer size in bytes
+     * @param mapMode Map mode (MapRead for readback, MapWrite for upload)
      * @param device Logical device to create resources
+     * @param debugName Optional debug name
      * @return true if creation succeeded
      */
-    bool create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device);
+    bool create(uint64_t size,
+                MapMode mapMode,
+                const std::shared_ptr<ILogicalDevice>& device,
+                const std::string& debugName = "");
 
     /**
      * Destroy the staging buffer and release resources
      */
     void destroy();
     
-    // No copy
-    DeferredStagingBuffer(const DeferredStagingBuffer&) = delete;
-    DeferredStagingBuffer& operator=(const DeferredStagingBuffer&) = delete;
-    
-    // Move only
-    DeferredStagingBuffer(DeferredStagingBuffer&& other) noexcept;
-    DeferredStagingBuffer& operator=(DeferredStagingBuffer&& other) noexcept;
     
     // IMappableBuffer interface
     void* getMappedData() override;
@@ -75,10 +74,18 @@ public:
     
     template<typename T>
     bool read(T* data, size_t count, size_t offsetElements = 0) const;
-   
+    
+    // Transfer operations - DeferredStagingBuffer is primarily for readback
+    bool downloadFrom(const std::shared_ptr<ICommandEncoder>& encoder, 
+                     const std::shared_ptr<DeviceBuffer>& source,
+                     const BufferCopyDesc& copyDesc = {});
+    
 private:
-    std::shared_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
-    BufferDesc _desc;
+    std::shared_ptr<INativeMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
+    uint64_t _size;
+    BufferUsage _usage;
+    std::string _debugName;
+    MapMode _mapMode;
     mutable MappedData _currentMapping;
     mutable std::future<MappedData> _mappingFuture;
     mutable bool _mappingPending;

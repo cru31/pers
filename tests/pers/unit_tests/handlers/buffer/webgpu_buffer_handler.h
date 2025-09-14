@@ -7,7 +7,7 @@
 #include "pers/graphics/ILogicalDevice.h"
 #include "pers/graphics/IResourceFactory.h"
 #include "pers/graphics/buffers/BufferTypes.h"
-#include "pers/graphics/buffers/IBuffer.h"
+#include "pers/graphics/buffers/INativeBuffer.h"
 #include <chrono>
 #include <vector>
 
@@ -59,7 +59,7 @@ private:
     std::shared_ptr<IResourceFactory> _resourceFactory;
     
     // Test state
-    std::vector<std::shared_ptr<IBuffer>> _createdBuffers;
+    std::vector<std::shared_ptr<INativeBuffer>> _createdBuffers;
     CreationMetrics _metrics;
     bool _verbose = false;
 };

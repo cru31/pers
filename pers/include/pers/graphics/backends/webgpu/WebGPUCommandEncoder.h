@@ -28,7 +28,10 @@ public:
     bool downloadFromDeviceBuffer(const std::shared_ptr<DeviceBuffer>& deviceBuffer,
                                  const std::shared_ptr<DeferredStagingBuffer>& readbackBuffer,
                                  const BufferCopyDesc& copyDesc) override;
-    
+
+    bool downloadFromDeviceBuffer(const std::shared_ptr<ImmediateDeviceBuffer>& deviceBuffer,
+                                 const std::shared_ptr<DeferredStagingBuffer>& readbackBuffer,
+                                 const BufferCopyDesc& copyDesc) override;
     bool copyDeviceToDevice(const std::shared_ptr<DeviceBuffer>& source,
                            const std::shared_ptr<DeviceBuffer>& destination,
                            const BufferCopyDesc& copyDesc) override;

@@ -354,6 +354,7 @@ set(PERS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/DynamicBuffer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/ImmediateStagingBuffer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/MappedData.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/buffers/ImmediateDeviceBuffer.cpp
     
     # Graphics - WebGPU Backend
     ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/backends/webgpu/WebGPUCommandBuffer.cpp

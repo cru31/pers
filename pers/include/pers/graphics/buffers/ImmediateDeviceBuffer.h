@@ -7,6 +7,7 @@
 namespace pers {
 
 class IResourceFactory;
+class INativeBuffer;
 
 /**
  * @brief Device buffer with immediate data initialization
@@ -20,14 +21,18 @@ public:
     /**
      * @brief Create a device buffer with immediate data
      * @param resourceFactory Factory for creating the underlying buffer
-     * @param desc Buffer description
+     * @param size Buffer size in bytes
+     * @param usage Buffer usage flags (Vertex, Index, Uniform, etc.)
      * @param initialData Data to write immediately
      * @param dataSize Size of initial data in bytes
+     * @param debugName Optional debug name
      */
     ImmediateDeviceBuffer(const std::shared_ptr<IResourceFactory>& resourceFactory,
-                         const BufferDesc& desc,
+                         uint64_t size,
+                         BufferUsage usage,
                          const void* initialData,
-                         size_t dataSize);
+                         size_t dataSize,
+                         const std::string& debugName = "");
     
     ~ImmediateDeviceBuffer() override;
     
@@ -46,8 +51,10 @@ public:
     AccessPattern getAccessPattern() const override;
     
 private:
-    std::unique_ptr<IBuffer> _buffer;
-    BufferDesc _desc;
+    std::shared_ptr<INativeBuffer> _buffer;
+    uint64_t _size;
+    BufferUsage _usage;
+    std::string _debugName;
     bool _initialized;
 };
 

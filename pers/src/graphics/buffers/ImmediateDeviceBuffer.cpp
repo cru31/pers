@@ -1,3 +1,4 @@
+#include "pers/graphics/buffers/INativeBuffer.h"
 #include "pers/graphics/buffers/ImmediateDeviceBuffer.h"
 #include "pers/graphics/IResourceFactory.h"
 #include "pers/utils/Logger.h"
@@ -7,10 +8,14 @@ namespace pers {
 
 ImmediateDeviceBuffer::ImmediateDeviceBuffer(
     const std::shared_ptr<IResourceFactory>& resourceFactory,
-    const BufferDesc& desc,
+    uint64_t size,
+    BufferUsage usage,
     const void* initialData,
-    size_t dataSize)
-    : _desc(desc)
+    size_t dataSize,
+    const std::string& debugName)
+    : _size(size)
+    , _usage(usage)
+    , _debugName(debugName)
     , _initialized(false) {
     
     if (!resourceFactory) {
@@ -23,28 +28,19 @@ ImmediateDeviceBuffer::ImmediateDeviceBuffer(
         return;
     }
     
-    if (dataSize > desc.size) {
+    if (dataSize > size) {
         LOG_ERROR("ImmediateDeviceBuffer", "Data size exceeds buffer size");
         return;
     }
+
+    // Create BufferDesc with internal settings for mappedAtCreation
+    BufferDesc desc;
+    desc.size = size;
+    desc.usage = usage;
+    desc.debugName = debugName;
+    // Note: createInitializableDeviceBuffer will internally handle mappedAtCreation
     
-    // Create buffer with mappedAtCreation for synchronous data write
-    BufferDesc syncDesc = desc;
-    syncDesc.mappedAtCreation = true;
-    
-    _buffer = resourceFactory->createBuffer(syncDesc);
-    if (!_buffer || !_buffer->isValid()) {
-        LOG_ERROR("ImmediateDeviceBuffer", "Failed to create underlying buffer");
-        return;
-    }
-    
-    // For WebGPU buffers created with mappedAtCreation, we need special handling
-    // The buffer should provide a way to get the mapped memory
-    // This is backend-specific, so we'll need to handle it through the resource factory
-    
-    // For now, we'll use the createInitializableDeviceBuffer method from IResourceFactory
-    // Reset and recreate using the proper method
-    _buffer.reset();
+    // Use createInitializableDeviceBuffer which handles mappedAtCreation internally
     _buffer = resourceFactory->createInitializableDeviceBuffer(desc, initialData, dataSize);
     
     if (!_buffer || !_buffer->isValid()) {
@@ -59,16 +55,15 @@ ImmediateDeviceBuffer::ImmediateDeviceBuffer(
 ImmediateDeviceBuffer::~ImmediateDeviceBuffer() = default;
 
 uint64_t ImmediateDeviceBuffer::getSize() const {
-    return _buffer ? _buffer->getSize() : 0;
+    return _buffer ? _buffer->getSize() : _size;
 }
 
 BufferUsage ImmediateDeviceBuffer::getUsage() const {
-    return _buffer ? _buffer->getUsage() : BufferUsage::None;
+    return _buffer ? _buffer->getUsage() : _usage;
 }
 
 const std::string& ImmediateDeviceBuffer::getDebugName() const {
-    static const std::string empty;
-    return _buffer ? _buffer->getDebugName() : empty;
+    return _buffer ? _buffer->getDebugName() : _debugName;
 }
 
 NativeBufferHandle ImmediateDeviceBuffer::getNativeHandle() const {

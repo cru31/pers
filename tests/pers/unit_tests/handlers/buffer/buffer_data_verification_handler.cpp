@@ -2,6 +2,8 @@
 #include "pers/graphics/backends/webgpu/WebGPUInstanceFactory.h"
 #include "pers/graphics/GraphicsEnumStrings.h"
 #include "pers/graphics/buffers/DeviceBuffer.h"
+#include "pers/graphics/buffers/ImmediateDeviceBuffer.h"
+#include "pers/graphics/buffers/DeviceBufferUsage.h"
 #include "pers/graphics/buffers/DeferredStagingBuffer.h"
 #include "pers/graphics/buffers/ImmediateStagingBuffer.h"
 #include "pers/graphics/ICommandEncoder.h"
@@ -193,40 +195,75 @@ TestResult BufferDataVerificationHandler::verifyInitializableDeviceBuffer(const 
         std::cout << "Pattern checksum: 0x" << std::hex << pattern.checksum << std::dec << std::endl;
     }
     
-    // Create buffer with initial data using createInitializableDeviceBuffer
-    BufferDesc desc;
-    desc.size = bufferSize;
-    desc.usage = BufferUsage::Storage | BufferUsage::CopySrc; // Allow readback
-    desc.debugName = "InitializableTestBuffer";
-    
-    auto startWrite = std::chrono::high_resolution_clock::now();
-
-    const auto& factory = _logicalDevice->getResourceFactory();
-    auto buffer = factory->createInitializableDeviceBuffer(
-        desc,
-        pattern.data.data(),
-        pattern.data.size()
-    );
-    
-    auto endWrite = std::chrono::high_resolution_clock::now();
-    double writeTimeMs = std::chrono::duration<double, std::milli>(endWrite - startWrite).count();
-    
-    if (!buffer) {
+    // Create DeviceBuffer first
+    auto deviceBuffer = std::make_shared<DeviceBuffer>();
+    if (!deviceBuffer->create(bufferSize, DeviceBufferUsage::Storage | DeviceBufferUsage::CopySrc, _logicalDevice, "TestBuffer")) {
         result.passed = false;
-        result.failureReason = "Failed to create buffer with initial data";
+        result.failureReason = "Failed to create device buffer";
         result.actualProperties["buffer_created"] = false;
         return result;
     }
+
+    // Create ImmediateStagingBuffer for initial data upload
+    auto uploadStaging = std::make_shared<ImmediateStagingBuffer>();
+    if (!uploadStaging->create(bufferSize, _logicalDevice, "UploadStagingBuffer")) {
+        result.passed = false;
+        result.failureReason = "Failed to create upload staging buffer";
+        return result;
+    }
+
+    // Write pattern data to staging buffer
+    auto startWrite = std::chrono::high_resolution_clock::now();
+
+    if (!uploadStaging->writeBytes(pattern.data.data(), bufferSize, 0)) {
+        result.passed = false;
+        result.failureReason = "Failed to write data to staging buffer";
+        return result;
+    }
+
+    uploadStaging->finalize();
+
+    // Create command encoder for upload
+    _commandEncoder = _logicalDevice->createCommandEncoder();
+    if (!_commandEncoder) {
+        result.passed = false;
+        result.failureReason = "Failed to create command encoder for upload";
+        return result;
+    }
+
+    // Upload from staging to device
+    BufferCopyDesc uploadCopyDesc;
+    uploadCopyDesc.srcOffset = 0;
+    uploadCopyDesc.dstOffset = 0;
+    uploadCopyDesc.size = bufferSize;
+
+    if (!_commandEncoder->uploadToDeviceBuffer(uploadStaging, deviceBuffer, uploadCopyDesc)) {
+        result.passed = false;
+        result.failureReason = "Failed to encode upload command";
+        return result;
+    }
+
+    auto uploadCommandBuffer = _commandEncoder->finish();
+    if (!uploadCommandBuffer) {
+        result.passed = false;
+        result.failureReason = "Failed to finish upload command";
+        return result;
+    }
+
+    _queue->submit({uploadCommandBuffer});
+
+    auto endWrite = std::chrono::high_resolution_clock::now();
+    double writeTimeMs = std::chrono::duration<double, std::milli>(endWrite - startWrite).count();
     
     // Now verify the data was written correctly
     // Create DeferredStagingBuffer for readback
-    BufferDesc stagingDesc;
-    stagingDesc.size = bufferSize;
-    stagingDesc.usage = BufferUsage::MapRead | BufferUsage::CopyDst;
-    stagingDesc.debugName = "DeferredStagingBuffer";
     
     auto deferredStaging = std::make_shared<DeferredStagingBuffer>();
-    deferredStaging->create(stagingDesc, _logicalDevice);
+    if (!deferredStaging->create(bufferSize, MapMode::Read, _logicalDevice, "DeferredStagingBuffer")) {
+        result.passed = false;
+        result.failureReason = "Failed to create deferred staging buffer";
+        return result;
+    }
     
     // Create command encoder for copy
     _commandEncoder = _logicalDevice->createCommandEncoder();
@@ -236,13 +273,7 @@ TestResult BufferDataVerificationHandler::verifyInitializableDeviceBuffer(const 
         return result;
     }
     
-    // Cast our buffer to DeviceBuffer
-    auto deviceBuffer = std::dynamic_pointer_cast<DeviceBuffer>(buffer);
-    if (!deviceBuffer) {
-        result.passed = false;
-        result.failureReason = "Buffer is not a DeviceBuffer type";
-        return result;
-    }
+    // Now create new command encoder for download
     
     // Copy from device buffer to staging
     BufferCopyDesc copyDesc;
@@ -407,13 +438,9 @@ TestResult BufferDataVerificationHandler::verifyThroughStagingCopy(const TestVar
     auto pattern = TestPattern::generate(type, bufferSize);
 
     // Create buffer
-    BufferDesc desc;
-    desc.size = bufferSize;
-    desc.usage = BufferUsage::Storage | BufferUsage::CopyDst | BufferUsage::CopySrc;
-    desc.debugName = "TestBuffer";
     
     auto deviceBuffer = std::make_shared<DeviceBuffer>();
-    if (!deviceBuffer->create(desc, _logicalDevice)) {
+    if (!deviceBuffer->create(bufferSize, DeviceBufferUsage::Storage | DeviceBufferUsage::CopySrc, _logicalDevice, "TestBuffer")) {
         
         result.passed = false;
         result.failureReason = "Failed to create device buffer";
@@ -421,13 +448,9 @@ TestResult BufferDataVerificationHandler::verifyThroughStagingCopy(const TestVar
     }
 
     // Create ImmediateStagingBuffer for upload
-    BufferDesc immediateStagingDesc;
-    immediateStagingDesc.size = bufferSize;
-    immediateStagingDesc.usage = BufferUsage::MapWrite | BufferUsage::CopySrc;
-    immediateStagingDesc.debugName = "ImmediateStagingBuffer";
     
     auto immediateStaging = std::make_shared<ImmediateStagingBuffer>();
-    if (!immediateStaging->create(immediateStagingDesc, _logicalDevice)) {
+    if (!immediateStaging->create(bufferSize, _logicalDevice, "ImmediateStagingBuffer")) {
         
         result.passed = false;
         result.failureReason = "Failed to create immediate staging buffer";
@@ -488,13 +511,9 @@ TestResult BufferDataVerificationHandler::verifyThroughStagingCopy(const TestVar
     // Now verify through staging copy (readback)
 
     // Create DeferredStagingBuffer for readback
-    BufferDesc readbackDesc;
-    readbackDesc.size = bufferSize;
-    readbackDesc.usage = BufferUsage::MapRead | BufferUsage::CopyDst;
-    readbackDesc.debugName = "ReadbackStagingBuffer";
     
     auto readbackStaging = std::make_shared<DeferredStagingBuffer>();
-    if (!readbackStaging->create(readbackDesc, _logicalDevice)) {
+    if (!readbackStaging->create(bufferSize, MapMode::Read, _logicalDevice, "ReadbackStagingBuffer")) {
         
         result.passed = false;
         result.failureReason = "Failed to create readback staging buffer";
@@ -738,15 +757,15 @@ bool BufferDataVerificationHandler::StagingCopyVerification::execute(
     return verified;
 }
 
-std::shared_ptr<IMappableBuffer> 
+std::shared_ptr<DeferredStagingBuffer> 
 BufferDataVerificationHandler::StagingCopyVerification::createStagingBuffer(
     size_t size, const std::shared_ptr<ILogicalDevice>& device ) {
-    BufferDesc desc;
-    desc.size = size;
-    desc.usage = BufferUsage::MapRead | BufferUsage::CopyDst;
-    desc.debugName = "StagingReadback";
-
-    return device->getResourceFactory()->createMappableBuffer(desc);
+    
+    auto stagingBuffer = std::make_shared<DeferredStagingBuffer>();
+    if (!stagingBuffer->create(size, MapMode::Read, device, "StagingReadback")) {
+        return nullptr;
+    }
+    return stagingBuffer;
 }
 
 bool BufferDataVerificationHandler::StagingCopyVerification::downloadDeviceBufferToStagingSync(

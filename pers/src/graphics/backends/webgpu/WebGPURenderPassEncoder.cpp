@@ -1,3 +1,4 @@
+#include "pers/graphics/buffers/IBuffer.h"
 #include "pers/graphics/backends/webgpu/WebGPURenderPassEncoder.h"
 #include "pers/graphics/backends/webgpu/WebGPURenderPipeline.h"
 #include "pers/graphics/backends/webgpu/buffers/WebGPUBuffer.h"

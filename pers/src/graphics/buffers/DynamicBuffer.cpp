@@ -4,7 +4,10 @@
 namespace pers {
 
 DynamicBuffer::DynamicBuffer() 
-    : _currentFrame(0)
+    : _size(0)
+    , _usage(BufferUsage::None)
+    , _debugName()
+    , _currentFrame(0)
     , _frameCount(0)
     , _created(false) {
 }
@@ -13,7 +16,7 @@ DynamicBuffer::~DynamicBuffer() {
     TODO_OR_DIE("DynamicBuffer", "Implement destructor");
 }
 
-bool DynamicBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device, uint32_t frameCount) {
+bool DynamicBuffer::create(uint64_t size, BufferUsage usage, const std::shared_ptr<ILogicalDevice>& device, uint32_t frameCount, const std::string& debugName) {
     TODO_OR_DIE("DynamicBuffer", "Implement create method");
     return false;
 }
@@ -23,25 +26,35 @@ void DynamicBuffer::destroy() {
 }
 
 DynamicBuffer::DynamicBuffer(DynamicBuffer&& other) noexcept
-    : _desc(std::move(other._desc))
+    : _size(other._size)
+    , _usage(other._usage)
+    , _debugName(std::move(other._debugName))
     , _buffers(std::move(other._buffers))
     , _currentFrame(other._currentFrame.load())
     , _frameCount(other._frameCount)
     , _mapped(std::move(other._mapped))
     , _created(other._created) {
     other._created = false;
+    other._size = 0;
+    other._usage = BufferUsage::None;
+    other._debugName.clear();
 }
 
 DynamicBuffer& DynamicBuffer::operator=(DynamicBuffer&& other) noexcept {
     if (this != &other) {
         destroy();
-        _desc = std::move(other._desc);
+        _size = other._size;
+        _usage = other._usage;
+        _debugName = std::move(other._debugName);
         _buffers = std::move(other._buffers);
         _currentFrame = other._currentFrame.load();
         _frameCount = other._frameCount;
         _mapped = std::move(other._mapped);
         _created = other._created;
         other._created = false;
+        other._size = 0;
+        other._usage = BufferUsage::None;
+        other._debugName.clear();
     }
     return *this;
 }
@@ -69,15 +82,15 @@ void DynamicBuffer::nextFrame() {
 }
 
 uint64_t DynamicBuffer::getSize() const {
-    return _desc.size;
+    return _size;
 }
 
 BufferUsage DynamicBuffer::getUsage() const {
-    return _desc.usage;
+    return _usage;
 }
 
 const std::string& DynamicBuffer::getDebugName() const {
-    return _desc.debugName;
+    return _debugName;
 }
 
 NativeBufferHandle DynamicBuffer::getNativeHandle() const {
@@ -99,7 +112,7 @@ BufferState DynamicBuffer::getState() const {
 }
 
 MemoryLocation DynamicBuffer::getMemoryLocation() const {
-    return _desc.memoryLocation;
+    return MemoryLocation::HostVisible;
 }
 
 AccessPattern DynamicBuffer::getAccessPattern() const {

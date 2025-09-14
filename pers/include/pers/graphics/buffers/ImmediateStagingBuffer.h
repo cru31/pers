@@ -9,6 +9,7 @@ namespace pers {
 class ICommandEncoder;
 class DeviceBuffer;
 class ILogicalDevice;
+class INativeMappableBuffer;
 
 /**
  * Staging buffer with immediate CPU access (mappedAtCreation=true)
@@ -20,11 +21,14 @@ public:
     ~ImmediateStagingBuffer() override;
     /**
      * Create and initialize the staging buffer
-     * @param desc Buffer description
+     * @param size Buffer size in bytes
      * @param device Logical device to create resources
+     * @param debugName Optional debug name
      * @return true if creation succeeded
      */
-    bool create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device);
+    bool create(uint64_t size, 
+                const std::shared_ptr<ILogicalDevice>& device,
+                const std::string& debugName = "");
 
     /**
      * Destroy the staging buffer and release resources
@@ -84,8 +88,10 @@ public:
     void invalidateMappedRange(uint64_t offset, uint64_t size) override;
     
 private:
-    std::shared_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
-    BufferDesc _desc;
+    std::shared_ptr<INativeMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
+    uint64_t _size;
+    BufferUsage _usage;
+    std::string _debugName;
     void* _mappedData;
     bool _finalized;
     uint64_t _bytesWritten;
@@ -102,11 +108,11 @@ void ImmediateStagingBuffer::write(const T* data, size_t count, size_t offsetEle
     uint64_t byteOffset = offsetElements * sizeof(T);
     uint64_t byteSize = count * sizeof(T);
     
-    if (byteOffset + byteSize > _desc.size) {
+    if (byteOffset + byteSize > _size) {
         return;
     }
     
     writeBytes(data, byteSize, byteOffset);
 }
-
 } // namespace pers
+

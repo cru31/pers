@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pers/graphics/buffers/IMappableBuffer.h"
+#include "pers/graphics/buffers/INativeMappableBuffer.h"
 #include "pers/graphics/backends/webgpu/buffers/WebGPUBuffer.h"
 #include <webgpu/webgpu.h>
 #include <memory>
@@ -10,10 +10,10 @@
 namespace pers {
 
 /**
- * WebGPU implementation of IMappableBuffer
+ * WebGPU implementation of INativeMappableBuffer
  * GPU buffer with CPU mapping capability via mapAsync
  */
-class WebGPUMappableBuffer : public IMappableBuffer {
+class WebGPUMappableBuffer : public INativeMappableBuffer {
 public:
     WebGPUMappableBuffer(WGPUDevice device, const BufferDesc& desc);
     virtual ~WebGPUMappableBuffer();

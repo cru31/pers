@@ -11,7 +11,7 @@
 #include "pers/graphics/RenderPassConfig.h"
 #include "pers/graphics/IFramebuffer.h"
 #include "pers/graphics/IResourceFactory.h"
-#include "pers/graphics/buffers/IBuffer.h"
+#include "pers/graphics/buffers/ImmediateDeviceBuffer.h"
 #include "pers/graphics/IShaderModule.h"
 #include "pers/graphics/IRenderPipeline.h"
 #include "pers/graphics/IRenderPassEncoder.h"
@@ -264,18 +264,16 @@ bool TriangleRenderer::createTriangleResources() {
          0.5f, -0.5f, 0.0f   // Bottom right
     };
     
-    pers::BufferDesc vertexBufferDesc;
-    vertexBufferDesc.size = vertices.size() * sizeof(float);
-    vertexBufferDesc.usage = pers::BufferUsage::Vertex | pers::BufferUsage::CopyDst;
-    vertexBufferDesc.debugName = "TriangleVertexBuffer";
-    
-    // Use createInitializableDeviceBuffer for synchronous data upload
-    _vertexBuffer = factory->createInitializableDeviceBuffer(
-        vertexBufferDesc,
+      // Use ImmediateDeviceBuffer for synchronous data upload
+    _vertexBuffer = std::make_shared<pers::ImmediateDeviceBuffer>(
+        factory,
+        vertices.size() * sizeof(float),
+        pers::BufferUsage::Vertex | pers::BufferUsage::CopyDst,
         vertices.data(),
-        vertices.size() * sizeof(float)
+        vertices.size() * sizeof(float),
+        "TriangleVertexBuffer"
     );
-    
+
     if (!_vertexBuffer) {
         LOG_ERROR("TriangleRenderer",
             "Failed to create vertex buffer with initial data");

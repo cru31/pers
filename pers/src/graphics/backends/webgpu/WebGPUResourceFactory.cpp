@@ -25,7 +25,7 @@ WebGPUResourceFactory::~WebGPUResourceFactory() {
     // No need to release device, shared_ptr handles it
 }
 
-std::shared_ptr<IBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& desc) const {
+std::shared_ptr<INativeBuffer> WebGPUResourceFactory::createBuffer(const BufferDesc& desc) const {
     auto device = _logicalDevice.lock();
     if (!device) {
         LOG_ERROR("WebGPUResourceFactory",
@@ -168,7 +168,7 @@ std::shared_ptr<IRenderPipeline> WebGPUResourceFactory::createRenderPipeline(con
     return std::make_shared<WebGPURenderPipeline>(desc, wgpuDevice);
 }
 
-std::shared_ptr<IBuffer> WebGPUResourceFactory::createInitializableDeviceBuffer(
+std::shared_ptr<INativeBuffer> WebGPUResourceFactory::createInitializableDeviceBuffer(
     const BufferDesc& desc,
     const void* initialData,
     size_t dataSize) const {
@@ -220,7 +220,7 @@ std::shared_ptr<IBuffer> WebGPUResourceFactory::createInitializableDeviceBuffer(
     return buffer;
 }
 
-std::shared_ptr<IMappableBuffer> WebGPUResourceFactory::createMappableBuffer(const BufferDesc& desc) const {
+std::shared_ptr<INativeMappableBuffer> WebGPUResourceFactory::createMappableBuffer(const BufferDesc& desc) const {
 
     auto device = _logicalDevice.lock();
     if (!device) {

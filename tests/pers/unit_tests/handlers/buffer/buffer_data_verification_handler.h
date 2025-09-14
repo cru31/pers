@@ -92,7 +92,7 @@ private:
         );
         
     private:
-        std::shared_ptr<IMappableBuffer> createStagingBuffer(size_t size, 
+        std::shared_ptr<DeferredStagingBuffer> createStagingBuffer(size_t size, 
             const std::shared_ptr<ILogicalDevice>& device );
 
         bool downloadDeviceBufferToStagingSync(

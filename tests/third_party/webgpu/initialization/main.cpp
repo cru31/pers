@@ -2,7 +2,7 @@
 #include <vector>
 #include <cassert>
 #include <cstring>
-#include <wgpu.h>
+#include <webgpu/webgpu.h>
 
 #ifdef _WIN32
     #include <windows.h>

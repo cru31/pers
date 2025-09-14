@@ -6,6 +6,7 @@
 #include "pers/graphics/buffers/IBuffer.h"
 #include "pers/graphics/buffers/ImmediateStagingBuffer.h"
 #include "pers/graphics/buffers/DeviceBuffer.h"
+#include "pers/graphics/buffers/DeviceBufferUsage.h"
 #include "pers/utils/Logger.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -278,13 +279,13 @@ bool ResourceLoader::createGPUBuffers(
     
     if (vertexDataSize > 0) {
         // Create staging buffer for vertices
-        pers::BufferDesc stagingDesc;
-        stagingDesc.size = vertexDataSize;
-        stagingDesc.usage = pers::BufferUsage::CopySrc | pers::BufferUsage::MapWrite;
-        stagingDesc.debugName = "BunnyVertexStagingBuffer";
+        //pers::BufferDesc stagingDesc;
+        //stagingDesc.size = vertexDataSize;
+        //stagingDesc.usage = pers::BufferUsage::CopySrc | pers::BufferUsage::MapWrite;
+        //stagingDesc.debugName = "BunnyVertexStagingBuffer";
         
         auto stagingBuffer = std::make_shared<pers::ImmediateStagingBuffer>();
-        if (!stagingBuffer->create(stagingDesc, device)) {
+        if (!stagingBuffer->create(vertexDataSize, device, "BunnyVertexStagingBuffer")) {
             LOG_ERROR("ResourceLoader", "Failed to create vertex staging buffer");
             return false;
         }
@@ -304,7 +305,7 @@ bool ResourceLoader::createGPUBuffers(
         deviceBufferDesc.debugName = "BunnyVertexBuffer";
         
         auto deviceBuffer = std::make_shared<pers::DeviceBuffer>();
-        if (!deviceBuffer->create(deviceBufferDesc, device)) {
+        if (!deviceBuffer->create(vertexDataSize, pers::DeviceBufferUsage::Vertex, device, "BunnyVertexBuffer")) {
             LOG_ERROR("ResourceLoader", "Failed to create vertex device buffer");
             return false;
         }
@@ -347,7 +348,7 @@ bool ResourceLoader::createGPUBuffers(
         stagingDesc.debugName = "BunnyIndexStagingBuffer";
         
         auto stagingBuffer = std::make_shared<pers::ImmediateStagingBuffer>();
-        if (!stagingBuffer->create(stagingDesc, device)) {
+        if (!stagingBuffer->create(indexDataSize, device, "BunnyIndexStagingBuffer")) {
             LOG_ERROR("ResourceLoader", "Failed to create index staging buffer");
             return false;
         }
@@ -367,7 +368,7 @@ bool ResourceLoader::createGPUBuffers(
         deviceBufferDesc.debugName = "BunnyIndexBuffer";
         
         auto deviceBuffer = std::make_shared<pers::DeviceBuffer>();
-        if (!deviceBuffer->create(deviceBufferDesc, device)) {
+        if (!deviceBuffer->create(indexDataSize, pers::DeviceBufferUsage::Index, device, "BunnyIndexBuffer")) {
             LOG_ERROR("ResourceLoader", "Failed to create index device buffer");
             return false;
         }

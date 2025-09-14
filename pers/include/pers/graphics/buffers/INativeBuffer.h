@@ -6,24 +6,21 @@
 #include "pers/graphics/GraphicsTypes.h"
 
 namespace pers {
+
 /**
- * Base buffer interface for all GPU buffers
+ * Interface for native backend buffer implementations
+ *
+ * This interface is for internal use by graphics backend implementations
+ * (WebGPU, Vulkan, D3D12, Metal, etc). It provides the base contract
+ * that all native buffer implementations must follow.
+ *
+ * User-facing buffer classes (DeviceBuffer, ImmediateStagingBuffer, etc)
+ * should NOT inherit from this interface directly.
  */
-class IBuffer {
+class INativeBuffer{
 public:
+    virtual ~INativeBuffer() = default;
     
-    // Prevent copying and moving at the interface level
-    IBuffer(const IBuffer&) = delete;
-    IBuffer& operator=(const IBuffer&) = delete;
-    IBuffer(IBuffer&&) = delete;
-    IBuffer& operator=(IBuffer&&) = delete;
-
-protected:
-    // Protected default constructor for derived classes
-    IBuffer() = default;
-
-public:
-    virtual ~IBuffer() = default;
     /**
      * Get buffer size in bytes
      */

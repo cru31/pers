@@ -4,6 +4,7 @@
 #include "pers/graphics/backends/webgpu/WebGPUTextureView.h"
 #include "pers/graphics/buffers/IBuffer.h"
 #include "pers/graphics/buffers/DeviceBuffer.h"
+#include "pers/graphics/buffers/ImmediateDeviceBuffer.h"
 #include "pers/graphics/buffers/ImmediateStagingBuffer.h"
 #include "pers/graphics/buffers/DeferredStagingBuffer.h"
 #include "pers/utils/Logger.h"
@@ -237,6 +238,31 @@ bool WebGPUCommandEncoder::downloadFromDeviceBuffer(const std::shared_ptr<Device
     
     return copyBufferToBuffer(std::static_pointer_cast<IBuffer>(deviceBuffer), 
                              std::static_pointer_cast<IBuffer>(readbackBuffer), 
+                             copyDesc);
+}
+
+
+bool WebGPUCommandEncoder::downloadFromDeviceBuffer(const std::shared_ptr<ImmediateDeviceBuffer>& deviceBuffer,
+                                                    const std::shared_ptr<DeferredStagingBuffer>& readbackBuffer,
+                                                    const BufferCopyDesc& copyDesc) {
+    if (!deviceBuffer) {
+        LOG_ERROR("WebGPUCommandEncoder", "ImmediateDevice buffer is null");
+        return false;
+    }
+
+    if (!readbackBuffer) {
+        LOG_ERROR("WebGPUCommandEncoder", "Readback buffer is null");
+        return false;
+    }
+
+    // Readback buffer must be unmapped before transfer
+    if (readbackBuffer->isMapped()) {
+        LOG_WARNING("WebGPUCommandEncoder", "Readback buffer is mapped, unmapping now");
+        const_cast<DeferredStagingBuffer*>(readbackBuffer.get())->unmap();
+    }
+
+    return copyBufferToBuffer(std::static_pointer_cast<IBuffer>(deviceBuffer),
+                             std::static_pointer_cast<IBuffer>(readbackBuffer),
                              copyDesc);
 }
 

@@ -7,6 +7,7 @@
 namespace pers {
 class IBuffer;
 class DeviceBuffer;
+class ImmediateDeviceBuffer;
 class ImmediateStagingBuffer;
 class DeferredStagingBuffer;
 class ICommandBuffer;
@@ -48,6 +49,16 @@ public:
      * @return true if command was successfully encoded, false otherwise
      */
     virtual bool downloadFromDeviceBuffer(const std::shared_ptr<DeviceBuffer>& deviceBuffer,
+                                          const std::shared_ptr<DeferredStagingBuffer>& readbackBuffer,
+                                          const BufferCopyDesc& copyDesc) = 0;
+    /**
+     * @brief Copy data from ImmediateDeviceBuffer to staging buffer for CPU readback
+     * @param deviceBuffer Source GPU buffer
+     * @param readbackBuffer Destination buffer for CPU readback
+     * @param copyDesc Copy parameters (offsets and size)
+     * @return true if command was successfully encoded, false otherwise
+     */
+    virtual bool downloadFromDeviceBuffer(const std::shared_ptr<ImmediateDeviceBuffer>& deviceBuffer,
                                           const std::shared_ptr<DeferredStagingBuffer>& readbackBuffer,
                                           const BufferCopyDesc& copyDesc) = 0;
     

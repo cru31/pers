@@ -15,8 +15,8 @@ public:
     ~WebGPUResourceFactory() override;
     
     // IResourceFactory interface
-    std::shared_ptr<IBuffer> createBuffer(const BufferDesc& desc) const override;
-    std::shared_ptr<IBuffer> createInitializableDeviceBuffer(
+    std::shared_ptr<INativeBuffer> createBuffer(const BufferDesc& desc) const override;
+    std::shared_ptr<INativeBuffer> createInitializableDeviceBuffer(
         const BufferDesc& desc,
         const void* initialData,
         size_t dataSize) const override;
@@ -27,7 +27,7 @@ public:
     std::shared_ptr<ISampler> createSampler(const SamplerDesc& desc) const override;
     std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc) const override;
     std::shared_ptr<IRenderPipeline> createRenderPipeline(const RenderPipelineDesc& desc) const override;
-    std::shared_ptr<IMappableBuffer> createMappableBuffer(const BufferDesc& desc) const override;
+    std::shared_ptr<INativeMappableBuffer> createMappableBuffer(const BufferDesc& desc) const override;
     
     
 private:

@@ -2,6 +2,7 @@
 
 #include "pers/graphics/buffers/IBuffer.h"
 #include "pers/graphics/buffers/IMappableBuffer.h"
+#include "pers/graphics/buffers/INativeMappableBuffer.h"
 #include <memory>
 #include <atomic>
 #include <vector>
@@ -29,13 +30,18 @@ public:
     
     /**
      * Create and initialize the dynamic buffer
-     * @param desc Buffer description
+     * @param size Buffer size in bytes
+     * @param usage Buffer usage flags
      * @param device Logical device to create resources
      * @param frameCount Number of frames to buffer (default 3)
+     * @param debugName Optional debug name
      * @return true if creation succeeded
      */
-    bool create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device,
-                uint32_t frameCount = DEFAULT_FRAME_COUNT);
+    bool create(uint64_t size,
+                BufferUsage usage,
+                const std::shared_ptr<ILogicalDevice>& device,
+                uint32_t frameCount = DEFAULT_FRAME_COUNT,
+                const std::string& debugName = "");
     
     /**
      * Destroy the dynamic buffer and release resources
@@ -70,12 +76,15 @@ public:
     virtual AccessPattern getAccessPattern() const override;
     
 protected:
-    BufferDesc _desc;
-    std::vector<std::shared_ptr<IMappableBuffer>> _buffers;
+    uint64_t _size;
+    BufferUsage _usage;
+    std::string _debugName;
+    std::vector<std::shared_ptr<INativeMappableBuffer>> _buffers;
     std::atomic<uint32_t> _currentFrame;
-    uint32_t _frameCount;
     std::vector<bool> _mapped;
+    uint32_t _frameCount;
     bool _created;
 };
 
 } // namespace pers
+

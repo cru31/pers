@@ -1,3 +1,4 @@
+#include "pers/graphics/buffers/INativeBuffer.h"
 #include "pers/graphics/buffers/DeviceBuffer.h"
 #include "pers/graphics/ICommandEncoder.h"
 #include "pers/graphics/ILogicalDevice.h"
@@ -10,7 +11,9 @@
 namespace pers {
 
 DeviceBuffer::DeviceBuffer()
-    : _desc()
+    : _size(0)
+    , _usage(BufferUsage::None)
+    , _debugName()
     , _totalBytesTransferred(0)
     , _transferCount(0)
     , _created(false) {
@@ -20,14 +23,14 @@ DeviceBuffer::~DeviceBuffer() {
     destroy();
 }
 
-bool DeviceBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device) {
+bool DeviceBuffer::create(uint64_t size, DeviceBufferUsage usage, const std::shared_ptr<ILogicalDevice>& device, const std::string& debugName) {
     if (_created) {
         LOG_ERROR("DeviceBuffer", "Buffer already created");
         return false;
     }
     
-    if (!desc.isValid()) {
-        LOG_ERROR("DeviceBuffer", "Invalid buffer description");
+    if (size == 0) {
+        LOG_ERROR("DeviceBuffer", "Invalid buffer size (0)");
         return false;
     }
     
@@ -42,12 +45,17 @@ bool DeviceBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogical
         return false;
     }
     
-    _desc = desc;
+    _size = size;
+    _usage = toBufferUsage(usage);
+    _debugName = debugName;
     
     // Force GPU-only configuration
-    BufferDesc deviceDesc = desc;
+    BufferDesc deviceDesc;
+    deviceDesc.size = size;
+    deviceDesc.debugName = debugName;
+    deviceDesc.usage = toBufferUsage(usage);
     deviceDesc.mappedAtCreation = false;
-    deviceDesc.usage |= BufferUsage::CopyDst;
+    _usage = deviceDesc.usage;
     
     if (deviceDesc.memoryLocation == MemoryLocation::Auto) {
         deviceDesc.memoryLocation = MemoryLocation::DeviceLocal;
@@ -64,8 +72,8 @@ bool DeviceBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogical
     _transferCount = 0;
     
     std::stringstream ss;
-    ss << "Created device buffer '" << _desc.debugName << "' size=" << _desc.size 
-       << " usage=0x" << std::hex << static_cast<uint32_t>(_desc.usage);
+    ss << "Created device buffer '" << _debugName << "' size=" << _size 
+       << " usage=0x" << std::hex << static_cast<uint32_t>(_usage);
     LOG_DEBUG("DeviceBuffer", ss.str().c_str());
     
     return true;
@@ -78,7 +86,7 @@ void DeviceBuffer::destroy() {
     
     if (_transferCount > 0) {
         std::stringstream ss;
-        ss << "Destroyed device buffer '" << _desc.debugName 
+        ss << "Destroyed device buffer '" << _debugName 
            << "' - total transfers: " << _transferCount 
            << ", bytes: " << _totalBytesTransferred;
         LOG_DEBUG("DeviceBuffer", ss.str().c_str());
@@ -88,36 +96,12 @@ void DeviceBuffer::destroy() {
     _totalBytesTransferred = 0;
     _transferCount = 0;
     _created = false;
-    _desc = BufferDesc();
+    _size = 0;
+    _usage = BufferUsage::None;
+    _debugName.clear();
 }
 
-DeviceBuffer::DeviceBuffer(DeviceBuffer&& other) noexcept
-    : _buffer(std::move(other._buffer))
-    , _desc(std::move(other._desc))
-    , _totalBytesTransferred(other._totalBytesTransferred)
-    , _transferCount(other._transferCount)
-    , _created(other._created) {
-    other._totalBytesTransferred = 0;
-    other._transferCount = 0;
-    other._created = false;
-}
 
-DeviceBuffer& DeviceBuffer::operator=(DeviceBuffer&& other) noexcept {
-    if (this != &other) {
-        destroy();
-        
-        _buffer = std::move(other._buffer);
-        _desc = std::move(other._desc);
-        _totalBytesTransferred = other._totalBytesTransferred;
-        _transferCount = other._transferCount;
-        _created = other._created;
-        
-        other._totalBytesTransferred = 0;
-        other._transferCount = 0;
-        other._created = false;
-    }
-    return *this;
-}
 
 // IBuffer interface
 uint64_t DeviceBuffer::getSize() const {
@@ -130,7 +114,7 @@ BufferUsage DeviceBuffer::getUsage() const {
 
 const std::string& DeviceBuffer::getDebugName() const {
     static const std::string empty;
-    return _created ? _desc.debugName : empty;
+    return _created ? _debugName : empty;
 }
 
 NativeBufferHandle DeviceBuffer::getNativeHandle() const {
@@ -151,7 +135,7 @@ MemoryLocation DeviceBuffer::getMemoryLocation() const {
 }
 
 AccessPattern DeviceBuffer::getAccessPattern() const {
-    return _desc.accessPattern;
+    return AccessPattern::Static;
 }
 
 } // namespace pers

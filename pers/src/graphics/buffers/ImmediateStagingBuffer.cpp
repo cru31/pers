@@ -1,3 +1,4 @@
+#include "pers/graphics/buffers/INativeMappableBuffer.h"
 #include "pers/graphics/buffers/ImmediateStagingBuffer.h"
 #include "pers/graphics/buffers/DeviceBuffer.h"
 #include "pers/graphics/ICommandEncoder.h"
@@ -23,7 +24,9 @@ static size_t alignBufferSize(size_t size) {
 
 
 ImmediateStagingBuffer::ImmediateStagingBuffer()
-    : _desc()
+    : _size(0)
+    , _usage(BufferUsage::None)
+    , _debugName()
     , _mappedData(nullptr)
     , _finalized(false)
     , _bytesWritten(0)
@@ -34,14 +37,14 @@ ImmediateStagingBuffer::~ImmediateStagingBuffer() {
     destroy();
 }
 
-bool ImmediateStagingBuffer::create(const BufferDesc& desc, const std::shared_ptr<ILogicalDevice>& device) {
+bool ImmediateStagingBuffer::create(uint64_t size, const std::shared_ptr<ILogicalDevice>& device, const std::string& debugName) {
     if (_created) {
         LOG_ERROR("ImmediateStagingBuffer", "Buffer already created");
         return false;
     }
     
-    if (!desc.isValid()) {
-        LOG_ERROR("ImmediateStagingBuffer", "Invalid buffer description");
+    if (size == 0) {
+        LOG_ERROR("ImmediateStagingBuffer", "Invalid buffer size (0)");
         return false;
     }
     
@@ -56,12 +59,16 @@ bool ImmediateStagingBuffer::create(const BufferDesc& desc, const std::shared_pt
         return false;
     }
     
-    _desc = desc;
+    _size = size;
+    _debugName = debugName;
     
     // Force immediate mapping configuration
-    BufferDesc stagingDesc = desc;
+    BufferDesc stagingDesc;
+    stagingDesc.size = size;
+    stagingDesc.debugName = debugName;
     stagingDesc.mappedAtCreation = true;
-    stagingDesc.usage |= BufferUsage::CopySrc;
+    stagingDesc.usage = BufferUsage::MapWrite | BufferUsage::CopySrc;
+    _usage = stagingDesc.usage;
     
     if (stagingDesc.memoryLocation == MemoryLocation::Auto) {
         stagingDesc.memoryLocation = MemoryLocation::HostVisible;
@@ -85,7 +92,7 @@ bool ImmediateStagingBuffer::create(const BufferDesc& desc, const std::shared_pt
     _bytesWritten = 0;
     
     std::stringstream ss;
-    ss << "Created staging buffer '" << _desc.debugName << "' size=" << _desc.size << " mapped=true";
+    ss << "Created staging buffer '" << _debugName << "' size=" << _size << " mapped=true";
     LOG_DEBUG("ImmediateStagingBuffer", ss.str().c_str());
     
     return true;
@@ -101,7 +108,7 @@ void ImmediateStagingBuffer::destroy() {
     if (!_finalized && _mappedData) {
         // Only unmap if we still have mapped data (not already finalized)
         std::stringstream ss;
-        ss << "Buffer '" << _desc.debugName << "' destroyed without being finalized";
+        ss << "Buffer '" << _debugName << "' destroyed without being finalized";
         LOG_WARNING("ImmediateStagingBuffer", ss.str().c_str());
         
         // Check if buffer is actually mapped before unmapping
@@ -115,18 +122,25 @@ void ImmediateStagingBuffer::destroy() {
     _finalized = false;
     _bytesWritten = 0;
     _created = false;
-    _desc = BufferDesc();
+    _size = 0;
+    _usage = BufferUsage::None;
+    _debugName.clear();
     
     LOG_DEBUG("ImmediateStagingBuffer", "Destroyed staging buffer");
 }
 
 ImmediateStagingBuffer::ImmediateStagingBuffer(ImmediateStagingBuffer&& other) noexcept
     : _buffer(std::move(other._buffer))
-    , _desc(std::move(other._desc))
+    , _size(other._size)
+    , _usage(other._usage)
+    , _debugName(std::move(other._debugName))
     , _mappedData(other._mappedData)
     , _finalized(other._finalized)
     , _bytesWritten(other._bytesWritten)
     , _created(other._created) {
+    other._size = 0;
+    other._usage = BufferUsage::None;
+    other._debugName.clear();
     other._mappedData = nullptr;
     other._finalized = false;
     other._bytesWritten = 0;
@@ -138,7 +152,9 @@ ImmediateStagingBuffer& ImmediateStagingBuffer::operator=(ImmediateStagingBuffer
         destroy();
         
         _buffer = std::move(other._buffer);
-        _desc = std::move(other._desc);
+        _size = other._size;
+        _usage = other._usage;
+        _debugName = std::move(other._debugName);
         _mappedData = other._mappedData;
         _finalized = other._finalized;
         _bytesWritten = other._bytesWritten;
@@ -147,6 +163,9 @@ ImmediateStagingBuffer& ImmediateStagingBuffer::operator=(ImmediateStagingBuffer
         other._mappedData = nullptr;
         other._finalized = false;
         other._bytesWritten = 0;
+        other._size = 0;
+        other._usage = BufferUsage::None;
+        other._debugName.clear();
         other._created = false;
     }
     return *this;
@@ -157,9 +176,9 @@ uint64_t ImmediateStagingBuffer::writeBytes(const void* data, uint64_t size, uin
         return 0;
     }
     
-    if (offset + size > _desc.size) {
+    if (offset + size > _size) {
         std::stringstream ss;
-        ss << "Write would exceed buffer size (offset=" << offset << ", size=" << size << ", buffer=" << _desc.size << ")";
+        ss << "Write would exceed buffer size (offset=" << offset << ", size=" << size << ", buffer=" << _size << ")";
         LOG_ERROR("ImmediateStagingBuffer", ss.str().c_str());
         return 0;
     }
@@ -179,7 +198,7 @@ void ImmediateStagingBuffer::finalize() {
     _finalized = true;
     
     std::stringstream ss;
-    ss << "Finalized buffer '" << _desc.debugName << "' with " << _bytesWritten << " bytes written";
+    ss << "Finalized buffer '" << _debugName << "' with " << _bytesWritten << " bytes written";
     LOG_DEBUG("ImmediateStagingBuffer", ss.str().c_str());
 }
 
@@ -201,7 +220,7 @@ BufferUsage ImmediateStagingBuffer::getUsage() const {
 
 const std::string& ImmediateStagingBuffer::getDebugName() const {
     static const std::string empty;
-    return _created ? _desc.debugName : empty;
+    return _created ? _debugName : empty;
 }
 
 NativeBufferHandle ImmediateStagingBuffer::getNativeHandle() const {
@@ -240,7 +259,7 @@ std::future<MappedData> ImmediateStagingBuffer::mapAsync(MapMode mode, const Buf
     if (!_created || _finalized) {
         promise.set_value(MappedData{nullptr, 0, nullptr});
     } else if (_mappedData) {
-        promise.set_value(MappedData{_mappedData, _desc.size, nullptr});
+        promise.set_value(MappedData{_mappedData, _size, nullptr});
     } else {
         promise.set_value(MappedData{nullptr, 0, nullptr});
     }
