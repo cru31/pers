@@ -183,48 +183,6 @@ void ImmediateStagingBuffer::finalize() {
     LOG_DEBUG("ImmediateStagingBuffer", ss.str().c_str());
 }
 
-bool ImmediateStagingBuffer::uploadTo(const std::shared_ptr<ICommandEncoder>& encoder, 
-                                      const std::shared_ptr<DeviceBuffer>& target,
-                                      const BufferCopyDesc& copyDesc) {
-    if (!_created) {
-        LOG_ERROR("ImmediateStagingBuffer", "Buffer not created");
-        return false;
-    }
-    
-    if (!_finalized) {
-        finalize();
-    }
-    
-    if (!encoder || !target || !_buffer) {
-        return false;
-    }
-    
-    BufferCopyDesc actualDesc = copyDesc;
-    if (actualDesc.size == BufferCopyDesc::WHOLE_SIZE) {
-        actualDesc.size = std::min(_bytesWritten, _desc.size);
-    }
-    
-    encoder->uploadToDeviceBuffer(std::dynamic_pointer_cast<ImmediateStagingBuffer>(shared_from_this()), target, actualDesc);
-    return true;
-}
-
-bool ImmediateStagingBuffer::uploadTo(const std::shared_ptr<ICommandEncoder>& encoder,
-                                      const std::shared_ptr<IBuffer>& target,
-                                      const BufferCopyDesc& copyDesc) {
-    if (!_created) {
-        LOG_ERROR("ImmediateStagingBuffer", "Buffer not created");
-        return false;
-    }
-    
-    auto deviceBuffer = std::dynamic_pointer_cast<DeviceBuffer>(target);
-    if (!deviceBuffer) {
-        LOG_ERROR("ImmediateStagingBuffer", "Target is not a device buffer");
-        return false;
-    }
-    
-    return uploadTo(encoder, deviceBuffer, copyDesc);
-}
-
 bool ImmediateStagingBuffer::isFinalized() const {
     return _finalized;
 }

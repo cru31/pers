@@ -14,7 +14,7 @@ class ILogicalDevice;
  * Staging buffer with immediate CPU access (mappedAtCreation=true)
  * Ideal for initial data upload and static resources
  */
-class ImmediateStagingBuffer final : public IMappableBuffer, public std::enable_shared_from_this<ImmediateStagingBuffer> {
+class ImmediateStagingBuffer final : public IMappableBuffer {
 public:
     ImmediateStagingBuffer();
     ~ImmediateStagingBuffer() override;
@@ -51,19 +51,7 @@ public:
      * Finalize buffer (unmap and prepare for GPU transfer)
      */
     void finalize();
-    
-    /**
-     * Upload to device buffer
-     */
-    bool uploadTo(const std::shared_ptr<ICommandEncoder>& encoder, const std::shared_ptr<DeviceBuffer>& target,
-                  const BufferCopyDesc& copyDesc = {0, 0, BufferCopyDesc::WHOLE_SIZE});
-    
-    /**
-     * Upload to another buffer
-     */
-    bool uploadTo(const std::shared_ptr<ICommandEncoder>& encoder, const std::shared_ptr<IBuffer>& target,
-                  const BufferCopyDesc& copyDesc = {0, 0, BufferCopyDesc::WHOLE_SIZE});
-    
+   
     /**
      * Check if buffer is finalized
      */

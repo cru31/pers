@@ -12,7 +12,7 @@ class ILogicalDevice;
  * GPU-only buffer for maximum performance
  * No CPU access, data upload via staging buffers
  */
-class DeviceBuffer final : public IBuffer, public std::enable_shared_from_this<DeviceBuffer> {
+class DeviceBuffer final : public IBuffer {
 public:
     DeviceBuffer();
     ~DeviceBuffer() override;
@@ -37,18 +37,6 @@ public:
     // Move only
     DeviceBuffer(DeviceBuffer&& other) noexcept;
     DeviceBuffer& operator=(DeviceBuffer&& other) noexcept;
-    
-    /**
-     * Copy data from source buffer
-     */
-    bool copyFrom(const std::shared_ptr<ICommandEncoder>& encoder, const std::shared_ptr<IBuffer>& source,
-                  const BufferCopyDesc& copyDesc = {0, 0, BufferCopyDesc::WHOLE_SIZE});
-    
-    /**
-     * Copy data to destination buffer
-     */
-    bool copyTo(const std::shared_ptr<ICommandEncoder>& encoder, const std::shared_ptr<IBuffer>& destination,
-                const BufferCopyDesc& copyDesc = {0, 0, BufferCopyDesc::WHOLE_SIZE});
     
     // IBuffer interface
     uint64_t getSize() const override;

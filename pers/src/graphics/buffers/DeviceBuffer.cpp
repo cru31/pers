@@ -119,60 +119,6 @@ DeviceBuffer& DeviceBuffer::operator=(DeviceBuffer&& other) noexcept {
     return *this;
 }
 
-bool DeviceBuffer::copyFrom(const std::shared_ptr<ICommandEncoder>& encoder, const std::shared_ptr<IBuffer>& source,
-                            const BufferCopyDesc& copyDesc) {
-    if (!_created) {
-        LOG_ERROR("DeviceBuffer", "Buffer not created");
-        return false;
-    }
-    
-    if (!encoder || !source || !_buffer) {
-        return false;
-    }
-    
-    uint64_t copySize = copyDesc.size;
-    if (copySize == BufferCopyDesc::WHOLE_SIZE) {
-        copySize = std::min(source->getSize() - copyDesc.srcOffset, 
-                            _desc.size - copyDesc.dstOffset);
-    }
-    
-    bool result = encoder->copyDeviceToDevice(std::dynamic_pointer_cast<DeviceBuffer>(source), std::dynamic_pointer_cast<DeviceBuffer>(shared_from_this()), copyDesc);
-    
-    if (result) {
-        _totalBytesTransferred += copySize;
-        _transferCount++;
-    }
-    
-    return result;
-}
-
-bool DeviceBuffer::copyTo(const std::shared_ptr<ICommandEncoder>& encoder, const std::shared_ptr<IBuffer>& destination,
-                          const BufferCopyDesc& copyDesc) {
-    if (!_created) {
-        LOG_ERROR("DeviceBuffer", "Buffer not created");
-        return false;
-    }
-    
-    if (!encoder || !destination || !_buffer) {
-        return false;
-    }
-    
-    uint64_t copySize = copyDesc.size;
-    if (copySize == BufferCopyDesc::WHOLE_SIZE) {
-        copySize = std::min(_desc.size - copyDesc.srcOffset, 
-                            destination->getSize() - copyDesc.dstOffset);
-    }
-    
-    bool result = encoder->copyDeviceToDevice(std::dynamic_pointer_cast<DeviceBuffer>(shared_from_this()), std::dynamic_pointer_cast<DeviceBuffer>(destination), copyDesc);
-    
-    if (result) {
-        _totalBytesTransferred += copySize;
-        _transferCount++;
-    }
-    
-    return result;
-}
-
 // IBuffer interface
 uint64_t DeviceBuffer::getSize() const {
     return _created && _buffer ? _buffer->getSize() : 0;

@@ -14,7 +14,7 @@ class ILogicalDevice;
  * Ring buffer for per-frame dynamic data updates
  * Automatically manages multiple buffer copies for frame overlap
  */
-class DynamicBuffer : public IBuffer, public std::enable_shared_from_this<DynamicBuffer> {
+class DynamicBuffer : public IBuffer {
 public:
     static constexpr uint32_t DEFAULT_FRAME_COUNT = 3;
     

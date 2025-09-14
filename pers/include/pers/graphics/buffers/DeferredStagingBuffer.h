@@ -20,7 +20,7 @@ class ILogicalDevice;
  * - Large data uploads that don't need immediate CPU access
  * - Asynchronous data transfers
  */
-class DeferredStagingBuffer final : public IMappableBuffer, public std::enable_shared_from_this<DeferredStagingBuffer> {
+class DeferredStagingBuffer final : public IMappableBuffer {
 public:
     DeferredStagingBuffer();
     ~DeferredStagingBuffer() override;
@@ -75,12 +75,7 @@ public:
     
     template<typename T>
     bool read(T* data, size_t count, size_t offsetElements = 0) const;
-    
-    // Transfer operations - DeferredStagingBuffer is primarily for readback
-    bool downloadFrom(const std::shared_ptr<ICommandEncoder>& encoder, 
-                     const std::shared_ptr<DeviceBuffer>& source,
-                     const BufferCopyDesc& copyDesc = {});
-    
+   
 private:
     std::shared_ptr<IMappableBuffer> _buffer;  // Internal WebGPU mappable buffer
     BufferDesc _desc;

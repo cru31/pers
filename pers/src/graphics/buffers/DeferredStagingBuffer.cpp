@@ -200,58 +200,6 @@ bool DeferredStagingBuffer::readBytes(void* data, uint64_t size, uint64_t offset
     return true;
 }
 
-bool DeferredStagingBuffer::downloadFrom(const std::shared_ptr<ICommandEncoder>& encoder,
-                                         const std::shared_ptr<DeviceBuffer>& source,
-                                         const BufferCopyDesc& copyDesc) {
-    if (!_created) {
-        LOG_ERROR("DeferredStagingBuffer", "Buffer not created");
-        return false;
-    }
-    
-    if (!encoder) {
-        LOG_ERROR("DeferredStagingBuffer", "downloadFrom: encoder is null");
-        return false;
-    }
-    
-    if (!source) {
-        LOG_ERROR("DeferredStagingBuffer", "downloadFrom: source is null");
-        return false;
-    }
-    
-    // Ensure buffer is unmapped before transfer
-    if (isMapped()) {
-        unmap();
-    }
-    
-    uint64_t size = copyDesc.size;
-    if (size == BufferCopyDesc::WHOLE_SIZE) {
-        size = std::min(source->getSize() - copyDesc.srcOffset, 
-                       _desc.size - copyDesc.dstOffset);
-    }
-    
-    if (size == 0) {
-        LOG_WARNING("DeferredStagingBuffer", "Nothing to download (size=0)");
-        return true;
-    }
-    
-    // Use the specific download method on the encoder
-    auto deferredBuffer = std::dynamic_pointer_cast<DeferredStagingBuffer>(shared_from_this());
-    if (!deferredBuffer) {
-        LOG_ERROR("DeferredStagingBuffer", "Failed to get shared_ptr to self");
-        return false;
-    }
-    
-    bool result = encoder->downloadFromDeviceBuffer(source, deferredBuffer, copyDesc);
-    
-    if (result) {
-        std::stringstream ss;
-        ss << "Downloaded " << size << " bytes from device to '" << _desc.debugName << "'";
-        LOG_DEBUG("DeferredStagingBuffer", ss.str().c_str());
-    }
-    
-    return result;
-}
-
 // IBuffer interface
 uint64_t DeferredStagingBuffer::getSize() const {
     return _created && _buffer ? _buffer->getSize() : 0;
