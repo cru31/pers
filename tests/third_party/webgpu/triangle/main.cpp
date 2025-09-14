@@ -4,8 +4,8 @@
 #include <vector>
 #include <cassert>
 #include <cstring>
-#include <webgpu.h>
-#include <wgpu.h>
+#include <webgpu/webgpu.h>
+#include <webgpu/wgpu.h>
 
 #ifdef _WIN32
     #define GLFW_EXPOSE_NATIVE_WIN32
