@@ -92,3 +92,4 @@ unit_test_results/20*
 
 # Temporary/experimental test directories
 tests/pers/async_stress_test/
+build-release/
