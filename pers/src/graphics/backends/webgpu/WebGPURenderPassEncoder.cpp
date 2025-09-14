@@ -81,22 +81,22 @@ void WebGPURenderPassEncoder::setVertexBuffer(uint32_t slot, const std::shared_p
         return;
     }
     
-    // Cast to WebGPU implementation
-    auto webgpuBuffer = std::dynamic_pointer_cast<WebGPUBuffer>(buffer);
-    if (!webgpuBuffer) {
+    // Get the native handle directly from the buffer
+    NativeBufferHandle nativeHandle = buffer->getNativeHandle();
+    if (!nativeHandle.isValid()) {
         LOG_ERROR("WebGPURenderPassEncoder", 
-                              "Invalid buffer type - not a WebGPUBuffer");
+                              "Invalid buffer - native handle is null");
         return;
     }
     
     // If size is 0, use the entire buffer size from offset
     uint64_t bufferSize = size;
     if (bufferSize == 0) {
-        bufferSize = webgpuBuffer->getSize() - offset;
+        bufferSize = buffer->getSize() - offset;
     }
     
     // Set the vertex buffer
-    WGPUBuffer wgpuBuffer = webgpuBuffer->getNativeHandle().as<WGPUBuffer>();
+    WGPUBuffer wgpuBuffer = nativeHandle.as<WGPUBuffer>();
     wgpuRenderPassEncoderSetVertexBuffer(_encoder, slot, wgpuBuffer, offset, bufferSize);
 }
 
@@ -114,9 +114,38 @@ void WebGPURenderPassEncoder::setIndexBuffer(const std::shared_ptr<IBuffer>& buf
                               "Cannot set index buffer on ended render pass");
         return;
     }
+      
+    // Get the native handle directly from the buffer
+    NativeBufferHandle nativeHandle = buffer->getNativeHandle();
+    if (!nativeHandle.isValid()) {
+        LOG_ERROR("WebGPURenderPassEncoder", 
+                              "Invalid buffer - native handle is null");
+        return;
+    }
     
-    TODO_OR_DIE("WebGPURenderPassEncoder::setIndexBuffer", 
-                   "Cast buffer to WebGPUBuffer and call wgpuRenderPassEncoderSetIndexBuffer");
+    // If size is 0, use the entire buffer size from offset
+    uint64_t bufferSize = size;
+    if (bufferSize == 0) {
+        bufferSize = buffer->getSize() - offset;
+    }
+    
+    // Convert index format to WebGPU format
+    WGPUIndexFormat wgpuFormat = WGPUIndexFormat_Undefined;
+    switch (indexFormat) {
+        case IndexFormat::Uint16:
+            wgpuFormat = WGPUIndexFormat_Uint16;
+            break;
+        case IndexFormat::Uint32:
+            wgpuFormat = WGPUIndexFormat_Uint32;
+            break;
+        default:
+            LOG_ERROR("WebGPURenderPassEncoder", "Invalid index format");
+            return;
+    }
+    
+    // Set the index buffer
+    WGPUBuffer wgpuBuffer = nativeHandle.as<WGPUBuffer>();
+    wgpuRenderPassEncoderSetIndexBuffer(_encoder, wgpuBuffer, wgpuFormat, offset, bufferSize);
 }
 
 void WebGPURenderPassEncoder::draw(uint32_t vertexCount, uint32_t instanceCount,
