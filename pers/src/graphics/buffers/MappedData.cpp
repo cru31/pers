@@ -1,4 +1,4 @@
-#include "pers/graphics/buffers/IMappableBuffer.h"
+#include "pers/graphics/buffers/MappedData.h"
 
 namespace pers {
 
